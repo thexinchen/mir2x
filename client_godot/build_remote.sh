@@ -49,7 +49,15 @@ mkdir -p "$project_dir/build/audio/seff"
 cp -a "$resource_dir/sound/seff/." "$project_dir/build/audio/seff/"
 touch "$project_dir/build/audio/.gdignore"
 
-"$repo_dir/build.sh" Release --mir2x-res "$resource_dir" --target godotworldres
+if [ "${MIR2X_SKIP_CPP_BUILD:-0}" = "1" ]; then
+    echo "MIR2X_SKIP_CPP_BUILD=1: 跳过 C++ 目标重建，直接使用现有 build/Release/godotworldres"
+    if [ ! -x "$repo_dir/build/Release/godotworldres" ]; then
+        echo "godotworldres 不存在，无法跳过重建: $repo_dir/build/Release/godotworldres" >&2
+        exit 1
+    fi
+else
+    "$repo_dir/build.sh" Release --mir2x-res "$resource_dir" --target godotworldres
+fi
 build_signature=$(sed -n 's/^MIR2X_BUILD_SIGNATURE:STRING=//p' "$repo_dir/build/Release/CMakeCache.txt" | head -n 1)
 if [ -z "$build_signature" ]; then
     echo "failed to read MIR2X_BUILD_SIGNATURE from CMakeCache.txt" >&2
