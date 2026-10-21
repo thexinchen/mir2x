@@ -231,7 +231,9 @@ func _test_map_object_animation_gate() -> bool:
 		if record[0] == 0x000C34AF and (record[1] & 1) != 0 and record[3] == 8:
 			affected_record = record
 			break
-	if affected_record.is_empty() or affected_world.texture(0x000C34B0) != null:
+	# 直读 map.zsdb 后，任何在包内的纹理都能解析出来（不再只有导出子集），
+	# 因此这里只要求 fixture 记录存在；真正的断言是下面“不出现在白名单的物件不得播动画”。
+	if affected_record.is_empty():
 		_fail("affected outside-whitelist map object fixture is unavailable")
 		return false
 	while floori(float(Time.get_ticks_msec()) / 200.0) % 8 in [0, 7]:

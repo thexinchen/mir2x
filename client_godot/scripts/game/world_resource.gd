@@ -3,6 +3,7 @@ extends RefCounted
 
 const MAGIC := "M2GW"
 const VERSION := 1
+const ResourceStoreScript = preload("res://scripts/resource/resource_store.gd")
 
 var base_path: String = ""
 var map_id: int = 0
@@ -15,6 +16,7 @@ var land: PackedByteArray = PackedByteArray()
 var tiles: Dictionary = {}
 var objects: Array[Dictionary] = [{}, {}, {}, {}]
 var _texture_cache: Dictionary = {}
+var _store = null
 var last_error: String = ""
 
 
@@ -128,8 +130,10 @@ func can_walk(x: int, y: int) -> bool:
 func texture(texture_id: int) -> Texture2D:
 	if _texture_cache.has(texture_id):
 		return _texture_cache[texture_id]
-	var path := "%s/textures/%08X.png" % [base_path, texture_id]
-	var bytes := FileAccess.get_file_as_bytes(path)
+	if _store == null:
+		_store = ResourceStoreScript.shared()
+		_store.adopt(base_path)
+	var bytes: PackedByteArray = _store.texture_bytes(texture_id)
 	if bytes.is_empty():
 		_texture_cache[texture_id] = null
 		return null
@@ -143,14 +147,7 @@ func texture(texture_id: int) -> Texture2D:
 
 
 func _find_base_path(requested_map_id: int) -> String:
-	var candidates: Array[String] = []
-	var env_path := OS.get_environment("MIR2X_WORLD_RES")
-	if not env_path.is_empty():
-		candidates.append(env_path)
-	candidates.append("res://world_res")
-	if not OS.has_feature("editor"):
-		candidates.append(OS.get_executable_path().get_base_dir().path_join("world_res"))
-	for candidate in candidates:
+	for candidate in ResourceStoreScript.candidate_roots():
 		var map_path := "%s/maps/%08X.m2xmap" % [candidate, requested_map_id]
 		if FileAccess.file_exists(map_path):
 			return candidate
