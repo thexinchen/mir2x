@@ -2,6 +2,7 @@ class_name ActorResource
 extends RefCounted
 
 const MAGIC := "M2SP"
+const ResourceStoreScript = preload("res://scripts/resource/resource_store.gd")
 
 var base_path: String = ""
 var offsets: Dictionary = {}
@@ -20,13 +21,23 @@ var magic_names: Dictionary = {}
 var magic_ids_by_name: Dictionary = {}
 var hero_weapon_orders := PackedByteArray()
 var _textures: Dictionary = {}
+var _store = null
+var _sprite_offset_count := 0
 
 
 func configure(path: String) -> bool:
-	base_path = path
-	var loaded := false
-	for family in ["hero", "hair", "helmet", "weapon", "monster", "npc", "item", "equip", "proguse", "selectchar", "magic"]:
-		loaded = _load_index(family) or loaded
+	_store = ResourceStoreScript.shared()
+	_store.adopt(path)
+	base_path = _store.base_path
+	var loaded: bool = _store.is_ready()
+	_sprite_offset_count = 0
+	for family in ResourceStoreScript.SPRITE_FAMILIES:
+		var archive = _store.sprite_archive(family)
+		if archive != null:
+			_sprite_offset_count += archive.entry_count
+		else:
+			# 兼容旧的解包目录：没有 ZSDB 时退回 .m2xindex + PNG。
+			loaded = _load_index(family) or loaded
 	_load_hero_weapon_orders()
 	_load_monster_meta()
 	_load_monster_names()
@@ -43,33 +54,31 @@ func configure(path: String) -> bool:
 
 
 func configure_default() -> bool:
-	var candidates: Array[String] = []
-	var env_path := OS.get_environment("MIR2X_WORLD_RES")
-	if not env_path.is_empty():
-		candidates.append(env_path)
-	candidates.append("res://world_res")
-	if not OS.has_feature("editor"):
-		candidates.append(OS.get_executable_path().get_base_dir().path_join("world_res"))
-	for candidate in candidates:
-		if FileAccess.file_exists("%s/sprites/item.m2xindex" % candidate):
-			return configure(candidate)
-	return false
+	_store = ResourceStoreScript.shared()
+	if not _store.is_ready() and not _store.configure():
+		return false
+	return configure(_store.base_path)
+
+
+func sprite_offset_count() -> int:
+	return _sprite_offset_count if _sprite_offset_count > 0 else offsets.size()
 
 
 func frame(family: String, key: int) -> Dictionary:
 	var cache_key := "%s:%08X" % [family, key]
 	if _textures.has(cache_key):
 		return _textures[cache_key]
-	var offset: Vector2i = offsets.get(cache_key, Vector2i.ZERO)
-	var bytes := FileAccess.get_file_as_bytes("%s/sprites/%s/%08X.png" % [base_path, family, key])
-	if bytes.is_empty():
+	if _store == null:
+		_store = ResourceStoreScript.shared()
+	var source: Dictionary = _store.sprite_frame(family, key)
+	if source.is_empty():
 		_textures[cache_key] = {}
 		return {}
 	var image := Image.new()
-	if image.load_png_from_buffer(bytes) != OK:
+	if image.load_png_from_buffer(source["bytes"]) != OK:
 		_textures[cache_key] = {}
 		return {}
-	var result := {"texture": ImageTexture.create_from_image(image), "offset": offset}
+	var result := {"texture": ImageTexture.create_from_image(image), "offset": source["offset"]}
 	_textures[cache_key] = result
 	return result
 

@@ -41,7 +41,7 @@ func _ready() -> void:
 	if not actors.configure(world.base_path):
 		_fail("failed to load actor indices")
 		return
-	if actors.offsets.size() < 345000 or actors.monster_look(224) <= 0 or actors.item_meta.size() < 1000:
+	if actors.sprite_offset_count() < 345000 or actors.monster_look(224) <= 0 or actors.item_meta.size() < 1000:
 		_fail("incomplete actor indices")
 		return
 	if actors.item_details.size() != actors.item_meta.size() or actors.buff_names.is_empty():
@@ -215,7 +215,7 @@ func _ready() -> void:
 	if mine_weapon_count == 0:
 		_fail("item meta v5 did not export mine-capable weapons")
 		return
-	print("WORLD RESOURCE PASS: map=%d size=%dx%d tiles=%d actor_frames=%d magic_seff=%d magic_target_offsets=%d fade_monster=%d persistent_corpse=%d special_spawn=%d transform=%d death_magic=%d transform_effect=%d weapon_sound=%d mine_weapon=%d durable=%d described=%d buffs=%d" % [world.map_id, world.width, world.height, world.tiles.size(), actors.offsets.size(), magic_seff_count, magic_target_offset_count, fade_monster_count, persistent_corpse_count, special_spawn_count, transform_count, death_magic_count, transform_effect_magic_count, weapon_sound_count, mine_weapon_count, durable_item_count, described_item_count, actors.buff_names.size()])
+	print("WORLD RESOURCE PASS: map=%d size=%dx%d tiles=%d actor_frames=%d magic_seff=%d magic_target_offsets=%d fade_monster=%d persistent_corpse=%d special_spawn=%d transform=%d death_magic=%d transform_effect=%d weapon_sound=%d mine_weapon=%d durable=%d described=%d buffs=%d" % [world.map_id, world.width, world.height, world.tiles.size(), actors.sprite_offset_count(), magic_seff_count, magic_target_offset_count, fade_monster_count, persistent_corpse_count, special_spawn_count, transform_count, death_magic_count, transform_effect_magic_count, weapon_sound_count, mine_weapon_count, durable_item_count, described_item_count, actors.buff_names.size()])
 	get_tree().quit()
 
 
