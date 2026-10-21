@@ -20,6 +20,26 @@
 
 namespace fs = std::filesystem;
 
+// --no-png：只输出索引/元数据，不写逐帧 PNG。
+// Godot 客户端已改为直接读取 ZSDB（client_godot/scripts/resource/），
+// 全量导出 37 万个 PNG 既慢又占 2.6G 磁盘，默认构建不再需要。
+static bool g_noPNG = false;
+
+static bool consumeFlag(int &argc, char *argv[], const char *flag)
+{
+    for(int index = 1; index < argc; ++index){
+        if(std::strcmp(argv[index], flag) != 0){
+            continue;
+        }
+        for(int move = index; move + 1 < argc; ++move){
+            argv[move] = argv[move + 1];
+        }
+        --argc;
+        return true;
+    }
+    return false;
+}
+
 #pragma pack(push, 1)
 struct MapHeader
 {
@@ -361,6 +381,9 @@ static std::string mapBinName(uint32_t mapID)
 
 static void extractTexture(ZSDB &textureDB, uint32_t textureID, const fs::path &textureDir)
 {
+    if(g_noPNG){
+        return;
+    }
     char key[16] {};
     const auto keyString = hexstr::to_string<uint32_t, 4>(textureID, key, true);
     const auto outputPath = textureDir / (std::string(keyString, 8) + ".png");
@@ -501,7 +524,7 @@ static size_t convertSprites(const char *family, const char *dbPath, const fs::p
         spriteList.push_back({key, check_cast<int16_t>(dx), check_cast<int16_t>(dy)});
 
         const auto outputPath = spriteDir / str_printf("%08X.png", key);
-        if(!fs::exists(outputPath)){
+        if(!g_noPNG && !fs::exists(outputPath)){
             if(!db.decomp(entry.fileName, 0, &pngData)){
                 throw fflpanic("failed to extract sprite: {}", entry.fileName);
             }
@@ -767,6 +790,7 @@ static size_t convertSprites(const char *family, const char *dbPath, const fs::p
 
 int main(int argc, char *argv[])
 {
+    g_noPNG = consumeFlag(argc, argv, "--no-png");
     if(argc >= 5 && std::strcmp(argv[1], "--sprites") == 0 && (argc % 2 == 1)){
         const fs::path outputDir(argv[2]);
         size_t totalCount = 0;
@@ -776,8 +800,8 @@ int main(int argc, char *argv[])
         return totalCount ? 0 : 1;
     }
     if(argc != 4 && argc != 5){
-		std::fprintf(stderr, "Usage: godotworldres mapbin.zsdb map.zsdb output-dir [map-id]\n");
-		std::fprintf(stderr, "       godotworldres --sprites output-dir family sprite.zsdb [family sprite.zsdb ...]\n");
+		std::fprintf(stderr, "Usage: godotworldres mapbin.zsdb map.zsdb output-dir [map-id] [--no-png]\n");
+		std::fprintf(stderr, "       godotworldres --sprites output-dir family sprite.zsdb [family sprite.zsdb ...] [--no-png]\n");
         return 2;
     }
 

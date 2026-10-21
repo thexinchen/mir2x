@@ -63,9 +63,17 @@ fi
 
 world_res_dir="$project_dir/build/world_res"
 mkdir -p "$world_res_dir"
-# Runtime resources are decoded directly with FileAccess/Image.load_png_from_buffer().
-# Prevent the editor from importing hundreds of thousands of external sprite files.
+# 客户端直接读取 ZSDB（scripts/resource/），这里只产出索引/元数据，
+# 不再把 37 万帧 PNG 铺到磁盘上；.gdignore 仍然保留，避免编辑器扫描运行时资源目录。
 touch "$world_res_dir/.gdignore"
+
+# 把纹理 ZSDB 挂到 world_res/texture 供 ResourceStore 解析；
+# 同一文件系统用硬链接，避免 1.4G 重复占用（无法硬链接时退回复制）。
+mkdir -p "$world_res_dir/texture"
+for zsdb_path in "$repo_dir"/build/Release/res/texture/*.zsdb; do
+    cp -l "$zsdb_path" "$world_res_dir/texture/" 2>/dev/null || cp "$zsdb_path" "$world_res_dir/texture/"
+done
+
 map_id_args=""
 if [ -n "${MIR2X_GODOT_MAP_ID:-}" ]; then
     map_id_args=$MIR2X_GODOT_MAP_ID
@@ -73,7 +81,7 @@ fi
 "$repo_dir/build/Release/godotworldres" \
     "$repo_dir/build/Release/res/map/mapbin.zsdb" \
     "$repo_dir/build/Release/res/texture/map.zsdb" \
-    "$world_res_dir" $map_id_args
+    "$world_res_dir" $map_id_args --no-png
 "$repo_dir/build/Release/godotworldres" --sprites "$world_res_dir" \
     hero "$repo_dir/build/Release/res/texture/hero.zsdb" \
     hair "$repo_dir/build/Release/res/texture/hair.zsdb" \
@@ -85,7 +93,7 @@ fi
     equip "$repo_dir/build/Release/res/texture/equip.zsdb" \
     proguse "$repo_dir/build/Release/res/texture/proguse.zsdb" \
     selectchar "$repo_dir/build/Release/res/texture/selectchar.zsdb" \
-    magic "$repo_dir/build/Release/res/texture/magic.zsdb"
+    magic "$repo_dir/build/Release/res/texture/magic.zsdb" --no-png
 
 mkdir -p "$project_dir/build"
 "$godot_bin" --headless --editor --path "$project_dir" --quit
