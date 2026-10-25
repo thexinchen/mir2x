@@ -180,6 +180,7 @@ func _run() -> void:
 	main.call("_send_player_action", stand)
 	stage = "disconnect"
 	main.set("_magic_focus_uid", 701)
+	main.set("_locked_magic_target_uid", 704)
 	main.set("_follow_focus_uid", 702)
 	main.set("_attack_focus_uid", 703)
 	main.get("_summon_spawn_blockers")[808] = {"token": 1, "map_uid": map_uid}
@@ -201,7 +202,7 @@ func _run() -> void:
 	if not reconnected or scene_messages < 2:
 		_fail("reconnection did not restore its scene")
 		return
-	if main.get("_magic_focus_uid") != 0 or main.get("_follow_focus_uid") != 0 or main.get("_attack_focus_uid") != 0 or not main.get("_summon_spawn_blockers").is_empty():
+	if main.get("_magic_focus_uid") != 0 or main.get("_locked_magic_target_uid") != 0 or main.get("_follow_focus_uid") != 0 or main.get("_attack_focus_uid") != 0 or not main.get("_summon_spawn_blockers").is_empty():
 		_fail("reconnection retained prior-scene targeting or summon blockers")
 		return
 	stage = "new-session"
