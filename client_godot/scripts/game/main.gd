@@ -740,10 +740,15 @@ func _ground_spell_grid(mouse_grid: Vector2i, force_front := false) -> Vector2i:
 		target = Vector2i(clampi(target.x, 0, map.width - 1), clampi(target.y, 0, map.height - 1))
 	var origin := Vector2i(game_state.player_x, game_state.player_y)
 	# 67CE88 also overrides legacy spell 21 (瞬息移动) with a front cell.
-	if force_front or target == origin:
+	if target == origin:
 		var facing := int(game_state.player_direction)
 		if facing >= 1 and facing <= 8:
 			target = origin + Mir3MovementScript.DIRECTIONS[facing - 1]
+	# 67CE26 computes the direction from normalized tile coordinates before
+	# 67CEAF projects directional exceptions one cell ahead.
+	if force_front:
+		var facing := Mir3MovementScript.screen_direction(target - origin)
+		target = origin + Mir3MovementScript.DIRECTIONS[facing - 1]
 	return target
 
 
@@ -754,6 +759,10 @@ func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim
 		var draw_grid: Vector2 = world_renderer.player_draw_grid()
 		var anchor := Vector2i(roundi(draw_grid.x * 48) - int(game_state.view_x), roundi(draw_grid.y * 32) - int(game_state.view_y))
 		direction_override = Mir3MovementScript.screen_direction(Vector2i(get_viewport().get_mouse_position()) - anchor)
+	elif action_type == 9 and aim_uid == 0:
+		# 67CBED / 67CE26 call the same sector routine on TILE deltas here.
+		# This turn is independent of terrain traversability.
+		direction_override = Mir3MovementScript.screen_direction(aim_grid - Vector2i(game_state.player_x, game_state.player_y))
 	var pending_action := {
 		"action_type": action_type,
 		"magic_id": magic_id,
@@ -815,6 +824,8 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 			"y": game_state.player_y,
 			"aimUID": aim_uid,
 		})
+	elif direction_override >= 1 and direction_override <= 8:
+		direction = direction_override
 	else:
 		var can_turn: bool = true
 		# C++ ActionSpell only inserts a turn for a live UID target or a
@@ -824,8 +835,6 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 			can_turn = aim_uid != 0 if requested_aim_uid != 0 else world_renderer.can_walk(target_grid.x, target_grid.y)
 		if can_turn:
 			direction = _direction_to(game_state.player_x, game_state.player_y, target_grid.x, target_grid.y)
-	if direction_override >= 1 and direction_override <= 8:
-		direction = direction_override
 	if direction == 0:
 		direction = game_state.player_direction
 	# Legacy heal 2 keeps the mouse-derived facing but sends self coordinates
