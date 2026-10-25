@@ -36,8 +36,12 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
     for label, path in [("godot_network", network_path), ("native_playerop", playerop_path), ("native_playernet", playernet_path)]:
         raw = path.read_text(encoding="utf-8").encode("utf-8")
         sources[label] = {"file": path.name, "sha256_lf": hashlib.sha256(raw).hexdigest()}
+    if "_send_request(CM_ACTION, action_data, false, callback, 10001)" not in network_path.read_text(encoding="utf-8"):
+        raise ValueError("current transport snapshot lacks optional action receipts")
+    if "postNetMessage(processed ? SM_OK : SM_ERROR, respID)" not in playernet_path.read_text(encoding="utf-8"):
+        raise ValueError("current server snapshot lacks correlated processing receipts")
     return {
-        "schema_version": 1, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 2, "sample_sha256": EXPECTED_SAMPLE,
         "wait_gate": {
             "check": "0x691738", "mark_sent": "0x691260", "clear": "0x693c4c",
             "pending_byte_offset": 3312, "sent_tick_u32_offset": 3320,
@@ -80,10 +84,12 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
             "source_snapshots": sources,
             "godot_send_action": "CM_ACTION uses fixed send without a response ID",
             "godot_generic_request_timeout_ms": 1000,
-            "native_cm_action": "handler ignores incoming response ID and has no generic correlated result reply",
+            "godot_optional_action_receipt": "send_action_request uses a response ID and expiry tick sent+10001",
+            "native_cm_action": "nonzero response ID receives SM_OK after a recognized handler completes; bad owner/map/type receives SM_ERROR; response ID zero retains old behavior",
+            "receipt_semantics": "Processing completion only; a rejected movement also returns SM_OK and sends its normal separate correction.",
             "native_owner_action": "on_AM_ACTION returns immediately when amA.UID == UID()",
             "required_before_runtime_wait_gate": [
-                "Define a correlated action-result response for this transport.",
+                "Integrate the optional processing receipt into gameplay pending state; ordinary sends still use the legacy path.",
                 "Distinguish acceptance, failure/state correction and owner action broadcasts.",
                 "Carry the documented timeout and next-check behavior without reusing the generic 1s timeout.",
                 "Test lost/reordered/stale replies and reconnect/map transitions before blocking user input.",
