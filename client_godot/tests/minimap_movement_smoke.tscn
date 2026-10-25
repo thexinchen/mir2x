@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/minimap_movement_smoke.gd" id="1"]
+
+[node name="MinimapMovementSmoke" type="Node"]
+script = ExtResource("1")

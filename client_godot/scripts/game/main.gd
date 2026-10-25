@@ -502,6 +502,12 @@ func _start_move_to(destination: Vector2i) -> void:
 	_move_path = _find_path([destination])
 
 
+func _on_minimap_move_requested(destination: Vector2i) -> void:
+	if _player_input_blocked() or map_loading_overlay.visible or not _player_forced_action_queue.is_empty():
+		return
+	_start_move_to(destination)
+
+
 func _start_chase(target_uid: int) -> void:
 	_cancel_movement()
 	_attack_focus_uid = target_uid
@@ -3200,6 +3206,7 @@ func _ensure_extra_panel(scene_path: String) -> Control:
 	panel.z_index = int(EXTRA_PANEL_DRAW_LAYERS.get(scene_path, 0))
 	panel.position = _extra_panel_initial_position(scene_path, panel.size)
 	if scene_path == MINIMAP_PANEL_PATH:
+		panel.move_requested.connect(_on_minimap_move_requested)
 		panel.call("set_requested_visible", true)
 	else:
 		panel.hide()

@@ -1,5 +1,7 @@
 extends "res://scripts/game/closable_panel.gd"
 
+signal move_requested(destination: Vector2i)
+
 const WorldResourceScript = preload("res://scripts/game/world_resource.gd")
 const ActorResourceScript = preload("res://scripts/game/actor_resource.gd")
 
@@ -213,7 +215,7 @@ func _on_map_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			var location := _canvas_to_map(event.position)
 			if _world.can_walk(location.x, location.y):
-				NetworkClient.send_request_space_move(_state.player_map_uid, location.x, location.y)
+				move_requested.emit(location)
 		accept_event()
 	elif event is InputEventMouseMotion:
 		_hover_position = event.position
