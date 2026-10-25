@@ -317,6 +317,8 @@ func switch_player_map(map_uid: int, x: int, y: int) -> void:
 
 func update_health(hp: int, hp_max: int, mp: int, mp_max: int) -> void:
 	player_hp = hp
+	if hp <= 0:
+		remove_actor_attachments(player_uid, true)
 	player_hp_max = hp_max
 	player_mp = mp
 	player_mp_max = mp_max
@@ -507,14 +509,29 @@ func chat_message_xml(message: Dictionary) -> String:
 
 func update_creature(uid: int, data: Dictionary) -> void:
 	creatures[uid] = data
+	if int(data.get("action_type", 0)) == 13:
+		remove_actor_attachments(uid, true)
 	state_changed.emit()
 
 
 func remove_creature(uid: int) -> void:
 	creatures.erase(uid)
+	remove_actor_attachments(uid)
 	player_say_messages.erase(uid)
 	creature_removed.emit(uid)
 	state_changed.emit()
+
+
+func remove_actor_attachments(uid: int, auras_only := false) -> bool:
+	if uid == 0:
+		return false
+	var remaining: Array = []
+	for effect in attached_magic_effects:
+		if int(effect.get("target_uid", 0)) != uid or (auras_only and effect.get("kind", "") not in ["shield", "shield_hit", "yin_yang_ring"]):
+			remaining.append(effect)
+	var removed := remaining.size() != attached_magic_effects.size()
+	attached_magic_effects = remaining
+	return removed
 
 
 func get_creature(uid: int) -> Dictionary:
@@ -711,6 +728,13 @@ func add_cast_magic_attachment(data: Dictionary, magic_name: String) -> bool:
 	if effect.target_uid != player_uid and not creatures.has(effect.target_uid):
 		return false
 	if effect.cycles == -1:
+		if effect.target_uid == player_uid:
+			if player_action_type == 13 or (player_health_initialized and player_hp <= 0):
+				return false
+		else:
+			var actor: Dictionary = creatures[effect.target_uid]
+			if actor.get("action_type", 0) == 13 or (actor.get("health_initialized", false) and int(actor.get("hp", 0)) <= 0):
+				return false
 		var remaining: Array = []
 		for existing in attached_magic_effects:
 			if existing.get("target_uid", 0) != effect.target_uid or existing.get("magicID", 0) != effect.magicID:
@@ -758,6 +782,8 @@ func update_entity_health(data: Dictionary) -> void:
 	creature["hp_max"] = data.get("maxHP", 0)
 	creature["mp_max"] = data.get("maxMP", 0)
 	creature["health_initialized"] = true
+	if int(creature.hp) <= 0:
+		remove_actor_attachments(uid, true)
 	creatures[uid] = creature
 	if initialized:
 		_add_health_feedback(creature.get("x", 0), creature.get("y", 0), creature.hp - previous_hp, creature.mp - previous_mp)

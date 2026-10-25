@@ -500,11 +500,11 @@
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "c998c5634016b72a48487ab5c98424a24df0ac3a79a28ec987fb0016b836e778"
+        "sha256_lf": "2ff8957f9dbae53de0fdbe27bb125b629f0fee5202dcc2519d0b4f1b87a290a2"
       },
       "godot_game_state": {
         "file": "game_state.gd",
-        "sha256_lf": "1bc17043d818cb8ea6404f1035595f8958e62c3684962a3946845d36776c4e10"
+        "sha256_lf": "62deaead28f7d577db91073b245ce87607c654c9180663efd2e707de55653727"
       },
       "godot_request_gate": {
         "file": "mir3_request_gate.gd",

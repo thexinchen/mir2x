@@ -1937,6 +1937,7 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 			0:
 				return
 	if action_type == 13:
+		game_state.remove_actor_attachments(uid, true)
 		if uid == game_state.player_uid:
 			_start_player_death_action(action)
 			return
@@ -3282,6 +3283,7 @@ func _handle_notify_dead(payload: PackedByteArray) -> void:
 	var uid := Protocol.decode_sm_notify_dead(payload)
 	if uid == 0:
 		return
+	game_state.remove_actor_attachments(uid, true)
 	if uid == game_state.player_uid:
 		if not _player_forced_action_queue.is_empty():
 			return
