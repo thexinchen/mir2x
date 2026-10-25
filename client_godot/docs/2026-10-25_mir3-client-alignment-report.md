@@ -310,3 +310,23 @@ xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network
 运行逻辑独立提交：新增共享 `magic_shortcuts.gd`，技能面板绑定和主场景施法使用同一映射。保留原有0–9、A–Z快捷键；已有数字1–9与F1–F9共用存储值，面板统一显示F键名称，字母仍按小写协议值保存，因此Shift-F1的65不会与字母A的97冲突。Shift组标签显示S-F1至S-F12，自动缩小字号以适应技能图标。可见药品栏对物理数字1–6的拦截保持不变，功能键可正常绑定。无需改变现有单字节快捷键协议。
 
 测试与文档另行提交。104 Linux Godot 4.7.1执行 `mir3_magic_shortcuts_smoke.tscn` 通过：验证两组12个编码、F1/F12绑定与施法分派、字母A不冲突、同槽替换旧技能、F13拒绝、标签宽度和旧Shift-X兼容。此测试替换实际施法函数以检查分派，没有发送网络技能请求。`skill_panel_smoke.tscn` 与 `world_action_smoke.tscn` 同时通过。本批没有验证新功能键经服务端重登录后的持久化，也没有据此扩大到所有技能的原版行为一致性。
+
+## 批次 28–29：修复原版功能键的服务端落库范围并验证重登录（2026-10-26）
+
+上一批仅验证客户端分派，本批实际联网发现遗漏：`Player::dbUpdateMagicKey()` 与共享 `SDMagicKeyList::setMagicKey()` 都断言只允许0–9和a–z。原版F10–F12存储58–60、Shift组65–76超出范围。104旧进程真实复现F12绑定后客户端已有施法动作，但未收到权威治疗；服务端日志持续报 `playerdb.cpp:421` 快捷键范围断言。故上一批通过不能作为完整功能可用的证据。
+
+两处校验统一扩展到原有0–9/a–z，加上完整原版49–60和65–76，保留字符协议与现有唯一槽分配逻辑。没有放宽到任意字节。104以 `cmake --build --preset conan-release --target server --parallel 6` 编译成功，确认旧server进程身份后正常终止，启动新server。
+
+独立测试批扩展 `network_magic_smoke`：`MIR2X_NETWORK_MAGIC_KEY` 支持X（默认）、F12、SHIFT_F12，预期协议值独立写明120、60、76，避免复用被测映射形成自证。绑定仍走技能面板入口，施法仍走主场景输入入口。重登模式在施法前要求服务端配置已经读回正确键值，不重新绑定。
+
+104真实结果：id_3 F12绑定治疗186->207，重登读取60后再次治疗251->271；id_4 Shift-F12绑定治疗289->353，Linux窗口重登读取76后再次治疗354->375。均确认本地施法、权威buff1、回血消息和HUD图标。测试不是操作系统物理按键模拟。最后用旧X键联网施法恢复两角色测试配置，并复跑双组快捷键和完整动作回归。仍有部分测试退出ObjectDB泄漏、llvmpipe不支持VSync的既有警告，未计为本批修复。
+
+```bash
+export MIR2X_NETWORK_MAGIC_KEY=F12  # 或 SHIFT_F12
+export MIR2X_NETWORK_MAGIC_ACCOUNT=id_3  # Shift组此次用id_4隔离
+/home/czx/godot --headless --max-fps 60 --path client_godot res://tests/network_magic_smoke.tscn
+export MIR2X_NETWORK_MAGIC_EXPECT_PERSISTED=1
+/home/czx/godot --headless --max-fps 60 --path client_godot res://tests/network_magic_smoke.tscn
+```
+
+这项覆盖了两组最大槽位的真实绑定、配置序列化、重登录和治愈术执行；其他技能和原版全部游戏逻辑尚未因此完成。

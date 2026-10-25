@@ -3,7 +3,10 @@ extends Node
 const Protocol = preload("res://scripts/network/protocol.gd")
 
 const MAGIC_ID := 17
-const MAGIC_KEY := 120
+var _magic_key := 120
+var _keycode := KEY_X
+var _shift := false
+var _key_label := "X"
 
 enum Stage { WAIT_READY, WAIT_BOUND, WAIT_CAST }
 
@@ -23,6 +26,21 @@ var _fixture_started := false
 
 
 func _ready() -> void:
+	var selected_key := OS.get_environment("MIR2X_NETWORK_MAGIC_KEY")
+	match selected_key:
+		"", "X": pass
+		"F12":
+			_magic_key = 60
+			_keycode = KEY_F12
+			_key_label = "F12"
+		"SHIFT_F12":
+			_magic_key = 76
+			_keycode = KEY_F12
+			_shift = true
+			_key_label = "S-F12"
+		_:
+			_fail("unsupported healing fixture key: %s" % selected_key, 20)
+			return
 	NetworkClient.connection_changed.connect(_on_connection_changed)
 	NetworkClient.message_received.connect(_on_message_received)
 	NetworkClient.connect_to_server()
@@ -68,17 +86,18 @@ func _process(_delta: float) -> void:
 				return
 			button.mouse_entered.emit()
 			if OS.has_environment("MIR2X_NETWORK_MAGIC_EXPECT_PERSISTED"):
-				if int(GameState.magic_keys.get(MAGIC_ID, 0)) != MAGIC_KEY:
-					_fail("server-generated player config did not reload healing=X: %s" % GameState.magic_keys, 9)
+				if int(GameState.magic_keys.get(MAGIC_ID, 0)) != _magic_key:
+					_fail("server-generated player config did not reload healing=%s: %s" % [_key_label, GameState.magic_keys], 9)
 					return
 			else:
 				var bind_event := InputEventKey.new()
-				bind_event.keycode = KEY_X
-				bind_event.unicode = MAGIC_KEY
+				bind_event.keycode = _keycode
+				bind_event.unicode = 120 if _keycode == KEY_X else 0
+				bind_event.shift_pressed = _shift
 				bind_event.pressed = true
 				panel.call("_unhandled_key_input", bind_event)
-				if int(GameState.magic_keys.get(MAGIC_ID, 0)) != MAGIC_KEY:
-					_fail("visible skill panel did not bind healing=X: %s" % GameState.magic_keys, 10)
+				if int(GameState.magic_keys.get(MAGIC_ID, 0)) != _magic_key:
+					_fail("visible skill panel did not bind healing=%s: %s" % [_key_label, GameState.magic_keys], 10)
 					return
 			_stage = Stage.WAIT_BOUND
 		Stage.WAIT_BOUND:
@@ -95,8 +114,9 @@ func _process(_delta: float) -> void:
 			_buff_list_received = false
 			_health_received = false
 			var cast_event := InputEventKey.new()
-			cast_event.keycode = KEY_X
-			cast_event.unicode = MAGIC_KEY
+			cast_event.keycode = _keycode
+			cast_event.unicode = 120 if _keycode == KEY_X else 0
+			cast_event.shift_pressed = _shift
 			cast_event.pressed = true
 			_main.call("_unhandled_input", cast_event)
 			_local_action_started = GameState.player_action_type == 9 and GameState.magic_cast_times.has(MAGIC_ID)
@@ -118,7 +138,7 @@ func _process(_delta: float) -> void:
 				if error != OK:
 					_fail("failed to save authoritative-buff screenshot: %s" % error, 15)
 					return
-			print("NETWORK MAGIC PASS: healing=%d buff=%d key=X hp=%d->%d local-action+authoritative-buff/health+HUD" % [MAGIC_ID, _expected_buff_id, _initial_hp, GameState.player_hp])
+			print("NETWORK MAGIC PASS: healing=%d buff=%d key=%s stored=%d hp=%d->%d local-action+authoritative-buff/health+HUD" % [MAGIC_ID, _expected_buff_id, _key_label, _magic_key, _initial_hp, GameState.player_hp])
 			_finished = true
 			NetworkClient.disconnect_from_server()
 			get_tree().quit()
