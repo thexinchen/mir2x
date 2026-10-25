@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "identity_sha256": "756e04a2f7131e9352b4ca8ee2d95f5641ac3724bd87a64f06fece6b272b95ba",
+  "general_resolver": "0x67cc08",
+  "setting_forced_route": {
+    "branch": "0x67c98a",
+    "expression": "explicit lock permission AND setting enabled",
+    "requires_a_valid_locked_actor": false
+  },
+  "projection": {
+    "branch_va": "0x67ce63",
+    "branch_hex": "0fb743548bd083c2f86683fa77770a83e27f0fa31534cf6700720c663d2e017406663d2002752a",
+    "input": "record uint16 dispatch ID at offset 84; NOT base ID at offset 0",
+    "bitmap_va": "0x67cf34",
+    "bitmap_hex": "0122c000000000000000000002000400",
+    "bitmap_first_id": 8,
+    "bitmap_last_id": 127,
+    "dispatch_ids": [
+      8,
+      17,
+      21,
+      30,
+      31,
+      105,
+      122,
+      302,
+      544
+    ],
+    "coordinate_assignment": "0x67ce94/0x67cea3 reset aim to player tile; 0x67ceaf steps once using pre-adjustment direction",
+    "uid_preserved": true,
+    "final_actor_direction": "0x67cef2 runs AFTER projection; may differ from the direction used for the projected tile"
+  },
+  "current_resource_candidates": [
+    {
+      "current_name": "魔法盾",
+      "original_resource_id": 31,
+      "explicit_lock_allowed": false
+    },
+    {
+      "current_name": "召唤骷髅",
+      "original_resource_id": 17,
+      "explicit_lock_allowed": false
+    },
+    {
+      "current_name": "抗拒火环",
+      "original_resource_id": 8,
+      "explicit_lock_allowed": true
+    },
+    {
+      "current_name": "瞬息移动",
+      "original_resource_id": 21,
+      "explicit_lock_allowed": false
+    },
+    {
+      "current_name": "召唤神兽",
+      "original_resource_id": 30,
+      "explicit_lock_allowed": false
+    },
+    {
+      "current_name": "超强召唤骷髅",
+      "original_resource_id": 105,
+      "explicit_lock_allowed": false
+    },
+    {
+      "current_name": "阴阳法环",
+      "original_resource_id": 122,
+      "explicit_lock_allowed": false
+    }
+  ],
+  "limits": [
+    "Resource identity is a base-ID mapping; candidate rows do not prove every learned dispatch-ID substitution.",
+    "The runtime adapter applies the recovered projection to current 抗拒火环 only in the proven setting-forced general route.",
+    "Other general-mode entries depend on missing original server record byte81; do not globally project self spells from this table.",
+    "Current/history target storage remains incomplete; negative static history permission is not a denial."
+  ]
+}
