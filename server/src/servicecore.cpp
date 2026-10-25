@@ -110,7 +110,14 @@ corof::awaitable<> ServiceCore::operateNet(uint32_t channID, uint8_t cmType, con
             }
         default:
             {
-                throw fflvalue(ClientMsg(cmType).name());
+                // A stale client may send gameplay traffic before it has a player.
+                // Reject it locally: throwing here leaves the mailbox batch pending
+                // and prevents subsequent sessions from reaching their login request.
+                if(respID){
+                    m_actorPod->postNet(channID, SM_ERROR, nullptr, 0, respID);
+                }
+                g_server->addLog(LOGTYPE_WARNING, "Ignored pre-player message: channel = %u, type = %s", channID, ClientMsg(cmType).name());
+                return {};
             }
     }
 }
