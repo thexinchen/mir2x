@@ -474,7 +474,7 @@ corof::awaitable<> Player::on_AM_NOTIFYDEAD(const ActorMsgPack &)
 
 corof::awaitable<> Player::on_AM_CHECKMASTER(const ActorMsgPack &rstMPK)
 {
-    const auto combNode = getCombatNode(m_sdItemStorage.wear, m_sdLearnedMagicList, UID(), level());
+    const auto combNode = getCombatNode(m_sdItemStorage.wear, m_sdLearnedMagicList, job(), level());
 
     AMCheckMasterOK amCMOK;
     std::memset(&amCMOK, 0, sizeof(amCMOK));

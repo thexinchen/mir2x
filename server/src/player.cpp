@@ -714,7 +714,7 @@ bool Player::dcValid(int, bool)
 
 DamageNode Player::getAttackDamage(int nDC, int) const
 {
-    const auto node = getCombatNode(m_sdItemStorage.wear, {}, UID(), level());
+    const auto node = getCombatNode(m_sdItemStorage.wear, m_sdLearnedMagicList, job(), level());
     const double elemRatio = 1.0 + 0.1 * [nDC, &node]() -> int
     {
         const auto &mr = DBCOM_MAGICRECORD(nDC);
@@ -788,7 +788,7 @@ bool Player::struckDamage(uint64_t, const DamageNode &node)
 
     const auto damage = [&node, this]() -> int
     {
-        const auto combatNode = getCombatNode(m_sdItemStorage.wear, {}, UID(), level());
+        const auto combatNode = getCombatNode(m_sdItemStorage.wear, m_sdLearnedMagicList, job(), level());
         if(DBCOM_MAGICID(u8"物理攻击") == to_u32(node.magicID)){
             return std::max<int>(0, node.damage - mathf::rand<int>(combatNode.ac[0], combatNode.ac[1]));
         }
@@ -1249,7 +1249,7 @@ corof::awaitable<> Player::onCMActionSpell(CMAction cmA)
     const auto magicID = cmA.action.extParam.spell.magicID;
 
     dispatchAction(cmA.action);
-    const auto node = getCombatNode(m_sdItemStorage.wear, m_sdLearnedMagicList, UID(), level());
+    const auto node = getCombatNode(m_sdItemStorage.wear, m_sdLearnedMagicList, job(), level());
 
     switch(magicID){
         case DBCOM_MAGICID(u8"治愈术"):
