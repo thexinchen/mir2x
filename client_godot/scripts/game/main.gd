@@ -748,11 +748,18 @@ func _ground_spell_grid(mouse_grid: Vector2i, force_front := false) -> Vector2i:
 
 
 func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
+	var direction_override := 0
+	if action_type == 9 and aim_uid == 0 and _resources.magic_names.get(magic_id, "") == "治愈术":
+		# 677548 / 67CC59 capture screen-facing before the legacy heal exception.
+		var draw_grid: Vector2 = world_renderer.player_draw_grid()
+		var anchor := Vector2i(roundi(draw_grid.x * 48) - int(game_state.view_x), roundi(draw_grid.y * 32) - int(game_state.view_y))
+		direction_override = Mir3MovementScript.screen_direction(Vector2i(get_viewport().get_mouse_position()) - anchor)
 	var pending_action := {
 		"action_type": action_type,
 		"magic_id": magic_id,
 		"aim_grid": aim_grid,
 		"aim_uid": aim_uid,
+		"direction_override": direction_override,
 	}
 	if not _pending_spell_action.is_empty():
 		_pending_spell_action = pending_action
@@ -766,7 +773,7 @@ func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim
 		game_state.state_changed.emit()
 		return true
 	_cancel_movement()
-	return _execute_spell_action(action_type, magic_id, aim_grid, aim_uid)
+	return _execute_spell_action(action_type, magic_id, aim_grid, aim_uid, direction_override)
 
 
 func _should_brake_movement_for_spell() -> bool:
@@ -786,10 +793,11 @@ func _release_pending_spell() -> void:
 		pending_action.get("magic_id", 0),
 		pending_action.get("aim_grid", Vector2i(game_state.player_x, game_state.player_y)),
 		pending_action.get("aim_uid", 0),
+		pending_action.get("direction_override", 0),
 	)
 
 
-func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
+func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int, direction_override := 0) -> bool:
 	var target_grid := aim_grid
 	var requested_aim_uid := aim_uid
 	if aim_uid == game_state.player_uid:
@@ -816,6 +824,8 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 			can_turn = aim_uid != 0 if requested_aim_uid != 0 else world_renderer.can_walk(target_grid.x, target_grid.y)
 		if can_turn:
 			direction = _direction_to(game_state.player_x, game_state.player_y, target_grid.x, target_grid.y)
+	if direction_override >= 1 and direction_override <= 8:
+		direction = direction_override
 	if direction == 0:
 		direction = game_state.player_direction
 	# Legacy heal 2 keeps the mouse-derived facing but sends self coordinates

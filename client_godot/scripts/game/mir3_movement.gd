@@ -53,6 +53,24 @@ func advance(delta: float, destination: Vector2i, ctrl: bool, over_world: bool, 
 		pending = true
 
 
+# Mir3 6FEE68: screen pixels, not tile deltas. Return native directions 1..8.
+static func screen_direction(delta: Vector2i) -> int:
+	if delta.x == 0:
+		return 1 if delta.y < 0 else 5
+	if delta.y == 0:
+		return 3 if delta.x > 0 else 7
+	var dx := absi(delta.x)
+	var dy := absi(delta.y)
+	# Exact integer forms preserve inclusive diagonal boundaries at 1/3, 2.5.
+	if dy * 3 < dx:
+		return 3 if delta.x > 0 else 7
+	if dy * 2 > dx * 5:
+		return 1 if delta.y < 0 else 5
+	if delta.y < 0:
+		return 2 if delta.x > 0 else 8
+	return 4 if delta.x > 0 else 6
+
+
 static func direction(from: Vector2i, to: Vector2i) -> int:
 	var dx := signi(to.x - from.x)
 	var dy := signi(to.y - from.y)
