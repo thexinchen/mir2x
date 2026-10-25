@@ -1,10 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": "Exact-name correspondence only; current_id is not an original Mir3 ID. Description entries include non-skill text and duplicates.",
+  "legacy_reference_sha256": "df935cf34fc2cb494c76a929d8c19c0086d5ea8b98ae226b05a882e3546759df",
   "source_sha256": "1aa5b84cad5c06c276f519bccc6e1af6ce3aeb7a55a04d87bd82d0a0168bd9b2",
   "name_metadata_sha256": "b383378379250be38e1eb7f549184af7d4216bc86b6f63b743a3f8fd273cfda1",
   "skill_metadata_sha256": "d84d2c85dce7c981794b32e7ad4d4a968fa9802526103ae8a7019fdde2968ba0",
-  "main_sha256": "04380c369cb94bc6024bee17759e2a958e068174bc10a22b3f765a2dfa99a342",
+  "main_sha256": "168ef8f08545d1dfd86ccf3af9b692de3cea1130cf87d00750c80f846b61b799",
   "description_key_count": 793,
   "description_entry_count": 798,
   "duplicate_keys": {
@@ -32,6 +33,33 @@
       "name": "雷电术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 11,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "11",
+          "MagName": "雷电术",
+          "Mag_Type": "2",
+          "EffectType": "7",
+          "Effect": "9",
+          "Spell": "7",
+          "Power": "15",
+          "MaxPower": "19",
+          "DefSpell": "6",
+          "DefPower": "7",
+          "DefMaxPower": "11",
+          "Job": "1",
+          "NeedL1": "16",
+          "L1Train": "40",
+          "NeedL2": "18",
+          "L2Train": "50",
+          "NeedL3": "20",
+          "L3Train": "60",
+          "Delay": "80",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 41,
@@ -44,6 +72,33 @@
       "name": "魔法盾",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 31,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "31",
+          "MagName": "魔法盾",
+          "Mag_Type": "3",
+          "EffectType": "4",
+          "Effect": "29",
+          "Spell": "20",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "30",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "1",
+          "NeedL1": "29",
+          "L1Train": "90",
+          "NeedL2": "31",
+          "L2Train": "100",
+          "NeedL3": "33",
+          "L3Train": "110",
+          "Delay": "10",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 51,
@@ -56,6 +111,33 @@
       "name": "召唤骷髅",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 17,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "17",
+          "MagName": "召唤骷髅",
+          "Mag_Type": "6",
+          "EffectType": "4",
+          "Effect": "15",
+          "Spell": "15",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "10",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "17",
+          "L1Train": "40",
+          "NeedL2": "19",
+          "L2Train": "50",
+          "NeedL3": "21",
+          "L3Train": "60",
+          "Delay": "200",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 89,
@@ -68,6 +150,33 @@
       "name": "火球术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 1,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "1",
+          "MagName": "火球术",
+          "Mag_Type": "0",
+          "EffectType": "1",
+          "Effect": "1",
+          "Spell": "3",
+          "Power": "6",
+          "MaxPower": "10",
+          "DefSpell": "1",
+          "DefPower": "0",
+          "DefMaxPower": "4",
+          "Job": "1",
+          "NeedL1": "7",
+          "L1Train": "10",
+          "NeedL2": "9",
+          "L2Train": "20",
+          "NeedL3": "11",
+          "L3Train": "30",
+          "Delay": "50",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 33,
@@ -80,6 +189,33 @@
       "name": "大火球",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 5,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "5",
+          "MagName": "大火球",
+          "Mag_Type": "0",
+          "EffectType": "1",
+          "Effect": "3",
+          "Spell": "6",
+          "Power": "15",
+          "MaxPower": "19",
+          "DefSpell": "6",
+          "DefPower": "7",
+          "DefMaxPower": "11",
+          "Job": "1",
+          "NeedL1": "15",
+          "L1Train": "40",
+          "NeedL2": "17",
+          "L2Train": "50",
+          "NeedL3": "19",
+          "L3Train": "60",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 40,
@@ -92,6 +228,33 @@
       "name": "治愈术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 2,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "2",
+          "MagName": "治愈术",
+          "Mag_Type": "4",
+          "EffectType": "2",
+          "Effect": "2",
+          "Spell": "7",
+          "Power": "11",
+          "MaxPower": "15",
+          "DefSpell": "2",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "7",
+          "L1Train": "10",
+          "NeedL2": "9",
+          "L2Train": "20",
+          "NeedL3": "11",
+          "L3Train": "30",
+          "Delay": "40",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 84,
@@ -104,6 +267,33 @@
       "name": "基本剑术",
       "current_policy": "passive",
       "original_id": null,
+      "legacy_reference": {
+        "id": 3,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "3",
+          "MagName": "基本剑术",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "0",
+          "Spell": "0",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "0",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "7",
+          "L1Train": "10",
+          "NeedL2": "9",
+          "L2Train": "20",
+          "NeedL3": "11",
+          "L3Train": "30",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 2,
@@ -116,6 +306,33 @@
       "name": "精神力战法",
       "current_policy": "passive",
       "original_id": null,
+      "legacy_reference": {
+        "id": 4,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "4",
+          "MagName": "精神力战法",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "0",
+          "Spell": "0",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "0",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "8",
+          "L1Train": "10",
+          "NeedL2": "10",
+          "L2Train": "20",
+          "NeedL3": "12",
+          "L3Train": "30",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 85,
@@ -128,6 +345,33 @@
       "name": "施毒术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 6,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "6",
+          "MagName": "施毒术",
+          "Mag_Type": "5",
+          "EffectType": "2",
+          "Effect": "4",
+          "Spell": "10",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "5",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "12",
+          "L1Train": "20",
+          "NeedL2": "14",
+          "L2Train": "30",
+          "NeedL3": "16",
+          "L3Train": "40",
+          "Delay": "60",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 86,
@@ -140,6 +384,33 @@
       "name": "攻杀剑术",
       "current_policy": "passive",
       "original_id": null,
+      "legacy_reference": {
+        "id": 7,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "7",
+          "MagName": "攻杀剑术",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "5",
+          "Spell": "0",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "0",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "14",
+          "L1Train": "30",
+          "NeedL2": "16",
+          "L2Train": "40",
+          "NeedL3": "18",
+          "L3Train": "50",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 3,
@@ -152,6 +423,33 @@
       "name": "抗拒火环",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 8,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "8",
+          "MagName": "抗拒火环",
+          "Mag_Type": "3",
+          "EffectType": "4",
+          "Effect": "6",
+          "Spell": "8",
+          "Power": "0",
+          "MaxPower": "2",
+          "DefSpell": "1",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "1",
+          "NeedL1": "12",
+          "L1Train": "20",
+          "NeedL2": "14",
+          "L2Train": "30",
+          "NeedL3": "16",
+          "L3Train": "40",
+          "Delay": "60",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 37,
@@ -164,6 +462,33 @@
       "name": "疾光电影",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 10,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "10",
+          "MagName": "疾光电影",
+          "Mag_Type": "2",
+          "EffectType": "6",
+          "Effect": "8",
+          "Spell": "12",
+          "Power": "14",
+          "MaxPower": "14",
+          "DefSpell": "15",
+          "DefPower": "12",
+          "DefMaxPower": "16",
+          "Job": "1",
+          "NeedL1": "21",
+          "L1Train": "50",
+          "NeedL2": "23",
+          "L2Train": "60",
+          "NeedL3": "25",
+          "L3Train": "70",
+          "Delay": "80",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 45,
@@ -176,6 +501,33 @@
       "name": "刺杀剑术",
       "current_policy": "swing",
       "original_id": null,
+      "legacy_reference": {
+        "id": 12,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "12",
+          "MagName": "刺杀剑术",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "13",
+          "Spell": "0",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "0",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "19",
+          "L1Train": "40",
+          "NeedL2": "21",
+          "L2Train": "50",
+          "NeedL3": "23",
+          "L3Train": "60",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 4,
@@ -188,6 +540,33 @@
       "name": "灵魂火符",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 13,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "13",
+          "MagName": "灵魂火符",
+          "Mag_Type": "5",
+          "EffectType": "8",
+          "Effect": "10",
+          "Spell": "6",
+          "Power": "6",
+          "MaxPower": "10",
+          "DefSpell": "3",
+          "DefPower": "3",
+          "DefMaxPower": "3",
+          "Job": "2",
+          "NeedL1": "13",
+          "L1Train": "20",
+          "NeedL2": "15",
+          "L2Train": "30",
+          "NeedL3": "17",
+          "L3Train": "40",
+          "Delay": "50",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 87,
@@ -200,6 +579,33 @@
       "name": "幽灵盾",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 14,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "14",
+          "MagName": "幽灵盾",
+          "Mag_Type": "5",
+          "EffectType": "9",
+          "Effect": "11",
+          "Spell": "10",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "5",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "21",
+          "L1Train": "50",
+          "NeedL2": "23",
+          "L2Train": "60",
+          "NeedL3": "25",
+          "L3Train": "70",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 91,
@@ -212,6 +618,33 @@
       "name": "神圣战甲术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 15,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "15",
+          "MagName": "神圣战甲术",
+          "Mag_Type": "5",
+          "EffectType": "9",
+          "Effect": "12",
+          "Spell": "10",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "5",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "25",
+          "L1Train": "70",
+          "NeedL2": "27",
+          "L2Train": "80",
+          "NeedL3": "29",
+          "L3Train": "90",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 94,
@@ -224,6 +657,33 @@
       "name": "困魔咒",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 16,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "16",
+          "MagName": "困魔咒",
+          "Mag_Type": "5",
+          "EffectType": "10",
+          "Effect": "14",
+          "Spell": "15",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "10",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "27",
+          "L1Train": "80",
+          "NeedL2": "29",
+          "L2Train": "90",
+          "NeedL3": "31",
+          "L3Train": "100",
+          "Delay": "100",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 95,
@@ -236,6 +696,33 @@
       "name": "隐身术",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 18,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "18",
+          "MagName": "隐身术",
+          "Mag_Type": "5",
+          "EffectType": "4",
+          "Effect": "16",
+          "Spell": "5",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "5",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "20",
+          "L1Train": "50",
+          "NeedL2": "22",
+          "L2Train": "60",
+          "NeedL3": "24",
+          "L3Train": "70",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 90,
@@ -248,6 +735,33 @@
       "name": "集体隐身术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 19,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "19",
+          "MagName": "集体隐身术",
+          "Mag_Type": "5",
+          "EffectType": "8",
+          "Effect": "17",
+          "Spell": "10",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "5",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "23",
+          "L1Train": "60",
+          "NeedL2": "25",
+          "L2Train": "70",
+          "NeedL3": "27",
+          "L3Train": "80",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 92,
@@ -260,6 +774,33 @@
       "name": "诱惑之光",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 20,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "20",
+          "MagName": "诱惑之光",
+          "Mag_Type": "6",
+          "EffectType": "2",
+          "Effect": "18",
+          "Spell": "3",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "3",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "1",
+          "NeedL1": "13",
+          "L1Train": "20",
+          "NeedL2": "15",
+          "L2Train": "30",
+          "NeedL3": "17",
+          "L3Train": "40",
+          "Delay": "60",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 38,
@@ -272,6 +813,33 @@
       "name": "瞬息移动",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 21,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "21",
+          "MagName": "瞬息移动",
+          "Mag_Type": "6",
+          "EffectType": "4",
+          "Effect": "19",
+          "Spell": "10",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "10",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "1",
+          "NeedL1": "14",
+          "L1Train": "30",
+          "NeedL2": "16",
+          "L2Train": "40",
+          "NeedL3": "18",
+          "L3Train": "50",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 39,
@@ -284,6 +852,33 @@
       "name": "火墙",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 22,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "22",
+          "MagName": "火墙",
+          "Mag_Type": "0",
+          "EffectType": "4",
+          "Effect": "20",
+          "Spell": "22",
+          "Power": "2",
+          "MaxPower": "9",
+          "DefSpell": "30",
+          "DefPower": "1",
+          "DefMaxPower": "6",
+          "Job": "1",
+          "NeedL1": "24",
+          "L1Train": "60",
+          "NeedL2": "26",
+          "L2Train": "70",
+          "NeedL3": "28",
+          "L3Train": "80",
+          "Delay": "100",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 48,
@@ -296,6 +891,33 @@
       "name": "地狱火",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 9,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "9",
+          "MagName": "地狱火",
+          "Mag_Type": "0",
+          "EffectType": "5",
+          "Effect": "7",
+          "Spell": "11",
+          "Power": "14",
+          "MaxPower": "18",
+          "DefSpell": "15",
+          "DefPower": "12",
+          "DefMaxPower": "16",
+          "Job": "1",
+          "NeedL1": "20",
+          "L1Train": "50",
+          "NeedL2": "22",
+          "L2Train": "60",
+          "NeedL3": "24",
+          "L3Train": "70",
+          "Delay": "80",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 44,
@@ -308,6 +930,33 @@
       "name": "爆裂火焰",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 23,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "23",
+          "MagName": "爆裂火焰",
+          "Mag_Type": "0",
+          "EffectType": "2",
+          "Effect": "21",
+          "Spell": "15",
+          "Power": "14",
+          "MaxPower": "18",
+          "DefSpell": "20",
+          "DefPower": "14",
+          "DefMaxPower": "18",
+          "Job": "1",
+          "NeedL1": "32",
+          "L1Train": "100",
+          "NeedL2": "34",
+          "L2Train": "110",
+          "NeedL3": "36",
+          "L3Train": "120",
+          "Delay": "90",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 52,
@@ -320,6 +969,33 @@
       "name": "地狱雷光",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 24,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "24",
+          "MagName": "地狱雷光",
+          "Mag_Type": "2",
+          "EffectType": "4",
+          "Effect": "22",
+          "Spell": "17",
+          "Power": "14",
+          "MaxPower": "18",
+          "DefSpell": "20",
+          "DefPower": "14",
+          "DefMaxPower": "18",
+          "Job": "1",
+          "NeedL1": "33",
+          "L1Train": "100",
+          "NeedL2": "35",
+          "L2Train": "110",
+          "NeedL3": "37",
+          "L3Train": "120",
+          "Delay": "90",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 53,
@@ -332,6 +1008,33 @@
       "name": "半月弯刀",
       "current_policy": "swing",
       "original_id": null,
+      "legacy_reference": {
+        "id": 25,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "25",
+          "MagName": "半月弯刀",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "23",
+          "Spell": "0",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "3",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "24",
+          "L1Train": "60",
+          "NeedL2": "26",
+          "L2Train": "70",
+          "NeedL3": "28",
+          "L3Train": "80",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 5,
@@ -344,6 +1047,33 @@
       "name": "烈火剑法",
       "current_policy": "swing",
       "original_id": null,
+      "legacy_reference": {
+        "id": 26,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "26",
+          "MagName": "烈火剑法",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "24",
+          "Spell": "2",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "7",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "32",
+          "L1Train": "100",
+          "NeedL2": "34",
+          "L2Train": "110",
+          "NeedL3": "36",
+          "L3Train": "120",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 7,
@@ -356,6 +1086,33 @@
       "name": "野蛮冲撞",
       "current_policy": "unsupported",
       "original_id": null,
+      "legacy_reference": {
+        "id": 27,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "27",
+          "MagName": "野蛮冲撞",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "25",
+          "Spell": "20",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "0",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "27",
+          "L1Train": "70",
+          "NeedL2": "29",
+          "L2Train": "80",
+          "NeedL3": "31",
+          "L3Train": "90",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 6,
@@ -368,6 +1125,33 @@
       "name": "群体治愈术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 29,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "29",
+          "MagName": "群体治愈术",
+          "Mag_Type": "4",
+          "EffectType": "2",
+          "Effect": "27",
+          "Spell": "10",
+          "Power": "8",
+          "MaxPower": "12",
+          "DefSpell": "20",
+          "DefPower": "4",
+          "DefMaxPower": "4",
+          "Job": "2",
+          "NeedL1": "31",
+          "L1Train": "100",
+          "NeedL2": "33",
+          "L2Train": "110",
+          "NeedL3": "35",
+          "L3Train": "120",
+          "Delay": "40",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 99,
@@ -380,6 +1164,33 @@
       "name": "召唤神兽",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 30,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "30",
+          "MagName": "召唤神兽",
+          "Mag_Type": "6",
+          "EffectType": "4",
+          "Effect": "28",
+          "Spell": "15",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "15",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "30",
+          "L1Train": "90",
+          "NeedL2": "32",
+          "L2Train": "100",
+          "NeedL3": "34",
+          "L3Train": "110",
+          "Delay": "200",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 98,
@@ -392,6 +1203,33 @@
       "name": "圣言术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 32,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "32",
+          "MagName": "圣言术",
+          "Mag_Type": "6",
+          "EffectType": "2",
+          "Effect": "30",
+          "Spell": "30",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "30",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "1",
+          "NeedL1": "26",
+          "L1Train": "70",
+          "NeedL2": "28",
+          "L2Train": "80",
+          "NeedL3": "30",
+          "L3Train": "90",
+          "Delay": "100",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 49,
@@ -404,6 +1242,33 @@
       "name": "冰咆哮",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 33,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "33",
+          "MagName": "冰咆哮",
+          "Mag_Type": "1",
+          "EffectType": "2",
+          "Effect": "31",
+          "Spell": "19",
+          "Power": "12",
+          "MaxPower": "16",
+          "DefSpell": "20",
+          "DefPower": "14",
+          "DefMaxPower": "18",
+          "Job": "1",
+          "NeedL1": "34",
+          "L1Train": "100",
+          "NeedL2": "36",
+          "L2Train": "110",
+          "NeedL3": "38",
+          "L3Train": "120",
+          "Delay": "90",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 54,
@@ -416,6 +1281,33 @@
       "name": "莲月剑法",
       "current_policy": "swing",
       "original_id": null,
+      "legacy_reference": {
+        "id": 34,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "34",
+          "MagName": "莲月剑法",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "32",
+          "Spell": "3",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "9",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "38",
+          "L1Train": "100",
+          "NeedL2": "40",
+          "L2Train": "110",
+          "NeedL3": "42",
+          "L3Train": "120",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 9,
@@ -428,6 +1320,33 @@
       "name": "翔空剑法",
       "current_policy": "swing",
       "original_id": null,
+      "legacy_reference": {
+        "id": 35,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "35",
+          "MagName": "翔空剑法",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "33",
+          "Spell": "2",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "8",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "35",
+          "L1Train": "100",
+          "NeedL2": "37",
+          "L2Train": "110",
+          "NeedL3": "39",
+          "L3Train": "120",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 8,
@@ -440,6 +1359,33 @@
       "name": "空拳刀法",
       "current_policy": "spinkick",
       "original_id": null,
+      "legacy_reference": {
+        "id": 36,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "36",
+          "MagName": "空拳刀法",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "34",
+          "Spell": "20",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "10",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "28",
+          "L1Train": "90",
+          "NeedL2": "30",
+          "L2Train": "100",
+          "NeedL3": "32",
+          "L3Train": "110",
+          "Delay": "80",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 96,
@@ -452,6 +1398,33 @@
       "name": "月魂断玉",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 37,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "37",
+          "MagName": "月魂断玉",
+          "Mag_Type": "4",
+          "EffectType": "8",
+          "Effect": "35",
+          "Spell": "6",
+          "Power": "6",
+          "MaxPower": "10",
+          "DefSpell": "3",
+          "DefPower": "3",
+          "DefMaxPower": "3",
+          "Job": "2",
+          "NeedL1": "14",
+          "L1Train": "30",
+          "NeedL2": "16",
+          "L2Train": "40",
+          "NeedL3": "18",
+          "L3Train": "50",
+          "Delay": "50",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 88,
@@ -464,6 +1437,33 @@
       "name": "月魂灵波",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 38,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "38",
+          "MagName": "月魂灵波",
+          "Mag_Type": "4",
+          "EffectType": "8",
+          "Effect": "36",
+          "Spell": "8",
+          "Power": "8",
+          "MaxPower": "12",
+          "DefSpell": "4",
+          "DefPower": "7",
+          "DefMaxPower": "7",
+          "Job": "2",
+          "NeedL1": "24",
+          "L1Train": "60",
+          "NeedL2": "26",
+          "L2Train": "70",
+          "NeedL3": "28",
+          "L3Train": "80",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 93,
@@ -476,6 +1476,33 @@
       "name": "冰月神掌",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 39,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "39",
+          "MagName": "冰月神掌",
+          "Mag_Type": "1",
+          "EffectType": "1",
+          "Effect": "37",
+          "Spell": "4",
+          "Power": "4",
+          "MaxPower": "8",
+          "DefSpell": "1",
+          "DefPower": "0",
+          "DefMaxPower": "4",
+          "Job": "1",
+          "NeedL1": "9",
+          "L1Train": "10",
+          "NeedL2": "11",
+          "L2Train": "20",
+          "NeedL3": "13",
+          "L3Train": "30",
+          "Delay": "50",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 35,
@@ -488,6 +1515,33 @@
       "name": "冰月震天",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 40,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "40",
+          "MagName": "冰月震天",
+          "Mag_Type": "1",
+          "EffectType": "1",
+          "Effect": "38",
+          "Spell": "7",
+          "Power": "13",
+          "MaxPower": "17",
+          "DefSpell": "6",
+          "DefPower": "7",
+          "DefMaxPower": "11",
+          "Job": "1",
+          "NeedL1": "17",
+          "L1Train": "40",
+          "NeedL2": "19",
+          "L2Train": "50",
+          "NeedL3": "21",
+          "L3Train": "60",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 42,
@@ -500,6 +1554,33 @@
       "name": "霹雳掌",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 41,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "41",
+          "MagName": "霹雳掌",
+          "Mag_Type": "2",
+          "EffectType": "1",
+          "Effect": "39",
+          "Spell": "4",
+          "Power": "6",
+          "MaxPower": "10",
+          "DefSpell": "1",
+          "DefPower": "0",
+          "DefMaxPower": "4",
+          "Job": "1",
+          "NeedL1": "8",
+          "L1Train": "10",
+          "NeedL2": "10",
+          "L2Train": "20",
+          "NeedL3": "12",
+          "L3Train": "30",
+          "Delay": "50",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 34,
@@ -512,6 +1593,33 @@
       "name": "冰沙掌",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 53,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "53",
+          "MagName": "冰沙掌",
+          "Mag_Type": "1",
+          "EffectType": "5",
+          "Effect": "51",
+          "Spell": "12",
+          "Power": "12",
+          "MaxPower": "16",
+          "DefSpell": "15",
+          "DefPower": "12",
+          "DefMaxPower": "16",
+          "Job": "1",
+          "NeedL1": "22",
+          "L1Train": "50",
+          "NeedL2": "24",
+          "L2Train": "60",
+          "NeedL3": "26",
+          "L3Train": "70",
+          "Delay": "80",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 46,
@@ -524,6 +1632,33 @@
       "name": "风掌",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 67,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "67",
+          "MagName": "风掌",
+          "Mag_Type": "3",
+          "EffectType": "1",
+          "Effect": "65",
+          "Spell": "3",
+          "Power": "5",
+          "MaxPower": "9",
+          "DefSpell": "1",
+          "DefPower": "0",
+          "DefMaxPower": "4",
+          "Job": "1",
+          "NeedL1": "10",
+          "L1Train": "10",
+          "NeedL2": "12",
+          "L2Train": "20",
+          "NeedL3": "14",
+          "L3Train": "30",
+          "Delay": "50",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 36,
@@ -536,6 +1671,33 @@
       "name": "龙卷风",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 72,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "72",
+          "MagName": "龙卷风",
+          "Mag_Type": "3",
+          "EffectType": "2",
+          "Effect": "70",
+          "Spell": "18",
+          "Power": "13",
+          "MaxPower": "17",
+          "DefSpell": "20",
+          "DefPower": "14",
+          "DefMaxPower": "18",
+          "Job": "1",
+          "NeedL1": "35",
+          "L1Train": "100",
+          "NeedL2": "37",
+          "L2Train": "110",
+          "NeedL3": "39",
+          "L3Train": "120",
+          "Delay": "90",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 55,
@@ -548,6 +1710,33 @@
       "name": "风震天",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 73,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "73",
+          "MagName": "风震天",
+          "Mag_Type": "3",
+          "EffectType": "2",
+          "Effect": "71",
+          "Spell": "13",
+          "Power": "13",
+          "MaxPower": "17",
+          "DefSpell": "15",
+          "DefPower": "12",
+          "DefMaxPower": "16",
+          "Job": "1",
+          "NeedL1": "23",
+          "L1Train": "60",
+          "NeedL2": "25",
+          "L2Train": "70",
+          "NeedL3": "27",
+          "L3Train": "80",
+          "Delay": "80",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 47,
@@ -560,6 +1749,33 @@
       "name": "击风",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 74,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "74",
+          "MagName": "击风",
+          "Mag_Type": "3",
+          "EffectType": "2",
+          "Effect": "72",
+          "Spell": "6",
+          "Power": "14",
+          "MaxPower": "18",
+          "DefSpell": "6",
+          "DefPower": "7",
+          "DefMaxPower": "11",
+          "Job": "1",
+          "NeedL1": "18",
+          "L1Train": "40",
+          "NeedL2": "20",
+          "L2Train": "50",
+          "NeedL3": "22",
+          "L3Train": "60",
+          "Delay": "80",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 43,
@@ -572,6 +1788,33 @@
       "name": "回生术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 77,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "77",
+          "MagName": "回生术",
+          "Mag_Type": "4",
+          "EffectType": "2",
+          "Effect": "75",
+          "Spell": "100",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "100",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "35",
+          "L1Train": "50",
+          "NeedL2": "37",
+          "L2Train": "60",
+          "NeedL3": "39",
+          "L3Train": "70",
+          "Delay": "500",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 102,
@@ -584,6 +1827,33 @@
       "name": "强魔震法",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 89,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "89",
+          "MagName": "强魔震法",
+          "Mag_Type": "5",
+          "EffectType": "9",
+          "Effect": "87",
+          "Spell": "10",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "5",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "29",
+          "L1Train": "90",
+          "NeedL2": "31",
+          "L2Train": "100",
+          "NeedL3": "33",
+          "L3Train": "110",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 97,
@@ -596,6 +1866,33 @@
       "name": "猛虎强势",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 94,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "94",
+          "MagName": "猛虎强势",
+          "Mag_Type": "5",
+          "EffectType": "9",
+          "Effect": "92",
+          "Spell": "10",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "5",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "34",
+          "L1Train": "100",
+          "NeedL2": "36",
+          "L2Train": "110",
+          "NeedL3": "38",
+          "L3Train": "120",
+          "Delay": "70",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 101,
@@ -608,6 +1905,33 @@
       "name": "铁布衫",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 102,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "102",
+          "MagName": "铁布衫",
+          "Mag_Type": "5",
+          "EffectType": "0",
+          "Effect": "23",
+          "Spell": "40",
+          "Power": "2",
+          "MaxPower": "4",
+          "DefSpell": "20",
+          "DefPower": "3",
+          "DefMaxPower": "5",
+          "Job": "0",
+          "NeedL1": "44",
+          "L1Train": "1000",
+          "NeedL2": "47",
+          "L2Train": "2000",
+          "NeedL3": "50",
+          "L3Train": "3000",
+          "Delay": "100",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 14,
@@ -620,6 +1944,33 @@
       "name": "十方斩",
       "current_policy": "swing",
       "original_id": null,
+      "legacy_reference": {
+        "id": 103,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "103",
+          "MagName": "十方斩",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "23",
+          "Spell": "0",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "7",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "40",
+          "L1Train": "500",
+          "NeedL2": "43",
+          "L2Train": "800",
+          "NeedL3": "46",
+          "L3Train": "1000",
+          "Delay": "0",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 10,
@@ -632,6 +1983,33 @@
       "name": "异形换位",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 104,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "104",
+          "MagName": "异形换位",
+          "Mag_Type": "6",
+          "EffectType": "4",
+          "Effect": "102",
+          "Spell": "20",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "20",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "1",
+          "NeedL1": "27",
+          "L1Train": "80",
+          "NeedL2": "29",
+          "L2Train": "90",
+          "NeedL3": "31",
+          "L3Train": "100",
+          "Delay": "250",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": []
     },
     {
@@ -639,6 +2017,33 @@
       "name": "超强召唤骷髅",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 105,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "105",
+          "MagName": "超强召唤骷髅",
+          "Mag_Type": "6",
+          "EffectType": "4",
+          "Effect": "103",
+          "Spell": "20",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "25",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "33",
+          "L1Train": "100",
+          "NeedL2": "35",
+          "L2Train": "110",
+          "NeedL3": "37",
+          "L3Train": "120",
+          "Delay": "200",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 100,
@@ -651,6 +2056,33 @@
       "name": "破血狂杀",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 106,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "106",
+          "MagName": "破血狂杀",
+          "Mag_Type": "5",
+          "EffectType": "0",
+          "Effect": "23",
+          "Spell": "100",
+          "Power": "2",
+          "MaxPower": "4",
+          "DefSpell": "100",
+          "DefPower": "3",
+          "DefMaxPower": "5",
+          "Job": "0",
+          "NeedL1": "48",
+          "L1Train": "1000",
+          "NeedL2": "51",
+          "L2Train": "2000",
+          "NeedL3": "54",
+          "L3Train": "3000",
+          "Delay": "200",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 12,
@@ -663,6 +2095,33 @@
       "name": "乾坤大挪移",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 107,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "107",
+          "MagName": "乾坤大挪移",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "23",
+          "Spell": "40",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "10",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "42",
+          "L1Train": "500",
+          "NeedL2": "45",
+          "L2Train": "800",
+          "NeedL3": "48",
+          "L3Train": "1000",
+          "Delay": "20",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 11,
@@ -675,6 +2134,33 @@
       "name": "斗转星移",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 108,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "108",
+          "MagName": "斗转星移",
+          "Mag_Type": "7",
+          "EffectType": "0",
+          "Effect": "23",
+          "Spell": "40",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "20",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "0",
+          "NeedL1": "46",
+          "L1Train": "500",
+          "NeedL2": "49",
+          "L2Train": "800",
+          "NeedL3": "52",
+          "L3Train": "1000",
+          "Delay": "20",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 15,
@@ -691,6 +2177,33 @@
       "name": "魄冰刺",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 110,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "110",
+          "MagName": "魄冰刺",
+          "Mag_Type": "1",
+          "EffectType": "5",
+          "Effect": "51",
+          "Spell": "20",
+          "Power": "16",
+          "MaxPower": "20",
+          "DefSpell": "20",
+          "DefPower": "16",
+          "DefMaxPower": "20",
+          "Job": "1",
+          "NeedL1": "38",
+          "L1Train": "500",
+          "NeedL2": "41",
+          "L2Train": "800",
+          "NeedL3": "44",
+          "L3Train": "1000",
+          "Delay": "10",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 56,
@@ -703,6 +2216,33 @@
       "name": "怒神霹雳",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 111,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "111",
+          "MagName": "怒神霹雳",
+          "Mag_Type": "2",
+          "EffectType": "4",
+          "Effect": "22",
+          "Spell": "40",
+          "Power": "20",
+          "MaxPower": "40",
+          "DefSpell": "30",
+          "DefPower": "20",
+          "DefMaxPower": "30",
+          "Job": "1",
+          "NeedL1": "40",
+          "L1Train": "500",
+          "NeedL2": "42",
+          "L2Train": "800",
+          "NeedL3": "44",
+          "L3Train": "1000",
+          "Delay": "10",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 57,
@@ -715,6 +2255,33 @@
       "name": "凝血离魂",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 112,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "112",
+          "MagName": "凝血离魂",
+          "Mag_Type": "5",
+          "EffectType": "0",
+          "Effect": "23",
+          "Spell": "60",
+          "Power": "6",
+          "MaxPower": "2",
+          "DefSpell": "10",
+          "DefPower": "1",
+          "DefMaxPower": "1",
+          "Job": "1",
+          "NeedL1": "46",
+          "L1Train": "1000",
+          "NeedL2": "48",
+          "L2Train": "2000",
+          "NeedL3": "50",
+          "L3Train": "3000",
+          "Delay": "10",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 69,
@@ -727,6 +2294,33 @@
       "name": "焰天火雨",
       "current_policy": "ground",
       "original_id": null,
+      "legacy_reference": {
+        "id": 113,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "113",
+          "MagName": "焰天火雨",
+          "Mag_Type": "0",
+          "EffectType": "1",
+          "Effect": "3",
+          "Spell": "32",
+          "Power": "32",
+          "MaxPower": "40",
+          "DefSpell": "20",
+          "DefPower": "14",
+          "DefMaxPower": "22",
+          "Job": "1",
+          "NeedL1": "43",
+          "L1Train": "1000",
+          "NeedL2": "45",
+          "L2Train": "2000",
+          "NeedL3": "47",
+          "L3Train": "3000",
+          "Delay": "10",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 58,
@@ -739,6 +2333,33 @@
       "name": "云寂术",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 120,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "120",
+          "MagName": "云寂术",
+          "Mag_Type": "5",
+          "EffectType": "2",
+          "Effect": "4",
+          "Spell": "20",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "10",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "38",
+          "L1Train": "500",
+          "NeedL2": "41",
+          "L2Train": "800",
+          "NeedL3": "44",
+          "L3Train": "1000",
+          "Delay": "10",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 103,
@@ -751,6 +2372,33 @@
       "name": "妙影无踪",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 121,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "121",
+          "MagName": "妙影无踪",
+          "Mag_Type": "5",
+          "EffectType": "4",
+          "Effect": "16",
+          "Spell": "120",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "80",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "43",
+          "L1Train": "1000",
+          "NeedL2": "45",
+          "L2Train": "2000",
+          "NeedL3": "47",
+          "L3Train": "3000",
+          "Delay": "10",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 105,
@@ -763,6 +2411,33 @@
       "name": "阴阳法环",
       "current_policy": "self",
       "original_id": null,
+      "legacy_reference": {
+        "id": 122,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "122",
+          "MagName": "阴阳法环",
+          "Mag_Type": "3",
+          "EffectType": "4",
+          "Effect": "29",
+          "Spell": "60",
+          "Power": "0",
+          "MaxPower": "0",
+          "DefSpell": "50",
+          "DefPower": "0",
+          "DefMaxPower": "0",
+          "Job": "2",
+          "NeedL1": "46",
+          "L1Train": "1000",
+          "NeedL2": "48",
+          "L2Train": "2000",
+          "NeedL3": "50",
+          "L3Train": "3000",
+          "Delay": "20",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 106,
@@ -775,6 +2450,33 @@
       "name": "移花接玉",
       "current_policy": "target",
       "original_id": null,
+      "legacy_reference": {
+        "id": 123,
+        "provenance": "repository King_Magic.csv; version match to analyzed binary unproven",
+        "fields": {
+          "MagID": "123",
+          "MagName": "移花接玉",
+          "Mag_Type": "5",
+          "EffectType": "2",
+          "Effect": "4",
+          "Spell": "40",
+          "Power": "4",
+          "MaxPower": "8",
+          "DefSpell": "30",
+          "DefPower": "3",
+          "DefMaxPower": "4",
+          "Job": "2",
+          "NeedL1": "40",
+          "L1Train": "500",
+          "NeedL2": "42",
+          "L2Train": "800",
+          "NeedL3": "44",
+          "L3Train": "1000",
+          "Delay": "20",
+          "UnKnowString": "",
+          "OrgMagName": "王者软件"
+        }
+      },
       "original_descriptions": [
         {
           "line": 104,
