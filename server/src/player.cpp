@@ -988,7 +988,7 @@ corof::awaitable<> Player::onCMActionMine(CMAction stCMA)
         case 1:
         case 2:
             {
-                if(DBCOM_ITEMRECORD(m_sdItemStorage.wear.getWLItem(WLG_WEAPON)).equip.weapon.mine){
+                if(DBCOM_ITEMRECORD(m_sdItemStorage.wear.getWLItem(WLG_WEAPON).itemID).equip.weapon.mine){
                     dispatchAction(mine);
                     addInventoryItem(SDItem
                     {
