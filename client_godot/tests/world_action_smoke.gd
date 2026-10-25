@@ -2154,6 +2154,20 @@ func _test_buff_transitions(main: Control, resources: RefCounted) -> bool:
 	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(local_uid, 2, 2))
 	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(monster_uid, 1, 2))
 	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload((5 << 59) | 99, 1, 2))
+	var late_uid: int = (5 << 59) | 99
+	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(late_uid, 1, 1))
+	if not GameState.get_creature(late_uid).is_empty():
+		_fail("early aura ON created an unknown actor")
+		return false
+	GameState.update_creature(late_uid, {"uid": late_uid, "type": 2, "action_type": 2})
+	if GameState.attached_magic_effects.any(func(effect): return effect.get("target_uid", 0) == late_uid):
+		_fail("actor creation replayed stale early aura state")
+		return false
+	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(late_uid, 1, 1))
+	if GameState.attached_magic_effects.size() != 5 or not GameState.attached_magic_effects.back().get("loop_only", false):
+		_fail("fresh ON did not apply after actor creation")
+		return false
+	GameState.remove_creature(late_uid)
 	main.call("_on_server_message", NetworkClient.SM_BUFF, PackedByteArray([1, 2]))
 	if GameState.attached_magic_effects.size() != 4 or GameState.buff_list != [buff_id] or GameState.creatures[remote_uid].buffs != [buff_id] or GameState.creatures[monster_uid].buffs != [buff_id]:
 		_fail("non-shield-off SM_BUFF changed attachments or buff IDs")

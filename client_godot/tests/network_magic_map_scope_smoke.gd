@@ -1,6 +1,7 @@
 extends Node
 
 const Protocol = preload("res://scripts/network/protocol.gd")
+const CerealReader = preload("res://scripts/network/cereal_reader.gd")
 var main: Control
 var role := ""
 var exchange := ""
@@ -38,6 +39,8 @@ var caster_hits := 0
 var replay_hits := 0
 var replay_kinds: Dictionary = {}
 var online_retries := 0
+var appearance_updates := 0
+var replay_appearance_before := 0
 
 func _ready() -> void:
 	role = OS.get_environment("MIR3_MAGIC_SCOPE_ROLE")
@@ -88,6 +91,10 @@ func _message(head: int, payload: PackedByteArray) -> void:
 	elif head == NetworkClient.SM_CORECORD and replay and role == "observer":
 		var record := Protocol.decode_sm_corecord(payload)
 		if record.get("uid", 0) == expected_uid: replay_records += 1
+	elif head == NetworkClient.SM_PLAYERWLDESP and replay and role == "observer":
+		var reader := CerealReader.new(payload)
+		var appearance := reader.read_sd_uid_wldesp()
+		if reader.valid and appearance.get("uid", 0) == expected_uid: appearance_updates += 1
 	elif head == NetworkClient.SM_BUFF and (lifetime or replay):
 		var buff := Protocol.decode_sm_buff(payload)
 		if replay and role == "observer" and buff.get("uid", 0) == expected_uid:
@@ -191,7 +198,8 @@ func _check_replay(renderer: Node) -> void:
 	match replay_stage:
 		"wait_on", "wait_repeat", "wait_recreate":
 			var required_on := 2 if replay_stage == "wait_on" else (4 if replay_stage == "wait_repeat" else 6)
-			if replay_on_count < required_on:
+			var waiting_appearance := (replay_stage == "wait_on" and appearance_updates == 0) or (replay_stage == "wait_repeat" and appearance_updates <= replay_appearance_before)
+			if replay_on_count < required_on or waiting_appearance:
 				if Time.get_ticks_msec() - replay_started_ms > 3000:
 					_fail("missing aura snapshot state stage=%s records=%d ON=%d" % [replay_stage, replay_records, replay_on_count])
 				return
@@ -217,9 +225,12 @@ func _check_replay(renderer: Node) -> void:
 			replay_hits = caster_hits
 			if replay_stage == "wait_on":
 				_capture(magic_ids[1])
+				replay_appearance_before = appearance_updates
 				replay_stage = "wait_repeat"
 				NetworkClient.send_query_corecord(expected_uid)
+				NetworkClient.send_query_player_wldesp(expected_uid)
 			elif replay_stage == "wait_repeat":
+				print("AURA APPEARANCE PASS: fresh appearance and duplicate status preserve live attachments")
 				if map_reentry or view_reentry:
 					_map_roundtrip("wait_recreate")
 				else:
