@@ -492,7 +492,7 @@
       },
       "native_playerop": {
         "file": "playerop.cpp",
-        "sha256_lf": "49e4cb78b2f39cacf466d8f77dd174c5f706b563ca95eba297b9f8d3356f0624"
+        "sha256_lf": "083f4978d1dd8e1927953b3c0934b8871af2928e2003d5e0301006058aa58306"
       },
       "native_playernet": {
         "file": "playernet.cpp",
@@ -500,7 +500,7 @@
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "2ff8957f9dbae53de0fdbe27bb125b629f0fee5202dcc2519d0b4f1b87a290a2"
+        "sha256_lf": "f1a7daed3414e4a229bd0d36c0895474eb314016eefaa0879ffd1e4f34bc18a4"
       },
       "godot_game_state": {
         "file": "game_state.gd",
