@@ -76,7 +76,7 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
     if "postNetMessage(processed ? SM_OK : SM_ERROR, respID)" not in playernet_path.read_text(encoding="utf-8"):
         raise ValueError("current server snapshot lacks correlated processing receipts")
     return {
-        "schema_version": 4, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 5, "sample_sha256": EXPECTED_SAMPLE,
         "wait_gate": {
             "check": "0x691738", "mark_sent": "0x691260", "clear": "0x693c4c",
             "pending_byte_offset": 3312, "sent_tick_u32_offset": 3320,
@@ -104,6 +104,17 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
         },
         "cast_permission": {
             "function": "0x68f7ac",
+            "ordinary_action_readiness": {
+                "dispatch_call": "0x67d563", "function": "0x68f640",
+                "idle_predicate_function": "0x6db938",
+                "current_action_dword_offset": 664,
+                "action_queue_pointer_offset": 16, "queue_count_offset": 8,
+                "idle_predicate": "actor_u32_664 == 0 AND actor_queue_TList_count == 0",
+                "action_assignment": "0x6db697 stores the dispatched action into actor+664",
+                "reset_assignment": "0x68f60f clears actor+664 on state reset",
+                "current_adapter": "ordinary ACTION_SPELL rejects active pickup or timed non-walking actions before stamping, braking or sending; existing walking brake is preserved",
+                "limits": "Other 0x68f640 status-bit and delay predicates are not fully mapped to current protocol.",
+            },
             "outer_guard": "global timeout value <= 10000",
             "actor_status_selector": {"function": "0x6dc440", "u32_offset": 128,
                 "helper": "0x6ff670", "expression": "(actor_u32_128 >> 30) & 3",

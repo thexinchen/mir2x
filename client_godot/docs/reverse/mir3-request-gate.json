@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "wait_gate": {
     "check": "0x691738",
@@ -55,6 +55,19 @@
   },
   "cast_permission": {
     "function": "0x68f7ac",
+    "ordinary_action_readiness": {
+      "dispatch_call": "0x67d563",
+      "function": "0x68f640",
+      "idle_predicate_function": "0x6db938",
+      "current_action_dword_offset": 664,
+      "action_queue_pointer_offset": 16,
+      "queue_count_offset": 8,
+      "idle_predicate": "actor_u32_664 == 0 AND actor_queue_TList_count == 0",
+      "action_assignment": "0x6db697 stores the dispatched action into actor+664",
+      "reset_assignment": "0x68f60f clears actor+664 on state reset",
+      "current_adapter": "ordinary ACTION_SPELL rejects active pickup or timed non-walking actions before stamping, braking or sending; existing walking brake is preserved",
+      "limits": "Other 0x68f640 status-bit and delay predicates are not fully mapped to current protocol."
+    },
     "outer_guard": "global timeout value <= 10000",
     "actor_status_selector": {
       "function": "0x6dc440",
@@ -160,7 +173,7 @@
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "f0105719e004f6495884f21f3e63cf0218dc192927a5302509ff3e518d091992"
+        "sha256_lf": "908ed5fca42f484337ee591ee560ffd909de70de7c8fe8a2272d26bba79c4e32"
       },
       "godot_request_gate": {
         "file": "mir3_request_gate.gd",
