@@ -18,11 +18,20 @@ var _authoritative_position := Vector2i.ZERO
 var _aura_mode := false
 var _aura_sent := false
 var _aura_received_ms := 0
+var _aura_pending := false
+var _aura_sent_ms := 0
+var _initial_revive_sent := false
+var _pending_cast_receipt := false
+var _pending_death_ms := 0
+var _pending_revive_ms := 0
+var _aura_magic_id := 13
 
 
 func _ready() -> void:
 	_early_revive = OS.has_environment("MIR2X_NETWORK_DEATH_EARLY_REVIVE")
 	_aura_mode = OS.get_environment("MIR3_NETWORK_DEATH_AURA") == "1"
+	_aura_pending = OS.get_environment("MIR3_NETWORK_DEATH_AURA_PENDING") == "1"
+	_aura_mode = _aura_mode or _aura_pending
 	NetworkClient.connection_changed.connect(_on_connection_changed)
 	NetworkClient.message_received.connect(_on_message_received)
 	NetworkClient.connect_to_server()
@@ -36,6 +45,9 @@ func _process(_delta: float) -> void:
 	var overlay := _main.get_node("DeathOverlay") as ColorRect
 	match _stage:
 		Stage.WAIT_READY:
+			if _aura_pending and _health_received and GameState.player_hp <= 0 and not _initial_revive_sent:
+				_submit_command("@revive")
+				_initial_revive_sent = true
 			if not _health_received or GameState.player_hp <= 0 or GameState.player_action_type == 13:
 				return
 			var world: RefCounted = renderer.get("world_resource")
@@ -45,10 +57,21 @@ func _process(_delta: float) -> void:
 				if not _aura_sent:
 					if not _main.call("_action_request_ready"): return
 					var resources: RefCounted = _main.get("_resources")
-					_aura_sent = _main.call("_send_spell_action", 9, resources.magic_id("魔法盾"), Vector2i(GameState.player_x, GameState.player_y), GameState.player_uid)
+					_aura_magic_id = resources.magic_id("阴阳法环" if _aura_pending and OS.get_environment("MIR3_NETWORK_DEATH_AURA_PENDING_KIND") == "ring" else "魔法盾")
+					if _aura_pending:
+						var action := {"type": 9, "speed": 100, "direction": GameState.player_direction,
+							"x": GameState.player_x, "y": GameState.player_y, "aimX": GameState.player_x, "aimY": GameState.player_y,
+							"aimUID": GameState.player_uid, "magicID": _aura_magic_id}
+						_aura_sent = NetworkClient.send_action_request(Protocol.encode_cm_action(GameState.player_uid, GameState.player_map_uid, action), _pending_receipt) == OK
+					else:
+						_aura_sent = _main.call("_send_spell_action", 9, resources.magic_id("魔法盾"), Vector2i(GameState.player_x, GameState.player_y), GameState.player_uid)
+					_aura_sent_ms = Time.get_ticks_msec()
 					return
-				if _aura_received_ms == 0 or Time.get_ticks_msec() - _aura_received_ms < 1200: return
-				if GameState.attached_magic_effects.is_empty():
+				if _aura_pending:
+					if not _pending_cast_receipt: return
+				elif _aura_received_ms == 0 or Time.get_ticks_msec() - _aura_received_ms < 1200:
+					return
+				if not _aura_pending and GameState.attached_magic_effects.is_empty():
 					_fail("real shield reply did not create death fixture", 19)
 					return
 			_authoritative_position = Vector2i(GameState.player_x, GameState.player_y)
@@ -88,7 +111,7 @@ func _process(_delta: float) -> void:
 			if int(_main.get("_follow_focus_uid")) != 777:
 				_fail("dead player accepted a world mouse command", 8)
 				return
-			if not _escape_recenters("dead player"):
+			if not _aura_pending and not _escape_recenters("dead player"):
 				return
 			if OS.has_environment("MIR2X_NETWORK_DEATH_SCREENSHOT"):
 				await RenderingServer.frame_post_draw
@@ -122,6 +145,8 @@ func _process(_delta: float) -> void:
 			if _aura_mode and not GameState.attached_magic_effects.is_empty():
 				_fail("revival resurrected pre-death shield", 21)
 				return
+			if _aura_pending and Time.get_ticks_msec() - _aura_sent_ms < 5000:
+				return
 			var live_click := InputEventMouseButton.new()
 			live_click.button_index = MOUSE_BUTTON_RIGHT
 			live_click.pressed = true
@@ -132,7 +157,12 @@ func _process(_delta: float) -> void:
 				_fail("revived player did not regain world mouse input", 12)
 				return
 			print("NETWORK DEATH REVIVE PASS: visible @die -> @revive hp=%d/action=%d forced=%s death=%s pos=%s world-input" % [GameState.player_hp, GameState.player_action_type, _saw_forced_correction, _saw_death_after_revive, Vector2i(GameState.player_x, GameState.player_y)])
-			if _aura_mode: print("NETWORK AURA DEATH PASS: actual shield cast, health death clears attachment, revival does not restore it")
+			if _aura_mode and not _aura_pending: print("NETWORK AURA DEATH PASS: actual shield cast, health death clears attachment, revival does not restore it")
+			if _aura_pending:
+				if _pending_death_ms <= _aura_sent_ms or _pending_revive_ms <= _pending_death_ms or _pending_death_ms - _aura_sent_ms >= 800:
+					_fail("missed pending start/death/revive timing boundary", 24)
+					return
+				print("NETWORK PENDING AURA DEATH PASS: magic=%d death=%dms revive=%dms accepted receipt; no delayed cast during5s wire observation" % [_aura_magic_id, _pending_death_ms - _aura_sent_ms, _pending_revive_ms - _aura_sent_ms])
 			_finished = true
 			NetworkClient.disconnect_from_server()
 			get_tree().quit()
@@ -142,6 +172,15 @@ func _submit_command(text: String) -> void:
 	var command := _main.get_node("ControlPanel").get_node("%Command") as LineEdit
 	command.text = text
 	command.text_submitted.emit(command.text)
+
+func _pending_receipt(head: int, _payload: PackedByteArray) -> void:
+	if head != NetworkClient.SM_OK:
+		_fail("pending cast receipt rejected", 23)
+		return
+	_pending_cast_receipt = true
+	print("PENDING AURA RECEIPT elapsed=%d" % (Time.get_ticks_msec() - _aura_sent_ms))
+	if Time.get_ticks_msec() - _aura_sent_ms >= 700:
+		_fail("receipt missed pending-start fixture window", 25)
 
 
 func _escape_recenters(context: String) -> bool:
@@ -188,8 +227,11 @@ func _on_message_received(head_code: int, payload: PackedByteArray) -> void:
 	match head_code:
 		NetworkClient.SM_CASTMAGIC:
 			var cast := Protocol.decode_sm_cast_magic(payload)
-			if _aura_mode and cast.get("uid", 0) == GameState.player_uid and cast.get("magic", 0) == 13:
+			if _aura_pending: print("PENDING AURA WIRE " + str(cast))
+			if _aura_mode and cast.get("uid", 0) == GameState.player_uid and cast.get("magic", 0) == _aura_magic_id:
 				_aura_received_ms = Time.get_ticks_msec()
+				if _aura_pending:
+					_fail("pending aura emitted after death request: stage=%d hp=%d elapsed=%d" % [_stage, GameState.player_hp, _aura_received_ms - _aura_sent_ms], 22)
 		NetworkClient.SM_LOGINOK:
 			if NetworkClient.enter_game() != OK:
 				_fail("failed to enter game", 3)
@@ -208,11 +250,13 @@ func _on_message_received(head_code: int, payload: PackedByteArray) -> void:
 				_main.call("_update_death_overlay")
 				var overlay := _main.get_node("DeathOverlay") as ColorRect
 				if _stage == Stage.WAIT_DEAD and GameState.player_hp == 0:
+					if _aura_pending and _pending_death_ms == 0: _pending_death_ms = Time.get_ticks_msec()
 					if not bool(_main.call("_player_dead")) or not overlay.visible:
 						_fail("HP=0 did not activate the death gate before ACTION_DIE", 17)
 						return
 					_saw_health_death_gate = true
 				elif _stage == Stage.WAIT_REVIVED and GameState.player_hp > 0:
+					if _aura_pending and _pending_revive_ms == 0: _pending_revive_ms = Time.get_ticks_msec()
 					if bool(_main.call("_player_dead")) or overlay.visible:
 						_fail("HP recovery did not release the death gate before ACTION_STAND", 18)
 						return
