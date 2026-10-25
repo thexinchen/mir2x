@@ -827,12 +827,14 @@ func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 	# 67C98A/67CCB9 routes eligible self/ground spells through the same
 	# live scene-member lock override as target spells. Keep special commands out.
 	if magic_name in SELF_MAGIC_NAMES or magic_name in GROUND_MAGIC_NAMES or magic_name in TARGET_MAGIC_NAMES:
-		var locked_uid := _valid_locked_magic_target()
-		if locked_uid != 0 and Mir3TargetLockScript.ALLOWED.has(magic_name):
+		if _magic_target_lock_enabled() and Mir3TargetLockScript.ALLOWED.has(magic_name):
+			var locked_uid := _valid_locked_magic_target()
+			if locked_uid != 0:
+				focus_uid = locked_uid
 			# 67CCCC writes the resolved lock into current spell focus before
 			# the busy gate. Independent lock storage does not bypass focus.
-			_magic_focus_uid = locked_uid
-			return _send_spell_action(9, magic_id, mouse_grid, locked_uid)
+			_magic_focus_uid = focus_uid
+			return _send_spell_action(9, magic_id, mouse_grid, focus_uid)
 	if magic_name in SELF_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, Vector2i(game_state.player_x, game_state.player_y), game_state.player_uid)
 	if magic_name in GROUND_MAGIC_NAMES:
@@ -867,6 +869,29 @@ func _ground_spell_grid(mouse_grid: Vector2i, force_front := false) -> Vector2i:
 	return target
 
 
+func _general_spell_aim(mouse_grid: Vector2i, focus_uid: int, project_front: bool) -> Dictionary:
+	var origin := Vector2i(game_state.player_x, game_state.player_y)
+	var actor: Dictionary = game_state.get_creature(focus_uid)
+	var target := _ground_spell_grid(mouse_grid)
+	var direction := Mir3MovementScript.screen_direction(target - origin)
+	if focus_uid != 0 and not actor.is_empty():
+		target = Vector2i(actor.get("x", mouse_grid.x), actor.get("y", mouse_grid.y))
+		# 67CC59 captures screen-facing before target substitution/projection.
+		var draw_grid: Vector2 = world_renderer.player_draw_grid()
+		var anchor := Vector2i(roundi(draw_grid.x * 48) - int(game_state.view_x), roundi(draw_grid.y * 32) - int(game_state.view_y))
+		direction = Mir3MovementScript.screen_direction(Vector2i(get_viewport().get_mouse_position()) - anchor)
+	else:
+		focus_uid = 0
+	if project_front:
+		# 67CE75 bitmap includes dispatch 8. Other current bitmap members
+		# are not eligible for this setting-forced general branch.
+		target = origin + Mir3MovementScript.DIRECTIONS[direction - 1]
+	if focus_uid != 0:
+		# 67CEF2 turns toward the actor AFTER projecting the coordinates.
+		direction = Mir3MovementScript.direction(origin, Vector2i(actor.get("x", origin.x), actor.get("y", origin.y))) + 1
+	return {"grid": target, "uid": focus_uid, "direction": direction}
+
+
 func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
 	# 67D563 -> 68F640 -> 6DB938 rejects ordinary casts while another
 	# committed action is still active. Keep the separate walking brake path.
@@ -879,11 +904,17 @@ func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim
 		_last_magic_request_ms = Time.get_ticks_msec()
 	var direction_override := 0
 	var magic_name: String = _resources.magic_names.get(magic_id, "")
+	var aim_resolved := action_type == 9 and _magic_target_lock_enabled() and Mir3TargetLockScript.ALLOWED.has(magic_name)
+	if aim_resolved:
+		var resolved := _general_spell_aim(aim_grid, aim_uid, magic_name == "抗拒火环")
+		aim_grid = resolved.grid
+		aim_uid = resolved.uid
+		direction_override = resolved.direction
 	var original_kick := action_type == 12 and magic_name == "空拳刀法"
 	if original_kick:
 		aim_uid = 0
 		aim_grid = Vector2i(game_state.player_x, game_state.player_y)
-	if original_kick or (action_type == 9 and aim_uid == 0 and magic_name == "治愈术"):
+	if not aim_resolved and (original_kick or (action_type == 9 and aim_uid == 0 and magic_name == "治愈术")):
 		# 677548 / 67CC59 / 67D0C2 capture screen-facing before enqueueing.
 		var draw_grid: Vector2 = world_renderer.player_draw_grid()
 		var anchor := Vector2i(roundi(draw_grid.x * 48) - int(game_state.view_x), roundi(draw_grid.y * 32) - int(game_state.view_y))
@@ -891,7 +922,7 @@ func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim
 		if original_kick:
 			anchor.y -= 32
 		direction_override = Mir3MovementScript.screen_direction(Vector2i(get_viewport().get_mouse_position()) - anchor)
-	elif action_type == 9 and aim_uid == 0:
+	elif not aim_resolved and action_type == 9 and aim_uid == 0:
 		# 67CBED / 67CE26 call the same sector routine on TILE deltas here.
 		# This turn is independent of terrain traversability.
 		direction_override = Mir3MovementScript.screen_direction(aim_grid - Vector2i(game_state.player_x, game_state.player_y))
@@ -901,6 +932,7 @@ func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim
 		"aim_grid": aim_grid,
 		"aim_uid": aim_uid,
 		"direction_override": direction_override,
+		"aim_resolved": aim_resolved,
 	}
 	if not _pending_spell_action.is_empty():
 		_pending_spell_action = pending_action
@@ -914,7 +946,7 @@ func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim
 		game_state.state_changed.emit()
 		return true
 	_cancel_movement()
-	return _execute_spell_action(action_type, magic_id, aim_grid, aim_uid, direction_override)
+	return _execute_spell_action(action_type, magic_id, aim_grid, aim_uid, direction_override, aim_resolved)
 
 
 func _should_brake_movement_for_spell() -> bool:
@@ -935,15 +967,17 @@ func _release_pending_spell() -> void:
 		pending_action.get("aim_grid", Vector2i(game_state.player_x, game_state.player_y)),
 		pending_action.get("aim_uid", 0),
 		pending_action.get("direction_override", 0),
+		pending_action.get("aim_resolved", false),
 	)
 
 
-func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int, direction_override := 0) -> bool:
+func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int, direction_override := 0, aim_resolved := false) -> bool:
 	var target_grid := aim_grid
 	var requested_aim_uid := aim_uid
-	if aim_uid == game_state.player_uid:
+	# Preserve a resolved coordinate/direction snapshot through braking.
+	if not aim_resolved and aim_uid == game_state.player_uid:
 		target_grid = Vector2i(game_state.player_x, game_state.player_y)
-	elif aim_uid != 0:
+	elif not aim_resolved and aim_uid != 0:
 		var target: Dictionary = game_state.get_creature(aim_uid)
 		if target.is_empty():
 			aim_uid = 0
