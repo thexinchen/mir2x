@@ -29,6 +29,17 @@ def extract(path):
         (0x6E3475, "807b68007421", "only hit state restores run after completion"),
         (0x6E347B, "0fb74330668943386603433c6689433a", "restore original run frame range"),
         (0x6E348B, "c6430400c74318ffffffffc6436800b001", "clear done, restore counter=-1, clear hit, return alive"),
+        (0x6DA66C, "60256e00", "actor VMT+72 is state-aura reconciliation"),
+        (0x6DB6D7, "83f820740583f8227524c6437c018bc38b10ff5248", "death actions32/34 set dead flag124 then call VMT+72"),
+        (0x6E2904, "000000000000", "initial desired-aura bitset is empty"),
+        (0x6E256B, "8b0504296e008945fa668b0508296e00668945fe", "initialize six-byte desired set from empty constant"),
+        (0x6E257F, "807f7c000f8556020000", "dead actor skips ordinary status-derived aura bits"),
+        (0x6E2595, "8b9f94000000f7c3000010007e04804dfa02", "actor+148 mask0x100000 requests effect1, shield"),
+        (0x6E25B3, "8b9f84000000f7c3000000807604804dfa04", "actor+132 mask0x80000000 requests effect2, ring"),
+        (0x6E283A, "8bf08bc68b15e02b6e00e88b1bd2ff", "reconcile only effects deriving from aura base class"),
+        (0x6E2853, "0fb646603c2f770783e07f0fa345fa7311", "effect96 indexes desired set; absent bit jumps to done"),
+        (0x6E2875, "c6460401", "mark obsolete aura done"),
+        (0x6E28DA, "8bd38bc78b08ff51048bf085f6740d885e608bd68b4708e83623dbff", "create missing desired aura, assign effect96, append to actor list"),
     ]
     evidence = []
     for address, expected, role in checks:
@@ -49,6 +60,8 @@ def extract(path):
             "positive_cycles": "decrement on wrap; done when decremented to zero",
             "shield_hit": "one hit cycle then restore original run range and counter=-1",
             "ring_identity": "owner-state factory constructs TMagicSheild2 using resource122",
+            "state_reconciliation": "0x6e2560 retires absent status auras and creates missing desired auras via VMT+4",
+            "death": "actions32/34 set actor124 and invoke reconciliation; ordinary state-derived shield/ring bits are skipped",
         },
         "baseline_commit": "830dc79",
         "baseline_gaps": [
@@ -63,6 +76,7 @@ def extract(path):
             "Original authoritative aura removal, duration, absorption and map replay remain unproven.",
             "Current server10s duration is an adapter behavior, not recovered original duration.",
             "Resource122 mapping uses existing independently verified skill identity; it is not an original network capture.",
+            "Reconciliation also adds one externally selected effect via0x4f6bcc; that selector and its possible overrides remain unproven.",
         ],
     }
 

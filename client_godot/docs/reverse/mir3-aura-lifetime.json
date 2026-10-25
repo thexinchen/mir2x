@@ -86,6 +86,61 @@
       "va": "0x6e348b",
       "hex": "c6430400c74318ffffffffc6436800b001",
       "role": "clear done, restore counter=-1, clear hit, return alive"
+    },
+    {
+      "va": "0x6da66c",
+      "hex": "60256e00",
+      "role": "actor VMT+72 is state-aura reconciliation"
+    },
+    {
+      "va": "0x6db6d7",
+      "hex": "83f820740583f8227524c6437c018bc38b10ff5248",
+      "role": "death actions32/34 set dead flag124 then call VMT+72"
+    },
+    {
+      "va": "0x6e2904",
+      "hex": "000000000000",
+      "role": "initial desired-aura bitset is empty"
+    },
+    {
+      "va": "0x6e256b",
+      "hex": "8b0504296e008945fa668b0508296e00668945fe",
+      "role": "initialize six-byte desired set from empty constant"
+    },
+    {
+      "va": "0x6e257f",
+      "hex": "807f7c000f8556020000",
+      "role": "dead actor skips ordinary status-derived aura bits"
+    },
+    {
+      "va": "0x6e2595",
+      "hex": "8b9f94000000f7c3000010007e04804dfa02",
+      "role": "actor+148 mask0x100000 requests effect1, shield"
+    },
+    {
+      "va": "0x6e25b3",
+      "hex": "8b9f84000000f7c3000000807604804dfa04",
+      "role": "actor+132 mask0x80000000 requests effect2, ring"
+    },
+    {
+      "va": "0x6e283a",
+      "hex": "8bf08bc68b15e02b6e00e88b1bd2ff",
+      "role": "reconcile only effects deriving from aura base class"
+    },
+    {
+      "va": "0x6e2853",
+      "hex": "0fb646603c2f770783e07f0fa345fa7311",
+      "role": "effect96 indexes desired set; absent bit jumps to done"
+    },
+    {
+      "va": "0x6e2875",
+      "hex": "c6460401",
+      "role": "mark obsolete aura done"
+    },
+    {
+      "va": "0x6e28da",
+      "hex": "8bd38bc78b08ff51048bf085f6740d885e608bd68b4708e83623dbff",
+      "role": "create missing desired aura, assign effect96, append to actor list"
     }
   ],
   "fields": {
@@ -110,7 +165,9 @@
     "negative_cycles": "wrap without decrement; no local fixed-cycle expiry",
     "positive_cycles": "decrement on wrap; done when decremented to zero",
     "shield_hit": "one hit cycle then restore original run range and counter=-1",
-    "ring_identity": "owner-state factory constructs TMagicSheild2 using resource122"
+    "ring_identity": "owner-state factory constructs TMagicSheild2 using resource122",
+    "state_reconciliation": "0x6e2560 retires absent status auras and creates missing desired auras via VMT+4",
+    "death": "actions32/34 set actor124 and invoke reconciliation; ordinary state-derived shield/ring bits are skipped"
   },
   "baseline_commit": "830dc79",
   "baseline_gaps": [
@@ -124,6 +181,7 @@
     "Negative cycle counter proves local animation persistence, not permanent gameplay protection.",
     "Original authoritative aura removal, duration, absorption and map replay remain unproven.",
     "Current server10s duration is an adapter behavior, not recovered original duration.",
-    "Resource122 mapping uses existing independently verified skill identity; it is not an original network capture."
+    "Resource122 mapping uses existing independently verified skill identity; it is not an original network capture.",
+    "Reconciliation also adds one externally selected effect via0x4f6bcc; that selector and its possible overrides remain unproven."
   ]
 }
