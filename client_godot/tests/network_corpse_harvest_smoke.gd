@@ -11,6 +11,7 @@ var role := "killer"
 var exchange := ""
 var origin_map := 0
 var origin := Vector2i.ZERO
+var own_stands := 0
 
 func _ready() -> void:
 	exchange = OS.get_environment("MIR3_CORPSE_EXCHANGE")
@@ -22,6 +23,9 @@ func _ready() -> void:
 	get_tree().create_timer(60.0).timeout.connect(func(): _fail("timeout at " + stage))
 
 func _message(head: int, payload: PackedByteArray) -> void:
+	if head == NetworkClient.SM_ACTION:
+		var data := Protocol.decode_sm_action(payload)
+		if data.get("uid", 0) == GameState.player_uid and data.get("action", {}).get("type", 0) in [2, 6]: own_stands += 1
 	if finished: return
 	if head == NetworkClient.SM_LOGINOK:
 		NetworkClient.enter_game()
@@ -250,9 +254,11 @@ func _race_claim(corpse_uid: int, before: int, resources) -> void:
 func _restore_origin() -> bool:
 	if origin_map == 0 or not NetworkClient.is_connected_to_server(): return false
 	main.call("_cancel_movement")
+	if GameState.player_map_uid == origin_map and Vector2i(GameState.player_x, GameState.player_y) == origin: return true
+	var before := own_stands
 	NetworkClient.send_request_space_move(origin_map, origin.x, origin.y)
 	for _attempt in 500:
-		if GameState.player_map_uid == origin_map and Vector2i(GameState.player_x, GameState.player_y) == origin: return true
+		if own_stands > before and GameState.player_map_uid == origin_map and Vector2i(GameState.player_x, GameState.player_y) == origin: return true
 		await get_tree().create_timer(0.01).timeout
 	return false
 
