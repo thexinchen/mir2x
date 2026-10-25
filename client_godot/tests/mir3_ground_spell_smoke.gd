@@ -45,7 +45,18 @@ func _ready() -> void:
 	GameState.player_y = 5
 	GameState.player_direction = 3
 	main.call("_cast_magic", resources.magic_id("瞬息移动"), Vector2i(1, 8))
-	_expect(main.get("request").grid == Vector2i(6, 5), "teleport ground request uses fixed front-cell exception")
+	_expect(main.get("request").grid == Vector2i(4, 6), "teleport front cell follows normalized mouse direction rather than old facing")
+	var teleport: int = resources.magic_id("瞬息移动")
+	for direction in range(1, 9):
+		GameState.player_direction = 3
+		main.call("_cast_magic", teleport, Vector2i(5, 5) + Movement.DIRECTIONS[direction - 1] * 3)
+		_expect(main.get("request").grid == Vector2i(5, 5) + Movement.DIRECTIONS[direction - 1], "teleport directional front %d" % direction)
+	GameState.player_direction = 7
+	main.call("_cast_magic", teleport, Vector2i(5, 5))
+	_expect(main.get("request").grid == Vector2i(4, 5), "teleport same-cell first follows current facing")
+	GameState.player_direction = 1
+	main.call("_cast_magic", teleport, Vector2i(99, 7))
+	_expect(main.get("request").grid == Vector2i(6, 6), "teleport clamps before sector boundary calculation")
 	main.call("_cast_magic", resources.magic_id("魔法盾"), Vector2i(-20, 99))
 	_expect(main.get("request").grid == Vector2i(5, 5) and main.get("request").uid == 101, "self spell keeps hero target")
 	main.call("_cast_magic", resources.magic_id("火球术"), Vector2i(-20, 99))
