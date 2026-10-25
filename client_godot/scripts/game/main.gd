@@ -22,10 +22,12 @@ const HORSE_PANEL_PATH := "res://scenes/game/panels/horse.tscn"
 const GUILD_PANEL_PATH := "res://scenes/game/panels/guild.tscn"
 const INPUT_STRING_PANEL_PATH := "res://scenes/game/panels/input_string.tscn"
 const RUNTIME_CONFIG_PANEL_PATH := "res://scenes/game/panels/runtime_config.tscn"
+const PLAYER_INSPECTION_PANEL_PATH := "res://scenes/game/panels/player_inspection.tscn"
 const SYS_QSTFSM := "_RSVD_NAME_QST_FSM_4194347313"
 
 # ImMainUI draws its retained-mode boards in this fixed order every frame.
 const EXTRA_PANEL_DRAW_LAYERS := {
+	PLAYER_INSPECTION_PANEL_PATH: 20,
 	MINIMAP_PANEL_PATH: 1,
 	NPC_CHAT_PANEL_PATH: 2,
 	FRIEND_CHAT_PANEL_PATH: 8,
@@ -91,6 +93,11 @@ var _ground_path_active := false
 var _ground_path_goal := Vector2i(-1, -1)
 var _last_attack_ms := -10000
 var _last_npc_dialogue_ms := -1501
+var _last_actor_inspection_ms := -1500
+var _inspection_uid := 0
+var _inspection_map_uid := 0
+var _inspection_waiting := false
+var _inspection_request_id := 0
 var _last_corpse_interaction_ms := -1001
 var _pending_spell_action: Dictionary = {}
 var _chase_target_uid := 0
@@ -369,6 +376,7 @@ func handle_panel_escape() -> bool:
 	# Match ImMainUI::processEvent(). Auction, NPC chat and minimap do not consume
 	# Escape. Runtime config closes but deliberately returns false.
 	var ordered_panels: Array[Control] = [
+		_extra_panel_nodes.get(PLAYER_INSPECTION_PANEL_PATH) as Control,
 		_extra_panel_nodes.get(HORSE_PANEL_PATH) as Control,
 		_extra_panel_nodes.get(GUILD_PANEL_PATH) as Control,
 		_extra_panel_nodes.get(INPUT_STRING_PANEL_PATH) as Control,
@@ -450,7 +458,10 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 					control_panel.call("prefill_private_message", str(target.get("name", "")))
 		# 67B423–67B4DE: plain and Alt actor hits both fall through to the
 		# ground turn/run request. Alt's chat prefill is not a stop action.
-		if focus_uid == 0 or not event.ctrl_pressed:
+		if focus_uid != 0 and event.ctrl_pressed and _ground_input.button == MOUSE_BUTTON_LEFT:
+			return
+		var inspected := focus_uid != 0 and event.ctrl_pressed and _request_actor_inspection(focus_uid)
+		if not inspected:
 			_begin_ground_input(event, grid)
 		elif _ground_input.button == 0:
 			# 66DBA7/65F784 marks held repeats; 67B438 then skips the
@@ -494,6 +505,64 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 			_ground_input.pending = false
 			return
 		_begin_ground_input(event, grid)
+
+
+func _request_actor_inspection(uid: int, now_ms := -1) -> bool:
+	var actor: Dictionary = game_state.get_creature(uid)
+	var now: int = Time.get_ticks_msec() if now_ms < 0 else now_ms
+	# 67B434–67B482: initial live actor request, inclusive 1500ms boundary.
+	if actor.is_empty() or actor.get("action_type", 0) == 13 or now - _last_actor_inspection_ms < 1500:
+		return false
+	_last_actor_inspection_ms = now
+	# Current CM_QUERYPLAYERWLDESP only accepts players. Consume the original
+	# initial actor branch for other types, without sending an invalid request.
+	if actor.get("type", 0) == 2:
+		_inspection_uid = uid
+		_inspection_map_uid = game_state.player_map_uid
+		_inspection_waiting = true
+		_inspection_request_id += 1
+		var request_id := _inspection_request_id
+		_send_actor_inspection_queries(uid)
+		get_tree().create_timer(2.0).timeout.connect(func():
+			if request_id == _inspection_request_id and _inspection_waiting:
+				_clear_player_inspection())
+	return true
+
+
+func _send_actor_inspection_queries(uid: int) -> void:
+	NetworkClient.send_query_player_name(uid)
+	NetworkClient.send_query_player_wldesp(uid)
+
+
+func _clear_player_inspection() -> void:
+	_inspection_request_id += 1
+	_inspection_uid = 0
+	_inspection_waiting = false
+	var panel := _extra_panel_nodes.get(PLAYER_INSPECTION_PANEL_PATH) as Control
+	if panel != null:
+		panel.hide()
+
+
+func _refresh_player_inspection(uid: int, allow_open := false) -> void:
+	if uid != _inspection_uid or _inspection_map_uid != game_state.player_map_uid:
+		return
+	if _inspection_waiting and not allow_open:
+		return # A name reply must not substitute cached wear for the requested reply.
+	var panel := _extra_panel_nodes.get(PLAYER_INSPECTION_PANEL_PATH) as Control
+	if not (allow_open and _inspection_waiting) and (panel == null or not panel.visible):
+		return
+	var actor: Dictionary = game_state.get_creature(uid)
+	if actor.is_empty() or not actor.has("desp"):
+		return
+	if panel == null:
+		panel = _ensure_extra_panel(PLAYER_INSPECTION_PANEL_PATH)
+		panel.visibility_changed.connect(func():
+			if not panel.visible:
+				_inspection_uid = 0
+				_inspection_waiting = false)
+	_inspection_waiting = false
+	panel.call("set_actor", uid, actor, actor.desp)
+	panel.show()
 
 
 func _request_npc_dialogue(uid: int, now_ms := -1) -> bool:
@@ -566,13 +635,17 @@ func _on_action_timeout(_head: int, _payload: PackedByteArray, token: int, uid: 
 		_action_request_gate.expire(token, Time.get_ticks_msec())
 
 
-func _on_action_connection_changed(_connected: bool, _message: String) -> void:
+func _on_action_connection_changed(connected: bool, _message: String) -> void:
 	_action_request_gate.reset()
+	if not connected:
+		_clear_player_inspection()
 
 
 func _on_creature_removed(uid: int) -> void:
 	if uid == 0:
 		return
+	if uid == _inspection_uid:
+		_clear_player_inspection()
 	# 6799BE–679A5B clears matching target pointers when an actor leaves.
 	if _locked_magic_target_uid == uid:
 		_locked_magic_target_uid = 0
@@ -1752,6 +1825,7 @@ func _handle_start_game_scene(payload: PackedByteArray) -> void:
 	# 68669A -> 676FA4 clears current/history targets with the old scene.
 	_locked_magic_target_uid = 0
 	_magic_focus_uid = 0
+	_clear_player_inspection()
 	_follow_focus_uid = 0
 	_attack_focus_uid = 0
 	_summon_spawn_blockers.clear()
@@ -2069,6 +2143,7 @@ func _switch_player_map(map_uid: int, action: Dictionary) -> void:
 	_player_post_forced_action = {}
 	_locked_magic_target_uid = 0
 	_magic_focus_uid = 0
+	_clear_player_inspection()
 	_follow_focus_uid = 0
 	_attack_focus_uid = 0
 	_summon_spawn_blockers.clear()
@@ -3046,6 +3121,7 @@ func _handle_player_name(payload: PackedByteArray) -> void:
 		c["name"] = name
 		c["name_color"] = name_color
 		game_state.update_creature(uid, c)
+		_refresh_player_inspection(uid)
 
 
 func _normalize_player_name_color(value: int) -> int:
@@ -3078,6 +3154,7 @@ func _handle_player_wl_desp(payload: PackedByteArray) -> void:
 		var creature: Dictionary = game_state.get_creature(uid)
 		creature["desp"] = data.get("desp", {})
 		game_state.update_creature(uid, creature)
+		_refresh_player_inspection(uid, true)
 
 
 func _handle_buff_id_list(payload: PackedByteArray) -> void:
@@ -3658,6 +3735,8 @@ func _ensure_extra_panel(scene_path: String) -> Control:
 func _extra_panel_initial_position(scene_path: String, panel_size: Vector2) -> Vector2:
 	var renderer_center := Vector2(floorf(size.x * 0.5), floorf(size.y * 0.5))
 	match scene_path:
+		PLAYER_INSPECTION_PANEL_PATH:
+			return Vector2(maxf(0.0, size.x - panel_size.x - 10.0), 30.0)
 		"res://scenes/game/panels/horse.tscn":
 			return renderer_center + Vector2(-128, -161)
 		"res://scenes/game/panels/guild.tscn":
