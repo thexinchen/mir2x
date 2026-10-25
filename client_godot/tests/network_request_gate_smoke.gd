@@ -21,6 +21,7 @@ var finished := false
 var reconnect_started := false
 var online_session := false
 var reconnected := false
+var reconnect_online_retries := 0
 var scene_messages := 0
 var wire_receipts: Array[Dictionary] = []
 
@@ -56,6 +57,13 @@ func _message(head: int, payload: PackedByteArray) -> void:
 			stands += 1
 			authoritative = Vector2i(data.action.x, data.action.y)
 	elif head in [NetworkClient.SM_LOGINERROR, NetworkClient.SM_ONLINEERROR]:
+		# The old player detaches on a different actor bucket after its channel
+		# closes. Retry only the documented transient duplicate-online result.
+		if reconnect_started and head == NetworkClient.SM_ONLINEERROR and payload.size() == 1 and payload[0] == 3 and reconnect_online_retries < 10:
+			reconnect_online_retries += 1
+			get_tree().create_timer(0.15).timeout.connect(func():
+				if not finished: NetworkClient.enter_game())
+			return
 		_fail("login rejected head=%d reconnect=%s payload=%s" % [head, reconnect_started, payload.hex_encode()])
 
 func _held() -> Array:
@@ -171,6 +179,10 @@ func _run() -> void:
 	main.call("deliver", _held().pop_front())
 	main.call("_send_player_action", stand)
 	stage = "disconnect"
+	main.set("_magic_focus_uid", 701)
+	main.set("_follow_focus_uid", 702)
+	main.set("_attack_focus_uid", 703)
+	main.get("_summon_spawn_blockers")[808] = {"token": 1, "map_uid": map_uid}
 	online_session = false
 	NetworkClient.disconnect_from_server()
 	await get_tree().process_frame
@@ -189,6 +201,9 @@ func _run() -> void:
 	if not reconnected or scene_messages < 2:
 		_fail("reconnection did not restore its scene")
 		return
+	if main.get("_magic_focus_uid") != 0 or main.get("_follow_focus_uid") != 0 or main.get("_attack_focus_uid") != 0 or not main.get("_summon_spawn_blockers").is_empty():
+		_fail("reconnection retained prior-scene targeting or summon blockers")
+		return
 	stage = "new-session"
 	main.call("_send_player_action", stand)
 	var reconnected_token := _pending()
@@ -202,7 +217,7 @@ func _run() -> void:
 		return
 	if not await _delayed_transport_receipt(stand):
 		return
-	print("NETWORK REQUEST GATE PASS: real move/receipt, committed interpolation/GUI, independent Stand isolation, blocked move/spell, held input preservation, matching/stale reply, map generation, disconnect/reconnect isolation, real 10s delayed-read expiry/late wire reply and original position restored")
+	print("NETWORK REQUEST GATE PASS: real move/receipt, committed interpolation/GUI, independent Stand isolation, blocked move/spell, held input preservation, matching/stale reply, map generation, reconnect target/blocker reset and receipt isolation, real 10s delayed-read expiry/late wire reply and original position restored")
 	finished = true
 	NetworkClient.disconnect_from_server()
 	get_tree().quit()
