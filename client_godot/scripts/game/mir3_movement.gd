@@ -84,3 +84,19 @@ func decide(from: Vector2i, can_walk: Callable, occupied: Dictionary) -> Diction
 
 static func _free(point: Vector2i, can_walk: Callable, occupied: Dictionary) -> bool:
 	return not occupied.has(point) and can_walk.call(point.x, point.y)
+
+
+static func can_step(from: Vector2i, to: Vector2i, can_walk: Callable, occupied: Dictionary) -> bool:
+	var delta := to - from
+	var distance := maxi(absi(delta.x), absi(delta.y))
+	if distance < 1 or distance > 2:
+		return false
+	if delta.x != 0 and delta.y != 0 and absi(delta.x) != absi(delta.y):
+		return false
+	var offset := Vector2i(signi(delta.x), signi(delta.y))
+	# 678228 checks both cells of a run; 6DB2F0 repeats this validation at
+	# action application time, after the original input/path decision.
+	for n in range(1, distance + 1):
+		if not _free(from + offset * n, can_walk, occupied):
+			return false
+	return true

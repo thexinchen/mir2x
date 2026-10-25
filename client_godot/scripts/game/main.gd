@@ -486,8 +486,8 @@ func _process_ground_input(delta: float) -> void:
 		decision = _ground_input.decide(from, world_renderer.can_walk, occupied)
 	if decision.has("move"):
 		var next: Vector2i = decision.move
-		_send_move_action(next.x, next.y)
-		_move_step_timer = MOVE_STEP_SECONDS
+		if _send_move_action(next.x, next.y):
+			_move_step_timer = MOVE_STEP_SECONDS
 	elif decision.has("turn") and int(decision.turn) != game_state.player_direction:
 		var stand := {"type": 2, "speed": 100, "direction": int(decision.turn), "x": from.x, "y": from.y, "aimX": from.x, "aimY": from.y, "aimUID": 0}
 		NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, stand))
@@ -760,15 +760,9 @@ func _plan_mine_path() -> void:
 
 
 func _find_path(goals: Array[Vector2i]) -> Array[Vector2i]:
-	var occupied := {}
 	var player_position := Vector2i(game_state.player_x, game_state.player_y)
-	for uid in game_state.creatures:
-		if int(uid) == game_state.player_uid:
-			continue
-		var creature: Dictionary = game_state.creatures[uid]
-		var creature_position := Vector2i(creature.get("x", -1), creature.get("y", -1))
-		if creature_position != player_position:
-			occupied[creature_position] = true
+	var occupied := _ground_occupied()
+	occupied.erase(player_position)
 	return _pathfinder.find_path(player_position, goals, world_renderer.can_walk, occupied, 50000, 2)
 
 
@@ -808,26 +802,28 @@ func _process_movement(delta: float) -> void:
 	_move_step_timer -= delta
 	if _move_step_timer > 0.0:
 		return
-	var next: Vector2i = _move_path.pop_front()
-	if _ground_path_active:
+	var next: Vector2i = _move_path.front()
+	if not _send_move_action(next.x, next.y):
+		# A creature/door or a server correction may invalidate a previously
+		# computed hop. Replan before consuming it or starting another cooldown.
 		var from := Vector2i(game_state.player_x, game_state.player_y)
-		var offset := Vector2i(signi(next.x - from.x), signi(next.y - from.y))
-		var occupied := _ground_occupied()
-		for distance in range(1, _grid_distance(from, next) + 1):
-			var crossed := from + offset * distance
-			if occupied.has(crossed) or not world_renderer.can_walk(crossed.x, crossed.y):
-				_move_path = _pathfinder.find_mir3_path(from, _ground_path_goal, world_renderer.can_walk, occupied)
-				_ground_path_active = not _move_path.is_empty()
-				return
-	_send_move_action(next.x, next.y)
+		if _ground_path_active:
+			_move_path = _pathfinder.find_mir3_path(from, _ground_path_goal, world_renderer.can_walk, _ground_occupied())
+			_ground_path_active = not _move_path.is_empty()
+		else:
+			var goals: Array[Vector2i] = [_move_path.back()]
+			_move_path = _find_path(goals)
+		return
+	_move_path.pop_front()
 	_move_step_timer = MOVE_STEP_SECONDS
 	if _move_path.is_empty():
 		_ground_path_active = false
 
 
-func _send_move_action(aim_x: int, aim_y: int) -> void:
-	if not world_renderer.can_walk(aim_x, aim_y):
-		return
+func _send_move_action(aim_x: int, aim_y: int) -> bool:
+	var from := Vector2i(game_state.player_x, game_state.player_y)
+	if not Mir3MovementScript.can_step(from, Vector2i(aim_x, aim_y), world_renderer.can_walk, _ground_occupied()):
+		return false
 	# ACTION_MOVE = 3
 	var action := {
 		"type": 3,  # ACTION_MOVE
@@ -856,6 +852,7 @@ func _send_move_action(aim_x: int, aim_y: int) -> void:
 		"action_started_ms": game_state.player_action_started_ms,
 		"action_step": game_state.player_action_step,
 	})
+	return true
 
 
 func _grid_distance(from: Vector2i, to: Vector2i) -> int:
