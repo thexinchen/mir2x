@@ -81,6 +81,7 @@ var _swing_magic: Dictionary = {}
 var _magic_focus_uid := 0
 var _last_impulse_magic_ms := -3000
 var _last_magic_request_ms := -500
+var _action_request_gate: RefCounted = preload("res://scripts/game/mir3_request_gate.gd").new()
 var _move_path: Array[Vector2i] = []
 var _move_step_timer := 0.0
 var _ground_input := Mir3MovementScript.new()
@@ -162,6 +163,7 @@ func _ready() -> void:
 	location_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	
 	NetworkClient.message_received.connect(_on_server_message)
+	NetworkClient.connection_changed.connect(_on_action_connection_changed)
 	game_state.state_changed.connect(_refresh_grabbed_item_icon)
 	world_renderer.gui_input.connect(_on_world_gui_input)
 	control_panel.connect("minimized_changed", _on_control_panel_minimized_changed)
@@ -518,6 +520,39 @@ func _ground_occupied() -> Dictionary:
 	return occupied
 
 
+func _action_request_ready(now_ms := -1) -> bool:
+	if not NetworkClient.is_connected_to_server():
+		_action_request_gate.reset()
+		return true
+	return _action_request_gate.ready(Time.get_ticks_msec() if now_ms < 0 else now_ms)
+
+
+func _send_player_action(payload: PackedByteArray) -> Error:
+	if not NetworkClient.is_connected_to_server():
+		return NetworkClient.send_action(payload)
+	var token: int = _action_request_gate.begin(Time.get_ticks_msec())
+	var uid: int = game_state.player_uid
+	var map_uid: int = game_state.player_map_uid
+	var result := NetworkClient.send_action_request(payload, _on_action_receipt.bind(token, uid, map_uid), _on_action_timeout.bind(token, uid, map_uid))
+	if result != OK:
+		_action_request_gate.complete(token)
+	return result
+
+
+func _on_action_receipt(head: int, _payload: PackedByteArray, token: int, uid: int, map_uid: int) -> void:
+	if uid == game_state.player_uid and map_uid == game_state.player_map_uid and head in [NetworkClient.SM_OK, NetworkClient.SM_ERROR]:
+		_action_request_gate.complete(token)
+
+
+func _on_action_timeout(_head: int, _payload: PackedByteArray, token: int, uid: int, map_uid: int) -> void:
+	if uid == game_state.player_uid and map_uid == game_state.player_map_uid:
+		_action_request_gate.expire(token, Time.get_ticks_msec())
+
+
+func _on_action_connection_changed(_connected: bool, _message: String) -> void:
+	_action_request_gate.reset()
+
+
 func _process_ground_input(delta: float) -> void:
 	if _player_server_move_active or not _player_server_action_queue.is_empty():
 		# Authority-driven motion pauses held dispatch; mouse release still
@@ -530,6 +565,9 @@ func _process_ground_input(delta: float) -> void:
 		return
 	if _player_input_blocked() or not _player_forced_action_queue.is_empty() or map_loading_overlay.visible:
 		_release_ground_input()
+		return
+	if not _action_request_ready():
+		_ground_input.held_seconds += delta
 		return
 	var hovered := get_viewport().gui_get_hovered_control()
 	var over_world := hovered == world_renderer or (hovered != null and world_renderer.is_ancestor_of(hovered))
@@ -583,7 +621,7 @@ func _process_ground_input(delta: float) -> void:
 			_move_step_timer = MOVE_STEP_SECONDS
 	elif decision.has("turn") and int(decision.turn) != game_state.player_direction:
 		var stand := {"type": 2, "speed": 100, "direction": int(decision.turn), "x": from.x, "y": from.y, "aimX": from.x, "aimY": from.y, "aimUID": 0}
-		NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, stand))
+		_send_player_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, stand))
 		game_state.player_direction = int(decision.turn)
 		_set_player_action(2)
 
@@ -601,6 +639,8 @@ func _find_corpse_near(grid: Vector2i) -> int:
 
 
 func _try_harvest_corpse(grid: Vector2i, direction: int, now_ms := -1) -> bool:
+	if not _action_request_ready():
+		return false
 	var now: int = Time.get_ticks_msec() if now_ms < 0 else now_ms
 	if now - _last_corpse_interaction_ms <= 1000:
 		return false
@@ -611,7 +651,7 @@ func _try_harvest_corpse(grid: Vector2i, direction: int, now_ms := -1) -> bool:
 	# 67AFCC/67AFF7 enqueue the same bend action with or without a corpse.
 	# Use the existing bend animation, without the delayed ground-pickup timer.
 	var action := {"type": 8, "speed": 100, "direction": direction, "x": game_state.player_x, "y": game_state.player_y}
-	NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
+	_send_player_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
 	game_state.player_direction = direction
 	_set_player_action(8)
 	_player_action_timer = _action_duration(8, 100, 2)
@@ -632,10 +672,14 @@ func _on_minimap_move_requested(destination: Vector2i) -> void:
 
 
 func _start_chase(target_uid: int) -> void:
+	var remaining := _move_step_timer if game_state.player_action_type in [3, 5] else 0.0
 	_cancel_movement()
+	_move_step_timer = remaining
 	_attack_focus_uid = target_uid
 	_chase_target_uid = target_uid
-	_plan_chase_path()
+	# Selecting the next target must not truncate a committed walking segment.
+	if remaining <= 0.0 and _player_action_timer < 0.0 and _pickup_action_timer < 0.0 and _action_request_ready():
+		_plan_chase_path()
 
 
 func _cancel_movement(cancel_ground_input := true) -> void:
@@ -762,6 +806,8 @@ func _ground_spell_grid(mouse_grid: Vector2i, force_front := false) -> Vector2i:
 
 
 func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
+	if action_type == 9 and not _action_request_ready():
+		return false
 	# 67D5A7 stamps ordinary cast acceptance before movement braking/enqueueing.
 	if action_type == 9:
 		_last_magic_request_ms = Time.get_ticks_msec()
@@ -813,7 +859,7 @@ func _should_brake_movement_for_spell() -> bool:
 
 
 func _release_pending_spell() -> void:
-	if _pending_spell_action.is_empty():
+	if _pending_spell_action.is_empty() or not _action_request_ready():
 		return
 	var pending_action := _pending_spell_action
 	_pending_spell_action = {}
@@ -870,7 +916,7 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 			"x": game_state.player_x, "y": game_state.player_y,
 			"aimX": game_state.player_x, "aimY": game_state.player_y, "aimUID": 0,
 		}
-		NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, stand))
+		_send_player_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, stand))
 		game_state.player_direction = direction
 	var action := {
 		"type": action_type, "speed": 100, "direction": direction_override if action_type == 12 else direction,
@@ -878,7 +924,7 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 		"aimX": target_grid.x, "aimY": target_grid.y, "aimUID": aim_uid,
 		"magicID": magic_id,
 	}
-	NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
+	_send_player_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
 	game_state.magic_cast_times[magic_id] = Time.get_ticks_msec()
 	if action_type == 12:
 		game_state.player_direction = direction
@@ -967,25 +1013,29 @@ func _process_movement(delta: float) -> void:
 				return
 			if game_state.player_action_type != 2:
 				_set_player_action(2)
-			_plan_mine_path()
+			if _action_request_ready():
+				_plan_mine_path()
 			return
 		if _chase_target_uid == 0:
 			# A server stand can leave a retry delay without a move animation.
 			# Advance that delay while idle too, or held input remains blocked.
 			_move_step_timer = maxf(0.0, _move_step_timer - delta)
-			if game_state.player_action_type in [3, 5]:
-				if _move_step_timer <= 0.0:
+			if _move_step_timer <= 0.0:
+				if game_state.player_action_type in [3, 5]:
 					_set_player_action(2)
-					_release_pending_spell()
+				_release_pending_spell()
 			return
 		_move_step_timer -= delta
 		if _move_step_timer > 0.0:
 			return
 		_set_player_action(2)
-		_plan_chase_path()
+		if _action_request_ready():
+			_plan_chase_path()
 		return
 	_move_step_timer -= delta
 	if _move_step_timer > 0.0:
+		return
+	if not _action_request_ready():
 		return
 	var next: Vector2i = _move_path.front()
 	if not _send_move_action(next.x, next.y):
@@ -1006,6 +1056,8 @@ func _process_movement(delta: float) -> void:
 
 
 func _send_move_action(aim_x: int, aim_y: int) -> bool:
+	if not _action_request_ready():
+		return false
 	var from := Vector2i(game_state.player_x, game_state.player_y)
 	if not Mir3MovementScript.can_step(from, Vector2i(aim_x, aim_y), world_renderer.can_walk, _ground_occupied()):
 		return false
@@ -1021,7 +1073,7 @@ func _send_move_action(aim_x: int, aim_y: int) -> bool:
 		"aimUID": 0,
 	}
 	var action_data := Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action)
-	NetworkClient.send_action(action_data)
+	_send_player_action(action_data)
 	game_state.player_direction = action.direction
 	game_state.player_action_from_x = game_state.player_x
 	game_state.player_action_from_y = game_state.player_y
@@ -1045,6 +1097,8 @@ func _grid_distance(from: Vector2i, to: Vector2i) -> int:
 
 
 func _send_attack_action(target_uid: int, ground_target := Vector2i(-1, -1)) -> void:
+	if not _action_request_ready():
+		return
 	_last_attack_ms = Time.get_ticks_msec()
 	# ACTION_ATTACK = 7
 	var creature: Dictionary = game_state.get_creature(target_uid)
@@ -1062,7 +1116,7 @@ func _send_attack_action(target_uid: int, ground_target := Vector2i(-1, -1)) -> 
 		"magicID": _consume_attack_magic_id(_direction_to(game_state.player_x, game_state.player_y, tx, ty)),
 	}
 	var action_data := Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action)
-	NetworkClient.send_action(action_data)
+	_send_player_action(action_data)
 	if action.magicID > 0:
 		game_state.magic_cast_times[action.magicID] = Time.get_ticks_msec()
 	game_state.player_direction = action.direction
@@ -1071,6 +1125,8 @@ func _send_attack_action(target_uid: int, ground_target := Vector2i(-1, -1)) -> 
 
 
 func _send_mine_action() -> void:
+	if not _action_request_ready():
+		return
 	var direction := _direction_to(game_state.player_x, game_state.player_y, _mine_target.x, _mine_target.y)
 	var action := {
 		"type": 14,
@@ -1079,7 +1135,7 @@ func _send_mine_action() -> void:
 		"x": _mine_target.x,
 		"y": _mine_target.y,
 	}
-	NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
+	_send_player_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
 	game_state.player_direction = direction
 	_set_player_action(14, action.speed)
 	_player_action_timer = _action_duration(14, action.speed, 2)
@@ -1162,10 +1218,14 @@ func _on_control_panel_minimized_changed(minimized: bool) -> void:
 
 
 func _request_pickup() -> void:
+	if not _action_request_ready():
+		return
 	NetworkClient.send_pickup(game_state.player_x, game_state.player_y, game_state.player_map_uid)
 
 
 func _begin_pickup_action() -> void:
+	if not _action_request_ready():
+		return
 	if _pickup_action_timer >= 0.0:
 		return
 	var action := {
@@ -1175,7 +1235,7 @@ func _begin_pickup_action() -> void:
 		"x": game_state.player_x,
 		"y": game_state.player_y,
 	}
-	NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
+	_send_player_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
 	_player_action_timer = -1.0
 	_set_player_action(8, action.speed)
 	_pickup_action_timer = 0.2
@@ -1186,6 +1246,9 @@ func _process_pickup_action(delta: float) -> void:
 		return
 	_pickup_action_timer -= delta
 	if _pickup_action_timer > 0.0:
+		return
+	if not _action_request_ready():
+		_pickup_action_timer = 0.0
 		return
 	_pickup_action_timer = -1.0
 	NetworkClient.send_pickup(game_state.player_x, game_state.player_y, game_state.player_map_uid)
@@ -1572,6 +1635,7 @@ func _handle_start_game_scene(payload: PackedByteArray) -> void:
 	if data.get("uid", 0) != game_state.player_uid or data.get("mapUID", 0) != game_state.player_map_uid:
 		push_error("SM_STARTGAMESCENE identity mismatch")
 		return
+	_action_request_gate.reset()
 	_cancel_movement()
 	_pickup_action_timer = -1.0
 	_player_action_timer = -1.0
@@ -1750,6 +1814,7 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 	if action_type == 6:
 		if uid == game_state.player_uid:
 			# Original 683AAE -> 6DE2CA refreshes the command clock on self relocation.
+			_action_request_gate.reset()
 			_last_magic_request_ms = Time.get_ticks_msec()
 		var space_magic_id: int = _resources.magic_id("瞬息移动")
 		if space_magic_id > 0:
@@ -1882,6 +1947,7 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 
 
 func _switch_player_map(map_uid: int, action: Dictionary) -> void:
+	_action_request_gate.reset()
 	_cancel_movement()
 	_pickup_action_timer = -1.0
 	_player_action_timer = -1.0

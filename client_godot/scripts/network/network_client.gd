@@ -279,11 +279,11 @@ func send_action(action_data: PackedByteArray) -> Error:
 
 # Optional processing receipt, separate from authoritative action/correction
 # broadcasts. SM_OK means processing ended, not that the action succeeded.
-func send_action_request(action_data: PackedByteArray, callback: Callable) -> Error:
+func send_action_request(action_data: PackedByteArray, callback: Callable, timeout_callback := Callable()) -> Error:
 	if action_data.size() != 43:
 		return ERR_INVALID_DATA
 	# Original elapsed > 10000 expires on tick 10001; other requests keep 1s.
-	return _send_request(CM_ACTION, action_data, false, callback, 10001)
+	return _send_request(CM_ACTION, action_data, false, callback, 10001, timeout_callback)
 
 
 func send_player_say(content: String) -> Error:
@@ -676,11 +676,11 @@ func _send_u64_request(head_code: int, value: int, callback: Callable) -> Error:
 	return _send_request(head_code, payload, false, callback)
 
 
-func _send_request(head_code: int, payload: PackedByteArray, variable: bool, callback: Callable, timeout_ms := 1000) -> Error:
+func _send_request(head_code: int, payload: PackedByteArray, variable: bool, callback: Callable, timeout_ms := 1000, timeout_callback := Callable()) -> Error:
 	var response_id := _next_response_id
 	_next_response_id += 1
 	if callback.is_valid():
-		_response_callbacks[response_id] = {"callback": callback, "expires": Time.get_ticks_msec() + timeout_ms}
+		_response_callbacks[response_id] = {"callback": callback, "timeout_callback": timeout_callback if timeout_callback.is_valid() else callback, "expires": Time.get_ticks_msec() + timeout_ms}
 	var error := _send_variable_message(head_code, payload, response_id) if variable else _send_fixed_message(head_code, payload, response_id)
 	if error != OK:
 		_response_callbacks.erase(response_id)
@@ -696,7 +696,7 @@ func _expire_responses() -> void:
 	for response_id in expired:
 		var entry: Dictionary = _response_callbacks.get(response_id, {})
 		_response_callbacks.erase(response_id)
-		var callback: Callable = entry.get("callback", Callable())
+		var callback: Callable = entry.get("timeout_callback", entry.get("callback", Callable()))
 		if callback.is_valid():
 			callback.call(SM_ERROR, PackedByteArray())
 
