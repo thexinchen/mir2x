@@ -2,7 +2,10 @@ extends Node
 
 class CaptureMain extends "res://scripts/game/main.gd":
 	var sent: Dictionary = {}
+	var use_actual_send := false
 	func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
+		if use_actual_send:
+			return super._send_spell_action(action_type, magic_id, aim_grid, aim_uid)
 		sent = {"action": action_type, "magic": magic_id, "grid": aim_grid, "uid": aim_uid}
 		return true
 
@@ -64,9 +67,33 @@ func _ready() -> void:
 		if not main.call("_cast_magic", mid, Vector2i(15, 12)) or main.get("sent").get("uid") != 606:
 			_fail("eligible spell ignored lock: " + name)
 			return
-		if main.get("_magic_focus_uid") != 707:
-			_fail("explicit lock replaced independent mouse/history focus")
+		if main.get("_magic_focus_uid") != 606:
+			_fail("resolved lock was not recorded as current spell focus")
 			return
+	# Original 67CCCC updates current focus; fireball also satisfies the
+	# known-positive history predicate. After disabling the setting and moving
+	# off actors, another fireball must retain the last resolved locked actor.
+	check.button_pressed = false
+	renderer.set("_actor_target_rects", {})
+	main.set("_last_magic_request_ms", -10000)
+	GameState.magic_cast_times.clear()
+	if not main.call("_cast_magic", resources.magic_id("火球术"), Vector2i(15, 12)) or main.get("sent").get("uid") != 606:
+		_fail("disabling lock restored stale pre-lock mouse target")
+		return
+	check.button_pressed = true
+	renderer.set("_actor_target_rects", {707: {"rect": rect, "map_y": 10}})
+	# 67D557 resolves selection before 67D563 checks committed action state.
+	main.set("use_actual_send", true)
+	main.set("_last_magic_request_ms", -10000)
+	GameState.magic_cast_times.clear()
+	GameState.player_action_type = 9
+	main.set("_player_action_timer", 0.25)
+	if main.call("_cast_magic", resources.magic_id("火球术"), Vector2i(15, 12)) or main.get("_magic_focus_uid") != 606 or main.get("_player_action_timer") != 0.25:
+		_fail("busy gate changed original target-resolution ordering")
+		return
+	main.set("use_actual_send", false)
+	GameState.player_action_type = 2
+	main.set("_player_action_timer", -1.0)
 	main.set("_last_magic_request_ms", -10000)
 	GameState.magic_cast_times.clear()
 	if not main.call("_cast_magic", resources.magic_id("魔法盾"), Vector2i(15, 12)) or main.get("sent").get("uid") != GameState.player_uid:
@@ -114,7 +141,7 @@ func _ready() -> void:
 		_fail("map switch retained lock")
 		return
 	GameState.runtime_config.clear()
-	print("MIR3 TARGET LOCK PASS: default/panel/key, corpse/live/same/empty hover, independent focus, spell routing, evidence permissions, status and lifecycle")
+	print("MIR3 TARGET LOCK PASS: default/panel/key, corpse/live/same/empty hover, resolved current focus, post-disable history, spell routing, evidence permissions, status and lifecycle")
 	get_tree().quit()
 
 
