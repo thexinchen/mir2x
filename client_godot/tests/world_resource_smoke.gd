@@ -47,6 +47,23 @@ func _ready() -> void:
 	if actors.item_details.size() != actors.item_meta.size() or actors.buff_names.is_empty():
 		_fail("item-detail or buff-name metadata incomplete")
 		return
+	for aura in [["魔法盾", 0x352, 3], ["阴阳法环", 0x0200012A, 1]]:
+		var aura_id: int = actors.magic_id(aura[0])
+		var intro: PackedInt32Array = actors.magic_layout(aura_id, 2)
+		var loop: PackedInt32Array = actors.magic_loop_layout(aura_id, 2)
+		if loop.size() != 42 or loop[0] != aura[1] or loop[2] != aura[2] or (loop[7] & 1) == 0 or loop[8] != -1:
+			_fail("missing aura continuation metadata: %s" % aura[0])
+			return
+		if intro.is_empty() or intro[0] == loop[0] or intro[2] <= loop[2]:
+			_fail("aura continuation overwrote initial run: %s" % aura[0])
+			return
+		for frame_index in loop[2]:
+			if actors.frame("magic", loop[0] + frame_index).is_empty():
+				_fail("missing aura continuation texture: %s frame=%d" % [aura[0], frame_index])
+				return
+	if not actors.magic_loop_layout(actors.magic_id("火球术"), 1).is_empty():
+		_fail("ordinary spell startup gained an aura continuation")
+		return
 	var spell1_motion_count := 0
 	var attack_mode_motion_count := 0
 	for magic_id_value in actors.magic_names:
