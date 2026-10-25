@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "scope": "Current IDs remain separate from original resource IDs. Original identity uses the source-checked resource join and one explicit spelling alias; server target-mode/delay values remain unproven.",
-  "original_identity_sha256": "756e04a2f7131e9352b4ca8ee2d95f5641ac3724bd87a64f06fece6b272b95ba",
+  "original_identity_sha256": "43cbc2d9c5ec88da9359e82ac312a53ec1808dc63556f510726260ce32b321c4",
   "legacy_reference_sha256": "df935cf34fc2cb494c76a929d8c19c0086d5ea8b98ae226b05a882e3546759df",
   "source_sha256": "1aa5b84cad5c06c276f519bccc6e1af6ce3aeb7a55a04d87bd82d0a0168bd9b2",
   "name_metadata_sha256": "b383378379250be38e1eb7f549184af7d4216bc86b6f63b743a3f8fd273cfda1",

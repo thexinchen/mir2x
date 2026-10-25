@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "function": "0x6aadd8",
+  "single_update_wrapper": "0x6aae64",
+  "minimum_payload_bytes": 11,
+  "lookup": {
+    "main": "0x6ab15c",
+    "alternate": "0x6ab86c",
+    "comparison": "record uint16 at offset0 == payload uint16 at offset0",
+    "order": "main first; alternate only when main has no match",
+    "creates_missing_definition": false
+  },
+  "dispatch": {
+    "record_offset": 84,
+    "bytes": 2,
+    "main_assignment": "0x6aadf8",
+    "alternate_assignment": "0x6aae3c",
+    "equals_matched_base_id_after_this_update": true,
+    "reason": "both successful exact-ID lookups write the same payload ID into dispatch offset84"
+  },
+  "main_writes": [
+    {
+      "record_offset": 83,
+      "value": 1
+    },
+    {
+      "record_offset": 86,
+      "value": "payload[2] & 15",
+      "except": "preserve when record[72] == 8"
+    },
+    {
+      "record_offset": 87,
+      "value": "payload[2] >> 4"
+    },
+    {
+      "record_offset": 88,
+      "value": "payload[3]"
+    },
+    {
+      "record_offset": 89,
+      "value": "little-endian DWORD payload[7:11]"
+    }
+  ],
+  "alternate_writes": [
+    {
+      "record_offset": 83,
+      "value": 1
+    },
+    {
+      "record_offset": 88,
+      "value": "payload[3]"
+    }
+  ],
+  "alternate_miss_tail": "0x6aae58 still calls 0x6aa8c4 with payload ID and shortcut byte",
+  "instruction_checks": [
+    {
+      "va": "0x6aade1",
+      "hex": "0fb7138bc6e871030000",
+      "role": "read payload WORD ID and call main lookup"
+    },
+    {
+      "va": "0x6ab180",
+      "hex": "0fb7103b55fc7406",
+      "role": "main lookup compares record WORD at offset0 to requested ID"
+    },
+    {
+      "va": "0x6aadf1",
+      "hex": "c64053010fb70a66894854",
+      "role": "main learned flag and identical payload ID to dispatch WORD"
+    },
+    {
+      "va": "0x6aadfc",
+      "hex": "80784808740a0fb64a0280e10f884856",
+      "role": "record byte72==8 preserves byte86; otherwise low nibble"
+    },
+    {
+      "va": "0x6aae0c",
+      "hex": "0fb64a02c1e9048848570fb64a038848588b5207895059",
+      "role": "high nibble, shortcut byte and training DWORD"
+    },
+    {
+      "va": "0x6aae25",
+      "hex": "0fb7138bc6e83d0a0000",
+      "role": "same payload WORD ID to alternate lookup"
+    },
+    {
+      "va": "0x6ab890",
+      "hex": "0fb7103b55fc7406",
+      "role": "alternate lookup compares record WORD at offset0 to requested ID"
+    },
+    {
+      "va": "0x6aae35",
+      "hex": "c64053010fb70a668948540fb65203885058",
+      "role": "alternate learned flag, dispatch ID and shortcut only"
+    }
+  ],
+  "limits": [
+    "This proves identity immediately after this exact lookup/update path; not a global claim about every indirect write in the program.",
+    "No actual server skill-definition payload was supplied; resource names do not recover byte81 target modes or byte64 cast delays.",
+    "Byte86/87 roles are not inferred merely from their nibble packing; current SDLearnedMagic carries ID and exp, not these original fields."
+  ]
+}

@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
-  "identity_sha256": "756e04a2f7131e9352b4ca8ee2d95f5641ac3724bd87a64f06fece6b272b95ba",
+  "identity_sha256": "43cbc2d9c5ec88da9359e82ac312a53ec1808dc63556f510726260ce32b321c4",
   "general_resolver": "0x67cc08",
   "setting_forced_route": {
     "branch": "0x67c98a",
@@ -35,41 +35,48 @@
     {
       "current_name": "魔法盾",
       "original_resource_id": 31,
+      "dispatch_id_after_exact_learn_update": 31,
       "explicit_lock_allowed": false
     },
     {
       "current_name": "召唤骷髅",
       "original_resource_id": 17,
+      "dispatch_id_after_exact_learn_update": 17,
       "explicit_lock_allowed": false
     },
     {
       "current_name": "抗拒火环",
       "original_resource_id": 8,
+      "dispatch_id_after_exact_learn_update": 8,
       "explicit_lock_allowed": true
     },
     {
       "current_name": "瞬息移动",
       "original_resource_id": 21,
+      "dispatch_id_after_exact_learn_update": 21,
       "explicit_lock_allowed": false
     },
     {
       "current_name": "召唤神兽",
       "original_resource_id": 30,
+      "dispatch_id_after_exact_learn_update": 30,
       "explicit_lock_allowed": false
     },
     {
       "current_name": "超强召唤骷髅",
       "original_resource_id": 105,
+      "dispatch_id_after_exact_learn_update": 105,
       "explicit_lock_allowed": false
     },
     {
       "current_name": "阴阳法环",
       "original_resource_id": 122,
+      "dispatch_id_after_exact_learn_update": 122,
       "explicit_lock_allowed": false
     }
   ],
   "limits": [
-    "Resource identity is a base-ID mapping; candidate rows do not prove every learned dispatch-ID substitution.",
+    "Exact-ID learning sets dispatch ID equal to matched base ID; candidate dispatch IDs apply after that verified update path, not arbitrary other writes.",
     "The runtime adapter applies the recovered projection to current 抗拒火环 only in the proven setting-forced general route.",
     "Other general-mode entries depend on missing original server record byte81; do not globally project self spells from this table.",
     "Current/history target storage remains incomplete; negative static history permission is not a denial."
