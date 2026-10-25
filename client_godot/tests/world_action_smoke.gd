@@ -2166,6 +2166,26 @@ func _test_buff_transitions(main: Control, resources: RefCounted) -> bool:
 	if GameState.attached_magic_effects.size() != 2 or GameState.attached_magic_effects.any(func(effect): return effect.get("target_uid", 0) == remote_uid) or GameState.creatures[remote_uid].buffs != [buff_id]:
 		_fail("remote Hero shield OFF did not preserve list ownership: %s" % GameState.attached_magic_effects)
 		return false
+	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(remote_uid, 1, 1))
+	var snapshot: Dictionary = GameState.attached_magic_effects.back()
+	if GameState.attached_magic_effects.size() != 3 or not snapshot.get("loop_only", false) or snapshot.get("cycles", 0) != -1:
+		_fail("shield ON snapshot did not restore a looping attachment")
+		return false
+	GameState.trigger_shield_hit(remote_uid)
+	var hit_started: int = snapshot.start_time
+	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(remote_uid, 1, 1))
+	if GameState.attached_magic_effects.size() != 3 or snapshot.kind != "shield_hit" or snapshot.start_time != hit_started:
+		_fail("duplicate ON snapshot restarted or replaced shield hit")
+		return false
+	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(remote_uid, 2, 1))
+	if GameState.attached_magic_effects.size() != 4 or GameState.attached_magic_effects.back().magicID != resources.magic_id("阴阳法环"):
+		_fail("ring ON did not coexist with snapshot shield")
+		return false
+	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(remote_uid, 2, 2))
+	main.call("_on_server_message", NetworkClient.SM_BUFF, _sm_buff_payload(remote_uid, 1, 2))
+	if GameState.attached_magic_effects.size() != 2:
+		_fail("snapshot OFF did not clear both matching effects")
+		return false
 	main.call("_on_server_message", NetworkClient.SM_BUFFIDLIST, _buff_id_list_payload(local_uid, [buff_id, buff_id + 1]))
 	main.call("_on_server_message", NetworkClient.SM_BUFFIDLIST, _buff_id_list_payload(remote_uid, []))
 	if GameState.buff_list != [buff_id, buff_id + 1] or not GameState.creatures[remote_uid].buffs.is_empty() or GameState.creatures[monster_uid].buffs != [buff_id]:
