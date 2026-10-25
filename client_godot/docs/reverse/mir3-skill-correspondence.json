@@ -4,7 +4,7 @@
   "source_sha256": "1aa5b84cad5c06c276f519bccc6e1af6ce3aeb7a55a04d87bd82d0a0168bd9b2",
   "name_metadata_sha256": "b383378379250be38e1eb7f549184af7d4216bc86b6f63b743a3f8fd273cfda1",
   "skill_metadata_sha256": "d84d2c85dce7c981794b32e7ad4d4a968fa9802526103ae8a7019fdde2968ba0",
-  "main_sha256": "d6914ff7fa9ee2aa8a13d47036e6344d1d2f3bc0646e35ab94e1e8476b6cb8f3",
+  "main_sha256": "04380c369cb94bc6024bee17759e2a958e068174bc10a22b3f765a2dfa99a342",
   "description_key_count": 793,
   "description_entry_count": 798,
   "duplicate_keys": {
@@ -174,7 +174,7 @@
     {
       "current_id": 24,
       "name": "刺杀剑术",
-      "current_policy": "unsupported",
+      "current_policy": "swing",
       "original_id": null,
       "original_descriptions": [
         {
