@@ -77,10 +77,19 @@ func _ready() -> void:
 	main.call("_release_ground_input")
 	_expect(main.call("_send_move_action", start.x + 1, start.y), "accepted-echo fixture submits a valid move", _position())
 	main.set("_ground_path_active", true)
+	main.set("_move_step_timer", 0.6)
 	started = GameState.player_action_started_ms
 	var accepted := {"type": 3, "speed": 100, "x": start.x, "y": start.y, "aimX": start.x + 1, "aimY": start.y}
+	await get_tree().create_timer(0.02).timeout
 	main.call("_handle_action", Protocol.encode_cm_action(GameState.player_uid, GameState.player_map_uid, accepted))
 	_expect(main.get("_ground_path_active") and GameState.player_action_started_ms == started, "accepted move echo preserves route latch and animation clock", main.get("_ground_path_active"))
+	var forced := {"type": 3, "speed": 100, "x": start.x + 1, "y": start.y, "aimX": start.x + 1, "aimY": start.y + 1}
+	main.call("_handle_action", Protocol.encode_cm_action(GameState.player_uid, GameState.player_map_uid, forced))
+	_expect(_position() == start + Vector2i(1, 1) and GameState.player_action_from_x == start.x + 1 and GameState.player_action_from_y == start.y, "nonduplicate server-driven self move applies authoritative endpoints", _position())
+	started = GameState.player_action_started_ms
+	await get_tree().create_timer(0.02).timeout
+	main.call("_handle_action", Protocol.encode_cm_action(GameState.player_uid, GameState.player_map_uid, forced))
+	_expect(GameState.player_action_started_ms == started, "duplicate forced move does not restart its animation", started)
 	if failures.is_empty():
 		print("MIR3 ACTION VALIDATION PASS: commit-time terrain/actor checks, corpse consistency, invalid hop rejection, dynamic replan")
 	get_tree().quit(0 if failures.is_empty() else 1)

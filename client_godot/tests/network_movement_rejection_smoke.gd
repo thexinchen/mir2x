@@ -4,6 +4,7 @@ const Protocol = preload("res://scripts/network/protocol.gd")
 const Movement = preload("res://scripts/game/mir3_movement.gd")
 var finished := false
 var stand_count := 0
+var self_moves := 0
 var authoritative := Vector2i.ZERO
 
 func _ready() -> void:
@@ -31,6 +32,8 @@ func _message(head: int, payload: PackedByteArray) -> void:
 		if int(data.get("uid", 0)) == GameState.player_uid and int(action.get("type", 0)) == 2:
 			authoritative = Vector2i(int(action.x), int(action.y))
 			stand_count += 1
+		elif int(data.get("uid", 0)) == GameState.player_uid and int(action.get("type", 0)) in [3, 5]:
+			self_moves += 1
 	elif head in [NetworkClient.SM_LOGINERROR, NetworkClient.SM_ONLINEERROR]:
 		_fail("login rejected")
 
@@ -102,7 +105,10 @@ func _run() -> void:
 	if stand_count <= before or authoritative != start:
 		_fail("test actor did not return to its initial server position")
 		return
-	print("NETWORK MOVEMENT REJECTION PASS: real reportStand, old route cleared, held input resumed, server accepted %s -> %s" % [start, resumed])
+	if self_moves != 0:
+		_fail("normal client movement unexpectedly echoed to self: %d" % self_moves)
+		return
+	print("NETWORK MOVEMENT REJECTION PASS: real reportStand, old route cleared, held input resumed, server accepted %s -> %s, no normal self-move echo" % [start, resumed])
 	finished = true
 	NetworkClient.disconnect_from_server()
 	get_tree().quit()

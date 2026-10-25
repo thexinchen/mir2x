@@ -1525,8 +1525,9 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 	if action_type == 9 and _resources.magic_cast_motion(action.get("magicID", 0)) == 7:
 		direction = 5
 	var creature: Dictionary = game_state.get_creature(uid) if uid != game_state.player_uid else {}
-	# The server broadcasts the accepted local move, and transports may repeat an
-	# actor action. Restarting the same timeline visibly rewinds it before catch-up.
+	# Normal client moves are broadcast only to other actors. Self moves can be
+	# server-driven, so ignore only an exact active duplicate; do not discard
+	# arbitrary self movement as an acknowledgement of local prediction.
 	if not correction_applied and _matches_active_move(uid, action, creature):
 		return
 	var previous_creature := creature.duplicate(true)
