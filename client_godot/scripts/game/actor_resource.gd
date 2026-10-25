@@ -17,6 +17,7 @@ var skill_meta: Dictionary = {}
 var buff_meta: Dictionary = {}
 var buff_names: Dictionary = {}
 var magic_meta: Dictionary = {}
+var magic_loop_meta: Dictionary = {}
 var magic_names: Dictionary = {}
 var magic_ids_by_name: Dictionary = {}
 var hero_weapon_orders := PackedByteArray()
@@ -48,7 +49,9 @@ func configure(path: String) -> bool:
 	_load_skill_meta()
 	_load_buff_meta()
 	_load_buff_names()
-	_load_magic_meta()
+	_load_magic_meta("magic.m2xmeta", magic_meta)
+	magic_loop_meta.clear()
+	_load_magic_meta("magic_loop.m2xmeta", magic_loop_meta)
 	_load_magic_names()
 	return loaded
 
@@ -315,6 +318,10 @@ func buff_name(buff_id: int) -> String:
 
 func magic_layout(magic_id: int, stage: int) -> PackedInt32Array:
 	return magic_meta.get(magic_id * 8 + stage, PackedInt32Array())
+
+
+func magic_loop_layout(magic_id: int, stage: int) -> PackedInt32Array:
+	return magic_loop_meta.get(magic_id * 8 + stage, PackedInt32Array())
 
 
 func magic_seff(magic_id: int, stage: int) -> int:
@@ -597,8 +604,8 @@ func _load_buff_names() -> void:
 		buff_names[buff_id] = file.get_buffer(length).get_string_from_utf8()
 
 
-func _load_magic_meta() -> void:
-	var file := FileAccess.open("%s/sprites/magic.m2xmeta" % base_path, FileAccess.READ)
+func _load_magic_meta(filename: String, destination: Dictionary) -> void:
+	var file := FileAccess.open("%s/sprites/%s" % [base_path, filename], FileAccess.READ)
 	if file == null or file.get_buffer(4).get_string_from_ascii() != MAGIC:
 		return
 	var version := file.get_32()
@@ -627,7 +634,7 @@ func _load_magic_meta() -> void:
 				meta.append(target_offset - 0x10000 if target_offset >= 0x8000 else target_offset)
 		if version >= 5:
 			meta.append(file.get_8())
-		magic_meta[magic_id * 8 + stage] = meta
+		destination[magic_id * 8 + stage] = meta
 
 
 func _load_magic_names() -> void:

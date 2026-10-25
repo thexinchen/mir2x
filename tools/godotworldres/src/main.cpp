@@ -727,6 +727,7 @@ static size_t convertSprites(const char *family, const char *dbPath, const fs::p
     }
     if(std::strcmp(family, "magic") == 0){
         std::vector<MagicEffectMetaRecord> metaList;
+        std::vector<MagicEffectMetaRecord> loopMetaList;
         for(uint32_t magicID = 1; magicID < DBCOM_MAGICENDID(); ++magicID){
             const auto &record = DBCOM_MAGICRECORD(magicID);
             if(!record){
@@ -759,12 +760,47 @@ static size_t convertSprites(const char *family, const char *dbPath, const fs::p
                     meta.targetOff[direction * 2 + 1] = check_cast<int16_t>(targetOffY);
                     ++direction;
                 }
+                // A stage can have an intro followed by a separate looping range.
+                // DBCOM_MAGICGFXENTRY returns only the first stage entry.
+                for(const auto &continuation: record.gfxList){
+                    if(!continuation || !continuation.loop || &continuation == gfxEntry || !continuation.checkStage(magicStageName(stage))){
+                        continue;
+                    }
+                    MagicEffectMetaRecord loopMeta {
+                        magicID,
+                        continuation.gfxID,
+                        continuation.modColor,
+                        check_cast<uint16_t>(continuation.frameCount),
+                        check_cast<uint16_t>(continuation.gfxIDCount),
+                        check_cast<uint16_t>(continuation.speed),
+                        check_cast<uint8_t>(stage),
+                        check_cast<uint8_t>(magicGfxEntryID(continuation.type)),
+                        check_cast<uint8_t>(continuation.gfxDirType),
+                        to_u8(1 | (continuation.onGround ? 2 : 0) | ((continuation.gfxID == SYS_U32NIL || continuation.frameCount <= 0) ? 4 : 0)),
+                        UINT32_MAX,
+                    };
+                    loopMeta.motion = check_cast<uint8_t>(continuation.motion);
+                    size_t loopDirection = 0;
+                    for(const auto &[targetOffX, targetOffY]: continuation.targetOffList){
+                        fflassert(loopDirection < 16);
+                        loopMeta.targetOff[loopDirection * 2 + 0] = check_cast<int16_t>(targetOffX);
+                        loopMeta.targetOff[loopDirection * 2 + 1] = check_cast<int16_t>(targetOffY);
+                        ++loopDirection;
+                    }
+                    loopMetaList.push_back(loopMeta);
+                    break;
+                }
             }
         }
         std::ofstream metaFile(outputDir / "sprites" / "magic.m2xmeta", std::ios::binary);
         const SpriteHeader metaHeader {.version = 5, .spriteCount = to_u32(metaList.size())};
         metaFile.write(reinterpret_cast<const char *>(&metaHeader), sizeof(metaHeader));
         writeVector(metaFile, metaList);
+
+        std::ofstream loopFile(outputDir / "sprites" / "magic_loop.m2xmeta", std::ios::binary);
+        const SpriteHeader loopHeader {.version = 5, .spriteCount = to_u32(loopMetaList.size())};
+        loopFile.write(reinterpret_cast<const char *>(&loopHeader), sizeof(loopHeader));
+        writeVector(loopFile, loopMetaList);
 
         std::ofstream nameFile(outputDir / "sprites" / "magic_name.m2xmeta", std::ios::binary);
         uint32_t nameCount = 0;
