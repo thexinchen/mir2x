@@ -36,5 +36,21 @@ int main()
             return 1;
         }
     }
+    // Spin-kick reuses the existing direction byte without changing the ABI.
+    ActionNode kick{};
+    kick.type = ACTION_SPINKICK;
+    kick.speed = 100;
+    kick.direction = 3;
+    kick.x = kick.aimX = 407;
+    kick.y = kick.aimY = 126;
+    const std::array<unsigned char, 27> expectedKick = {
+        0x8c, 0x0c, 3, 0x97, 1, 0x7e, 0, 0x97, 1, 0x7e, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::array<unsigned char, 27> kickBytes{};
+    std::memcpy(kickBytes.data(), &kick, sizeof(kick));
+    if(kickBytes != expectedKick){
+        std::fputs("ACTION WIRE FAIL: explicit spin-kick heading\n", stderr);
+        return 1;
+    }
     std::puts("ACTION WIRE PASS: fixed 27 bytes, independent direction byte, signed positions, UID and magic ID in both directions");
 }

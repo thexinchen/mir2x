@@ -3,8 +3,14 @@ extends Node
 class RequestMain:
 	extends "res://scripts/game/main.gd"
 	var requests := 0
+	var focus_updates := 0
+	var requested_uid := -1
+	func _update_magic_focus(_grid: Vector2i, _magic_id := 0) -> int:
+		focus_updates += 1
+		return 606
 	func _send_spell_action(_action_type: int, _magic_id: int, _aim: Vector2i, _uid: int) -> bool:
 		requests += 1
+		requested_uid = _uid
 		return true
 
 var failures: Array[String] = []
@@ -29,6 +35,7 @@ func _ready() -> void:
 	_expect(main.call("_magic_ready", fireball, 10001), "unrelated spell does not inherit impulse gate")
 	main.set("_last_impulse_magic_ms", -3000)
 	_expect(main.call("_cast_magic", kick, Vector2i.ZERO) and main.get("requests") == 1, "first kick queues normally")
+	_expect(main.get("focus_updates") == 0 and main.get("requested_uid") == 0, "kick neither refreshes spell focus nor adopts a target UID")
 	_expect(main.get("_last_impulse_magic_ms") >= 0, "kick stamps shared gate even before action executes")
 	_expect(not main.call("_cast_magic", kick, Vector2i.ZERO) and main.get("requests") == 1, "immediate retry does not queue a second kick")
 	_expect(not main.call("_magic_ready", rush), "kick also closes shared rush gate")
