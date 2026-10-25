@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "wait_gate": {
     "check": "0x691738",
@@ -61,7 +61,51 @@
       "u32_offset": 128,
       "helper": "0x6ff670",
       "expression": "(actor_u32_128 >> 30) & 3",
-      "semantic_name": null
+      "semantic_name": "profession",
+      "evidence_function": "0x66f030",
+      "profession_helpers": [
+        {
+          "value": 0,
+          "role": "warrior",
+          "branch": "0x66f070",
+          "vmt_pointer_cell": "0x6c33e4",
+          "vmt": "0x6c3430",
+          "class_name": "TmirZSHelper",
+          "damage_stat_label": "破坏：",
+          "damage_stat_label_va": "0x52c354"
+        },
+        {
+          "value": 1,
+          "role": "wizard",
+          "branch": "0x66f083",
+          "vmt_pointer_cell": "0x6c344c",
+          "vmt": "0x6c3498",
+          "class_name": "TmirFSHelper",
+          "damage_stat_label": "自然：",
+          "damage_stat_label_va": "0x52c364"
+        },
+        {
+          "value": 2,
+          "role": "taoist",
+          "branch": "0x66f096",
+          "vmt_pointer_cell": "0x6c34b4",
+          "vmt": "0x6c3500",
+          "class_name": "TmirDSHelper",
+          "damage_stat_label": "灵魂：",
+          "damage_stat_label_va": "0x52c374"
+        },
+        {
+          "value": 3,
+          "role": "assassin",
+          "branch": "0x66f0a9",
+          "vmt_pointer_cell": "0x6c351c",
+          "vmt": "0x6c3568",
+          "class_name": "TmirCKHelper",
+          "damage_stat_label": "破坏：",
+          "damage_stat_label_va": "0x52c354"
+        }
+      ],
+      "cross_check": "0x52c268 selects destruction/nature/soul damage rows for values 0-or-3/1/2"
     },
     "selected_status_branch": "selector != 0 AND dispatch_magic_id != 232: elapsed > shared_cast_delay",
     "other_branch": "actor_byte_134 bit7 must be clear",
@@ -75,7 +119,30 @@
       "instruction": "0x67d06a",
       "value": 0
     },
-    "note": "Status selector, request pending flag and local animation are different inputs."
+    "note": "Profession, request pending flag and local animation are different inputs; current job bit flags use a different numbering.",
+    "skill_delay_source": {
+      "message": 97,
+      "registration": {
+        "call": "0x691031",
+        "register_function": "0x690d74",
+        "message": 97,
+        "registration_ecx": 6,
+        "handler": "0x6940dc"
+      },
+      "handler": "0x6940dc",
+      "loader": "0x6ab2e8",
+      "record_count_header_offset": 10,
+      "record_count_header_bytes": 2,
+      "record_stride_header_offset": 0,
+      "record_stride_header_bytes": 4,
+      "zero_stride_fallback": "payload_bytes / record_count (signed division in original)",
+      "allocation_bytes": 102,
+      "copied_prefix_max_bytes": 83,
+      "cast_delay_u32_offset": 64,
+      "learned_state_loader": "0x6aadd8 (11-byte records, does not overwrite delay)",
+      "availability": "Server-provided definition prefix; actual per-skill delay values are not recovered from this executable.",
+      "current_metadata": "skill.m2xmeta v2 exports coolDown, not this original delay; do not substitute it or legacy CSV Delay without evidence."
+    }
   },
   "current_transport_gap": {
     "source_snapshots": {
@@ -109,7 +176,8 @@
     "gameplay_wait_gate": "main.gd routes connected CM_ACTION sends through correlated receipts; mir3_request_gate.gd serializes subsequent gameplay checks, preserves committed animation and held input, and scopes callbacks by token/owner/map",
     "local_timeout_callback": "separate from server SM_ERROR; expires pending state and denies one following check",
     "remaining_alignment_work": [
-      "Recover the original actor-status selector meanings and cast-delay state mapping.",
+      "Adapt the now-identified profession selector while preserving current multi-job semantics.",
+      "Recover per-skill server definition delay values and the identity of original exception 232 before enabling the full shared cast gate.",
       "Distinguish acceptance, failure/state correction and owner action broadcasts.",
       "Exercise real packet loss beyond the deterministic timeout boundaries and held/reordered callback fixtures.",
       "Recover the original result payload before equating any status branch with current SM_OK/SM_ERROR."
@@ -118,6 +186,7 @@
   "limits": [
     "This extractor reports evidence; the active CM_ACTION wait gate is implemented in main.gd and mir3_request_gate.gd.",
     "No RTT meaning is inferred for the original timeout global.",
-    "Actor status bit meanings and original result status semantic labels remain unresolved."
+    "Actor byte134 bit7 meaning and original result status semantic labels remain unresolved.",
+    "Profession helper names prove the selector role; they do not recover missing server-supplied delay values or the exception 232 name."
   ]
 }
