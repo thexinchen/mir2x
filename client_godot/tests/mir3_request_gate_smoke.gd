@@ -1,0 +1,55 @@
+extends Node
+
+const Gate = preload("res://scripts/game/mir3_request_gate.gd")
+var failures: Array[String] = []
+
+func _ready() -> void:
+	var gate = Gate.new()
+	_expect(gate.ready(0), "initial idle permits input")
+	var first: int = gate.begin(1000)
+	_expect(not gate.ready(10999) and gate.pending_token == first, "pending before timeout")
+	_expect(not gate.ready(11000) and gate.pending_token == first, "exact 10000ms does not expire")
+	_expect(not gate.ready(11001) and gate.pending_token == 0, "expired check clears but still denies")
+	_expect(gate.ready(11001), "next check after timeout permits")
+	var second: int = gate.begin(12000)
+	_expect(not gate.complete(first) and gate.pending_token == second, "late receipt cannot clear a new request")
+	_expect(gate.complete(second) and gate.ready(12001), "matching receipt releases immediately")
+	var third: int = gate.begin(13000)
+	gate.expire(third, 23000)
+	_expect(gate.pending_token == third, "transport expiry also uses strict boundary")
+	gate.expire(third, 23001)
+	_expect(gate.pending_token == 0 and not gate.ready(23001) and gate.ready(23001), "transport expiry denies one following check")
+	var old: int = gate.begin(24000)
+	var newer: int = gate.begin(24001)
+	_expect(not gate.complete(old) and gate.pending_token == newer, "compound turn/spell tracks latest request")
+	gate.expire(old, 50000)
+	_expect(gate.pending_token == newer, "old timeout cannot expire latest request")
+	gate.reset()
+	var fresh: int = gate.begin(25000)
+	_expect(fresh != newer and not gate.complete(newer) and gate.pending_token == fresh, "scene/session reset invalidates old token generation")
+	gate.reset()
+	_expect(gate.ready(25001), "disconnect/reset releases waiting state")
+	NetworkClient.disconnect_from_server()
+	GameState.player_uid = 101
+	GameState.player_map_uid = 1 << 35
+	var main: Control = load("res://scenes/game/main.tscn").instantiate()
+	add_child(main)
+	main.set_process(false)
+	var live_gate: RefCounted = main.get("_action_request_gate")
+	var live_token: int = live_gate.begin(Time.get_ticks_msec())
+	main.call("_on_action_receipt", NetworkClient.SM_OK, PackedByteArray(), live_token, 202, GameState.player_map_uid)
+	main.call("_on_action_receipt", NetworkClient.SM_OK, PackedByteArray(), live_token, 101, 24 << 35)
+	main.call("_on_action_receipt", NetworkClient.SM_ACTION, PackedByteArray(), live_token, 101, GameState.player_map_uid)
+	_expect(live_gate.pending_token == live_token, "wrong owner/map/non-receipt head cannot release gameplay state")
+	main.call("_on_action_receipt", NetworkClient.SM_ERROR, PackedByteArray(), live_token, 101, GameState.player_map_uid)
+	_expect(live_gate.pending_token == 0, "actual server error is completion rather than a timeout")
+	live_token = live_gate.begin(Time.get_ticks_msec() - 10001)
+	main.call("_on_action_timeout", NetworkClient.SM_ERROR, PackedByteArray(), live_token, 101, GameState.player_map_uid)
+	_expect(not live_gate.ready(Time.get_ticks_msec()) and live_gate.ready(Time.get_ticks_msec()), "gameplay transport-timeout callback preserves one denied check")
+	if failures.is_empty(): print("MIR3 REQUEST GATE PASS: strict 10s, deny expired check, next-check retry, matching/stale receipts, old timeout, compound requests and reset generation")
+	get_tree().quit(0 if failures.is_empty() else 1)
+
+func _expect(value: bool, message: String) -> void:
+	if not value:
+		failures.append(message)
+		push_error(message)

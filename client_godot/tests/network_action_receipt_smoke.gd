@@ -117,6 +117,11 @@ func _run() -> void:
 	if receipts.get("expired", []) != [NetworkClient.SM_ERROR] or NetworkClient.get("_response_callbacks").has(2147483647):
 		_fail("local expiry callback was not removed exactly once")
 		return
+	NetworkClient.get("_response_callbacks")[2147483646] = {"expires": -1, "callback": _receipt.bind("normal-not-timeout"), "timeout_callback": _receipt.bind("distinct-timeout")}
+	NetworkClient.call("_expire_responses")
+	if receipts.has("normal-not-timeout") or receipts.get("distinct-timeout", []) != [NetworkClient.SM_ERROR]:
+		_fail("transport timeout was confused with a server receipt")
+		return
 	print("NETWORK ACTION RECEIPT PASS: correlated completion, rejected move correction, wrong owner/map/type, concurrent IDs, strict 10s expiry slot, local timeout and legacy action compatibility")
 	finished = true
 	NetworkClient.disconnect_from_server()
