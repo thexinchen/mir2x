@@ -1372,6 +1372,9 @@ corof::awaitable<> Player::onCMActionSpell(CMAction cmA)
         case DBCOM_MAGICID(u8"魔法盾"):
         case DBCOM_MAGICID(u8"阴阳法环"):
             {
+                const auto auraIndex = magicID == DBCOM_MAGICID(u8"魔法盾") ? 0 : 1;
+                const auto generation = ++m_auraCastGeneration[auraIndex];
+                const auto buffType = auraIndex == 0 ? BFT_SHIELD : BFT_YINYANG_RING;
                 SMCastMagic smFM;
                 std::memset(&smFM, 0, sizeof(smFM));
 
@@ -1380,16 +1383,22 @@ corof::awaitable<> Player::onCMActionSpell(CMAction cmA)
                 smFM.Magic = magicID;
                 smFM.Speed = MagicSpeed();
 
-                addDelay(800, [this, smFM](bool)
+                addDelay(800, [this, smFM, auraIndex, generation, buffType](bool)
                 {
+                    if(m_auraCastGeneration[auraIndex] != generation){
+                        return;
+                    }
                     dispatchNetPackage(true, SM_CASTMAGIC, smFM);
-                    addDelay(10000, [this](bool)
+                    addDelay(10000, [this, auraIndex, generation, buffType](bool)
                     {
+                        if(m_auraCastGeneration[auraIndex] != generation){
+                            return;
+                        }
                         SMBuff smB;
                         std::memset(&smB, 0, sizeof(smB));
 
                         smB.uid   = UID();
-                        smB.type  = BFT_SHIELD;
+                        smB.type  = buffType;
                         smB.state = BFS_OFF;
                         dispatchNetPackage(true, SM_BUFF, smB);
                     });

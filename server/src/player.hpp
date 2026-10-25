@@ -1,5 +1,6 @@
 #pragma once
 #include <set>
+#include <array>
 #include <deque>
 #include <cstdint>
 #include <cstring>
@@ -79,6 +80,7 @@ class Player final: public BattleObject
         // by implementation client reports action to server, at the same time client present action gfx without wait server's response
         // so for some random action like 攻杀技术, server has to send enable flag to client in advance to show that ``next hit you can use 攻杀技术"
         bool m_nextStrike = false;
+        std::array<uint64_t, 2> m_auraCastGeneration {};
 
     private:
         SDFriendList       m_sdFriendList;

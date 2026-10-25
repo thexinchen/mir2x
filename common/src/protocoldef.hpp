@@ -340,6 +340,7 @@ enum BuffType: int
     BFT_NONE   = 0,
     BFT_BEGIN  = 1,
     BFT_SHIELD = BFT_BEGIN,
+    BFT_YINYANG_RING,
     BFT_END,
 };
 
