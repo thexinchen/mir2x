@@ -1,5 +1,5 @@
 {
-  "schema_version": 7,
+  "schema_version": 8,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "actor_action_translation": {
     "initializer": "0x66cb38",
@@ -207,6 +207,25 @@
     "other_cleanup": "free old scene actors except the local actor and clear scene-owned effect lists",
     "current_adapter": "validated SM_STARTGAMESCENE and map switches clear magic/follow/attack focus and summon spawn blockers",
     "lifecycle_scope": "reinitializing an existing main scene after reconnect also invalidates its previous targeting state"
+  },
+  "removed_actor_target_cleanup": {
+    "function": "0x679674",
+    "actor_removal": "0x6799b2",
+    "matching_current_pointer_checks": [
+      "0x6799be",
+      "0x6799d0",
+      "0x6799e2"
+    ],
+    "matching_history_uid_check": "0x679a08",
+    "history_clear": "0x679a5b",
+    "rule": "clear only pointers matching the removed actor; history comparison uses actor UID",
+    "current_adapter": "GameState.remove_creature emits creature_removed; main clears matching focus, unsent chase and summon blockers without truncating its committed movement timer",
+    "paths": [
+      "current-map SM_OFFLINE",
+      "completed WorldRenderer corpse fade"
+    ],
+    "reentry": "the same UID returning later must not restore old magic history without a fresh target selection",
+    "limits": "Does not reconstruct original per-skill history permission or split the current/history caches."
   },
   "wait_gate": {
     "check": "0x691738",
@@ -479,7 +498,11 @@
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "d5c0458951d345af9b970075003cb3c67f746b340eac98bd1f9a05e2fe76abd0"
+        "sha256_lf": "2df3e2ec3eeb082a3cb0b71aae83a208bfede8e239b514bff53f3ae16f562baa"
+      },
+      "godot_game_state": {
+        "file": "game_state.gd",
+        "sha256_lf": "cb249e5ee0f8bf91fe3238174555dfc568515871f3c80fd84b5b4902c0cc0ff8"
       },
       "godot_request_gate": {
         "file": "mir3_request_gate.gd",

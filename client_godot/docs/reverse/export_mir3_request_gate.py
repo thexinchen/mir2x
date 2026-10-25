@@ -132,7 +132,7 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
     if read_va(sample, 0x6AB316, 5) != bytes.fromhex("bf53000000") or read_va(sample, 0x6AB365, 5) != bytes.fromhex("b866000000"):
         raise ValueError("unexpected skill definition copy/allocation limits")
     sources = {}
-    for label, path in [("godot_network", network_path), ("native_playerop", playerop_path), ("native_playernet", playernet_path), ("godot_main", main_path), ("godot_request_gate", main_path.parent / "mir3_request_gate.gd")]:
+    for label, path in [("godot_network", network_path), ("native_playerop", playerop_path), ("native_playernet", playernet_path), ("godot_main", main_path), ("godot_game_state", main_path.parent / "game_state.gd"), ("godot_request_gate", main_path.parent / "mir3_request_gate.gd")]:
         raw = path.read_text(encoding="utf-8").encode("utf-8")
         sources[label] = {"file": path.name, "sha256_lf": hashlib.sha256(raw).hexdigest()}
     if "_send_request(CM_ACTION, action_data, false, callback, 10001, timeout_callback)" not in network_path.read_text(encoding="utf-8"):
@@ -140,7 +140,7 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
     if "postNetMessage(processed ? SM_OK : SM_ERROR, respID)" not in playernet_path.read_text(encoding="utf-8"):
         raise ValueError("current server snapshot lacks correlated processing receipts")
     return {
-        "schema_version": 7, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 8, "sample_sha256": EXPECTED_SAMPLE,
         "actor_action_translation": extract_action_translation(sample),
         "scene_target_reset": {
             "scene_setup": "0x6865d4", "call": "0x68669a", "function": "0x676fa4",
@@ -149,6 +149,16 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
             "other_cleanup": "free old scene actors except the local actor and clear scene-owned effect lists",
             "current_adapter": "validated SM_STARTGAMESCENE and map switches clear magic/follow/attack focus and summon spawn blockers",
             "lifecycle_scope": "reinitializing an existing main scene after reconnect also invalidates its previous targeting state",
+        },
+        "removed_actor_target_cleanup": {
+            "function": "0x679674", "actor_removal": "0x6799b2",
+            "matching_current_pointer_checks": ["0x6799be", "0x6799d0", "0x6799e2"],
+            "matching_history_uid_check": "0x679a08", "history_clear": "0x679a5b",
+            "rule": "clear only pointers matching the removed actor; history comparison uses actor UID",
+            "current_adapter": "GameState.remove_creature emits creature_removed; main clears matching focus, unsent chase and summon blockers without truncating its committed movement timer",
+            "paths": ["current-map SM_OFFLINE", "completed WorldRenderer corpse fade"],
+            "reentry": "the same UID returning later must not restore old magic history without a fresh target selection",
+            "limits": "Does not reconstruct original per-skill history permission or split the current/history caches.",
         },
         "wait_gate": {
             "check": "0x691738", "mark_sent": "0x691260", "clear": "0x693c4c",
