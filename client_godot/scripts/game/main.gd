@@ -85,6 +85,7 @@ var _ground_input := Mir3MovementScript.new()
 var _ground_path_active := false
 var _ground_path_goal := Vector2i(-1, -1)
 var _last_attack_ms := -10000
+var _last_npc_dialogue_ms := -1501
 var _pending_spell_action: Dictionary = {}
 var _chase_target_uid := 0
 var _follow_focus_uid := 0
@@ -413,7 +414,8 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		if focus_uid != 0:
 			var creature: Dictionary = game_state.get_creature(focus_uid)
 			if creature.get("type", 0) == 3:
-				NetworkClient.send_npc_event(focus_uid, "", "_RSVD_NAME_ENTER_90360178872")
+				_release_ground_input()
+				_request_npc_dialogue(focus_uid)
 			elif creature.get("type", 0) == 1:
 				_start_chase(focus_uid)
 			return
@@ -430,6 +432,18 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 				_start_mining(grid)
 			else:
 				_begin_ground_input(event, grid)
+
+
+func _request_npc_dialogue(uid: int, now_ms := -1) -> bool:
+	var now: int = Time.get_ticks_msec() if now_ms < 0 else now_ms
+	# 67B05F rejects held-repeat dispatch; this entry is reached only by the
+	# actual click branch. 67B073/67B079 reject elapsed <= 1500 ms globally,
+	# including when the user switches to another NPC.
+	if now - _last_npc_dialogue_ms <= 1500:
+		return false
+	_last_npc_dialogue_ms = now
+	NetworkClient.send_npc_event(uid, "", "_RSVD_NAME_ENTER_90360178872")
+	return true
 
 
 func _begin_ground_input(event: InputEventMouseButton, grid: Vector2i) -> void:
