@@ -732,6 +732,7 @@ struct AMCORecord
         uint8_t gender : 1;
         uint8_t job    : 3;
         uint32_t Level;
+        uint8_t auraMask;
     };
 
     struct _AMCORecord_NPC

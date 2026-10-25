@@ -464,6 +464,18 @@ corof::awaitable<> Player::on_AM_CORECORD(const ActorMsgPack &mpk)
     }
 
     postNetMessage(SM_CORECORD, smCOR);
+    // Keep the client wire layout unchanged. Replay the two aura states after
+    // the actor record so the receiver can resolve their target immediately.
+    if(uidf::isPlayer(amCOR.UID) && amCOR.mapUID == mapUID()){
+        for(uint32_t index = 0; index < 2; ++index){
+            const SMBuff buff {
+                .uid = amCOR.UID,
+                .type = index == 0 ? BFT_SHIELD : BFT_YINYANG_RING,
+                .state = (amCOR.Player.auraMask & (1U << index)) ? BFS_ON : BFS_OFF,
+            };
+            postNetMessage(SM_BUFF, buff);
+        }
+    }
     return {};
 }
 

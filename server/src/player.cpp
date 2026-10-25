@@ -641,6 +641,14 @@ void Player::reportCO(uint64_t toUID)
     amCOR.Player.gender = gender();
     amCOR.Player.job = job();
     amCOR.Player.Level = level();
+    if(!m_sdHealth.dead()){
+        const auto now = std::chrono::steady_clock::now();
+        for(size_t index = 0; index < m_auraExpiresAt.size(); ++index){
+            if(now < m_auraExpiresAt[index]){
+                amCOR.Player.auraMask |= 1U << index;
+            }
+        }
+    }
     m_actorPod->post(toUID, {AM_CORECORD, amCOR});
 }
 
@@ -692,6 +700,7 @@ void Player::onDie()
     for(auto &generation: m_auraCastGeneration){
         ++generation;
     }
+    m_auraExpiresAt = {};
     m_luaRunner->spawn(m_threadKey++, "_RSVD_NAME_trigger(SYS_ON_DIE)");
     const ActionDie die
     {
@@ -1393,12 +1402,14 @@ corof::awaitable<> Player::onCMActionSpell(CMAction cmA)
                     if(m_auraCastGeneration[auraIndex] != generation || m_sdHealth.dead() || mapUID() != smFM.mapUID){
                         return;
                     }
+                    m_auraExpiresAt[auraIndex] = std::chrono::steady_clock::now() + std::chrono::seconds(10);
                     dispatchNetPackage(true, SM_CASTMAGIC, smFM);
                     addDelay(10000, [this, auraIndex, generation, buffType](bool)
                     {
                         if(m_auraCastGeneration[auraIndex] != generation){
                             return;
                         }
+                        m_auraExpiresAt[auraIndex] = {};
                         SMBuff smB;
                         std::memset(&smB, 0, sizeof(smB));
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <set>
 #include <array>
+#include <chrono>
 #include <deque>
 #include <cstdint>
 #include <cstring>
@@ -81,6 +82,7 @@ class Player final: public BattleObject
         // so for some random action like 攻杀技术, server has to send enable flag to client in advance to show that ``next hit you can use 攻杀技术"
         bool m_nextStrike = false;
         std::array<uint64_t, 2> m_auraCastGeneration {};
+        std::array<std::chrono::steady_clock::time_point, 2> m_auraExpiresAt {};
 
     private:
         SDFriendList       m_sdFriendList;
