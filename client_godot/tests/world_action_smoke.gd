@@ -3805,6 +3805,9 @@ func _test_world_displacement(main: Control, resources: RefCounted) -> bool:
 	if GameState.player_x != 22 or GameState.player_y != 21 or GameState.player_action_step != 2:
 		_fail("local ACTION_MOVE did not retain its two-grid Hero movement state")
 		return false
+	# Complete the authority-driven move before starting the independent mine
+	# fixture; a real mine packet during the move now waits in its action queue.
+	main.call("_process_player_action", 0.61)
 	GameState.player_x = 20
 	GameState.player_y = 21
 	main.call("_on_server_message", NetworkClient.SM_ACTION, _sm_action(101, 202, {
