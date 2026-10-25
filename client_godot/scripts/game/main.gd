@@ -423,7 +423,9 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		_follow_focus_uid = 0
 		if focus_uid != 0:
 			_follow_focus_uid = focus_uid
-		else:
+		# 67B423–67B4DE: an actor hit without Ctrl/Alt still falls through
+		# to the ordinary ground turn/run request; focus is not a stop action.
+		if focus_uid == 0 or (not event.ctrl_pressed and not event.alt_pressed):
 			_begin_ground_input(event, grid)
 	elif event.button_index == MOUSE_BUTTON_LEFT:
 		# The hero's hit rectangle is useful to team targeting, but must not

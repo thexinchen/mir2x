@@ -4029,8 +4029,8 @@ func _test_exact_frame_input(main: Control) -> bool:
 	main.call("_handle_mouse_click", right_click)
 	var path_after_right_click: Array[Vector2i] = main.get("_move_path")
 	if main.get("_attack_focus_uid") != 0 or main.get("_follow_focus_uid") != 707 \
-			or path_after_right_click.size() != 2 or path_after_right_click[0] != Vector2i(1, 0) or path_after_right_click[1] != Vector2i(2, 0):
-		_fail("right-click focused creature changed state: attack=%s follow=%s path=%s" % [main.get("_attack_focus_uid"), main.get("_follow_focus_uid"), main.get("_move_path")])
+			or not path_after_right_click.is_empty() or main.get("_ground_input").button != MOUSE_BUTTON_RIGHT:
+		_fail("right-click focused creature did not keep focus while replacing the old route: attack=%s follow=%s path=%s" % [main.get("_attack_focus_uid"), main.get("_follow_focus_uid"), main.get("_move_path")])
 		return false
 	main.call("_cancel_movement")
 	if main.get("_follow_focus_uid") != 707:

@@ -159,3 +159,16 @@ python3 client_godot/tests/run_network_directional_attack.py --godot /home/czx/g
 ```bash
 xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_movement_rejection_smoke.tscn
 ```
+
+## 批次 13：普通右键命中角色后仍处理移动（2026-10-26）
+
+原版 `67B398` 在 `67B423` 检查命中对象，仅在 Ctrl（标志4）或 Alt（标志2）分支执行额外对象操作。不带这两个修饰键时，存在对象也继续到 `67B4DE` 的屏幕转格、近距离转向或远距离跑动。`67777C` 是命中对象查询，不能把它的非空结果视为取消走路。
+
+Godot 原先右键命中任何角色都只设置 `_follow_focus_uid`，不进入地面输入。现在普通右键在保留原有高亮的同时调用 `_begin_ground_input`，替换旧路线，接受正常转向/跑动和动作提交层的地形、占用检查。高亮本身是现有 mir2x UI 适配，未声称恢复了原版全部焦点状态。Ctrl/Alt 对象特殊操作尚未恢复，本批不新增它们的语义。
+
+104 `mir3_right_actor_smoke.tscn` 对怪物、人物、NPC 三种对象分别验证点击坐标进入地面右键请求、旧路径被替换、首个两格跑步决策合法；Xvfb 窗口模式通过 `Input.parse_input_event` 实际右键点中 NPC 的命中框，验证人物从(309,100)跑到(311,100)。完整 `world_action_smoke.tscn` 回归通过，其原“右键对象保持旧路径”断言已按本次原版证据改为“保持高亮并替换旧路径”。这些是客户端场景与窗口输入验证，不包含三类角色的真实联网点击回放。
+
+```bash
+/home/czx/godot --headless --path client_godot res://tests/mir3_right_actor_smoke.tscn
+xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/mir3_right_actor_smoke.tscn
+```
