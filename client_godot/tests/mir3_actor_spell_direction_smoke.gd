@@ -31,6 +31,7 @@ func _ready() -> void:
 	main.call("_send_spell_action", 9, fireball, Vector2i(12, 16), 0)
 	_expect(GameState.player_direction == 5, "unowned spell keeps sector direction instead of actor near-axis rule")
 	GameState.remove_creature(606)
+	main.call("_process_player_action", 10.0)
 	GameState.player_direction = 7
 	main.call("_send_spell_action", 9, fireball, Vector2i(12, 16), 606)
 	_expect(GameState.player_direction == 7 and int(GameState.magic_effects.back().get("aimUID", -1)) == 0, "removed actor does not supply a direction")

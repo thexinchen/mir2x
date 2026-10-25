@@ -1307,6 +1307,7 @@ func _test_magic_actions(main: Control, resources: RefCounted, physical_id: int)
 		return false
 	GameState.magic_cast_times.erase(firewall_id)
 	GameState.learned_magic = [{"magicID": firewall_id, "exp": 0}]
+	main.call("_process_player_action", 10.0)
 	GameState.magic_keys = {firewall_id: 120}
 	var key_event := InputEventKey.new()
 	key_event.unicode = 120
@@ -1319,6 +1320,7 @@ func _test_magic_actions(main: Control, resources: RefCounted, physical_id: int)
 		return false
 	GameState.magic_cast_times.erase(firewall_id)
 	GameState.player_direction = 5
+	main.call("_process_player_action", 10.0)
 	var invalid_ground_effect_count := GameState.magic_effects.size()
 	if not main.call("_cast_magic", firewall_id, Vector2i(-1, -1)) \
 			or GameState.magic_effects.size() != invalid_ground_effect_count + 1:
@@ -1328,6 +1330,7 @@ func _test_magic_actions(main: Control, resources: RefCounted, physical_id: int)
 	if GameState.player_direction != 8 or int(invalid_ground_effect.get("direction", -1)) != 8:
 		_fail("ground spell omitted original turn toward the clamped target: player=%d effect=%s" % [GameState.player_direction, invalid_ground_effect])
 		return false
+	main.call("_process_player_action", 10.0)
 	if not main.call("_cast_magic", shield_id, Vector2i(12, 12)) or GameState.magic_effects.back().get("aimUID", 0) != GameState.player_uid:
 		_fail("self spell did not target player UID")
 		return false
@@ -1361,6 +1364,7 @@ func _test_magic_actions(main: Control, resources: RefCounted, physical_id: int)
 		_fail("cooldown feedback diverged from original error log: %s" % [cooldown_log])
 		return false
 	GameState.magic_cast_times.erase(fireball_id)
+	main.call("_process_player_action", 10.0)
 	if not main.call("_cast_magic", fireball_id, Vector2i(12, 10)) or GameState.magic_effects.back().get("aimUID", 0) != 505:
 		_fail("target spell did not retain focused creature UID")
 		return false
@@ -1500,6 +1504,7 @@ func _test_magic_panel_hotkey_precedence(main: Control, resources: RefCounted) -
 	GameState.learned_magic = [{"magicID": firewall_id, "exp": 0}]
 	GameState.magic_keys = {firewall_id: 104}
 	GameState.magic_cast_times.erase(firewall_id)
+	main.call("_process_player_action", 10.0)
 	var h_key := InputEventKey.new()
 	h_key.keycode = KEY_H
 	h_key.unicode = 104
@@ -1533,6 +1538,7 @@ func _test_magic_panel_hotkey_precedence(main: Control, resources: RefCounted) -
 		_fail("shifted digit bypassed the original HUD-first quick-bar route")
 		return false
 	quick_bar.hide()
+	main.call("_process_player_action", 10.0)
 	main.call("_unhandled_input", shifted_digit)
 	if GameState.magic_effects.size() != effect_count + 1:
 		_fail("hidden quick bar did not restore the original getKeyChar(false) shifted-digit magic route")
