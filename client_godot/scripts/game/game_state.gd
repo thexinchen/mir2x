@@ -694,11 +694,11 @@ func add_cast_magic_attachment(data: Dictionary, magic_name: String) -> bool:
 	match magic_name:
 		"魔法盾":
 			effect["target_uid"] = data.get("uid", 0)
-			effect["cycles"] = 2
+			effect["cycles"] = -1
 			effect["kind"] = "shield"
 		"阴阳法环":
 			effect["target_uid"] = data.get("uid", 0)
-			effect["cycles"] = 2
+			effect["cycles"] = -1
 			effect["kind"] = "yin_yang_ring"
 		"雷电术", "沃玛教主_雷电术":
 			effect["target_uid"] = data.get("aimUID", 0)
@@ -710,6 +710,12 @@ func add_cast_magic_attachment(data: Dictionary, magic_name: String) -> bool:
 		return false
 	if effect.target_uid != player_uid and not creatures.has(effect.target_uid):
 		return false
+	if effect.cycles == -1:
+		var remaining: Array = []
+		for existing in attached_magic_effects:
+			if existing.get("target_uid", 0) != effect.target_uid or existing.get("magicID", 0) != effect.magicID:
+				remaining.append(existing)
+		attached_magic_effects = remaining
 	attached_magic_effects.append(effect)
 	state_changed.emit()
 	return true

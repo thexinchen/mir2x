@@ -504,14 +504,15 @@ func _resolve_attached_magic(now: int) -> Dictionary:
 		var speed := maxi(1, meta[4])
 		var cycle_duration := maxi(100, roundi(meta[2] * 1000.0 / (10.0 * speed / 100.0)))
 		var elapsed := maxi(0, now - int(effect.get("start_time", now)))
-		var cycles := maxi(1, effect.get("cycles", 1))
-		if elapsed >= cycle_duration * cycles:
+		var cycles: int = effect.get("cycles", 1)
+		if cycles >= 0 and elapsed >= cycle_duration * maxi(1, cycles):
 			if effect.get("kind", "") != "shield_hit":
 				continue
 			effect["stage"] = MAGIC_STAGE_RUN
 			effect["kind"] = "shield"
 			effect["start_time"] = int(effect.get("start_time", now)) + cycle_duration
-			effect["cycles"] = 2
+			effect["cycles"] = -1
+			effect["loop_only"] = true
 			stage = MAGIC_STAGE_RUN
 			meta = actor_resource.magic_layout(magic_id, stage)
 			if meta.is_empty() or meta[2] <= 0:
@@ -519,15 +520,25 @@ func _resolve_attached_magic(now: int) -> Dictionary:
 			speed = maxi(1, meta[4])
 			cycle_duration = maxi(100, roundi(meta[2] * 1000.0 / (10.0 * speed / 100.0)))
 			elapsed = maxi(0, now - int(effect.start_time))
-			cycles = 2
-		var cycle := floori(float(elapsed) / cycle_duration)
+			cycles = -1
+		var in_loop := false
+		var loop_elapsed := 0
+		if cycles < 0 and (effect.get("loop_only", false) or elapsed >= cycle_duration):
+			var loop_meta: PackedInt32Array = actor_resource.magic_loop_layout(magic_id, stage)
+			if not loop_meta.is_empty() and loop_meta[2] > 0:
+				loop_elapsed = elapsed if effect.get("loop_only", false) else elapsed - cycle_duration
+				elapsed = loop_elapsed
+				meta = loop_meta
+				speed = maxi(1, meta[4])
+				cycle_duration = maxi(100, roundi(meta[2] * 1000.0 / (10.0 * speed / 100.0)))
+				in_loop = true
 		var cycle_elapsed := elapsed % cycle_duration
 		var absolute_frame := floori(float(cycle_elapsed) / 1000.0 * 10.0 * speed / 100.0)
 		var alpha_mod := 1.0
 		if effect.get("kind", "") in ["shield", "shield_hit"]:
 			alpha_mod = 240.0 / 255.0
-		elif effect.get("kind", "") == "yin_yang_ring" and cycle == 1:
-			alpha_mod = maxf(absf(cos(float(cycle_elapsed) / 800.0)), 32.0 / 255.0)
+		elif effect.get("kind", "") == "yin_yang_ring" and in_loop:
+			alpha_mod = maxf(absf(cos(float(loop_elapsed) / 800.0)), 32.0 / 255.0)
 		var resolved := {
 			"magic_id": magic_id,
 			"kind": effect.get("kind", ""),

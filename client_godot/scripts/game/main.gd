@@ -127,6 +127,7 @@ const MAP_OBJECT_MAX_WIDTH := 3
 const MAP_OBJECT_MAX_HEIGHT := 25
 const U32_MASK := 0xFFFFFFFF
 const BUFF_TYPE_SHIELD := 1
+const BUFF_TYPE_YINYANG_RING := 2
 const BUFF_STATE_OFF := 2
 
 const SWING_MAGIC_NAMES := ["刺杀剑术", "烈火剑法", "翔空剑法", "莲月剑法", "半月弯刀", "十方斩"]
@@ -3174,14 +3175,15 @@ func _handle_buff_id_list(payload: PackedByteArray) -> void:
 
 func _handle_buff(payload: PackedByteArray) -> void:
 	var data := Protocol.decode_sm_buff(payload)
-	if data.get("type", 0) != BUFF_TYPE_SHIELD or data.get("state", 0) != BUFF_STATE_OFF:
+	var buff_type: int = data.get("type", 0)
+	if buff_type not in [BUFF_TYPE_SHIELD, BUFF_TYPE_YINYANG_RING] or data.get("state", 0) != BUFF_STATE_OFF:
 		return
 	var uid: int = data.get("uid", 0)
 	if uid != game_state.player_uid:
 		var creature: Dictionary = game_state.get_creature(uid)
 		if creature.get("type", 0) != 2:
 			return
-	var shield_id: int = _resources.magic_id("魔法盾")
+	var shield_id: int = _resources.magic_id("魔法盾" if buff_type == BUFF_TYPE_SHIELD else "阴阳法环")
 	if shield_id == 0:
 		return
 	var remaining: Array = []
