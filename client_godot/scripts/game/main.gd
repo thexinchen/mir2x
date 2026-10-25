@@ -716,10 +716,25 @@ func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 	if magic_name in SELF_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, Vector2i(game_state.player_x, game_state.player_y), game_state.player_uid)
 	if magic_name in GROUND_MAGIC_NAMES:
-		return _send_spell_action(9, magic_id, mouse_grid, 0)
+		return _send_spell_action(9, magic_id, _ground_spell_grid(mouse_grid, magic_name == "瞬息移动"), 0)
 	if magic_name in TARGET_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, mouse_grid, focus_uid)
 	return false
+
+
+func _ground_spell_grid(mouse_grid: Vector2i, force_front := false) -> Vector2i:
+	var target := mouse_grid
+	var map: RefCounted = world_renderer.world_resource
+	# 67CB50–67CBCC / 67CD89–67CE05 clamp before the same-cell step.
+	if map.width > 0 and map.height > 0:
+		target = Vector2i(clampi(target.x, 0, map.width - 1), clampi(target.y, 0, map.height - 1))
+	var origin := Vector2i(game_state.player_x, game_state.player_y)
+	# 67CE88 also overrides legacy spell 21 (瞬息移动) with a front cell.
+	if force_front or target == origin:
+		var facing := int(game_state.player_direction)
+		if facing >= 1 and facing <= 8:
+			target = origin + Mir3MovementScript.DIRECTIONS[facing - 1]
+	return target
 
 
 func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
