@@ -826,6 +826,9 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 		})
 	elif direction_override >= 1 and direction_override <= 8:
 		direction = direction_override
+	elif action_type == 9 and aim_uid != 0 and aim_uid != game_state.player_uid:
+		# 67CADF / 67CEF2 use 6FEC28 for actor targets, not 6FEE68 sectors.
+		direction = Mir3MovementScript.direction(Vector2i(game_state.player_x, game_state.player_y), target_grid) + 1
 	else:
 		var can_turn: bool = true
 		# C++ ActionSpell only inserts a turn for a live UID target or a
