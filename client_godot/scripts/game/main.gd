@@ -806,6 +806,10 @@ func _ground_spell_grid(mouse_grid: Vector2i, force_front := false) -> Vector2i:
 
 
 func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
+	# 67D563 -> 68F640 -> 6DB938 rejects ordinary casts while another
+	# committed action is still active. Keep the separate walking brake path.
+	if action_type == 9 and (_pickup_action_timer >= 0.0 or (game_state.player_action_type not in [2, 3, 5] and _player_action_timer >= 0.0)):
+		return false
 	if action_type == 9 and not _action_request_ready():
 		return false
 	# 67D5A7 stamps ordinary cast acceptance before movement braking/enqueueing.
