@@ -144,8 +144,8 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
         "actor_action_translation": extract_action_translation(sample),
         "scene_target_reset": {
             "scene_setup": "0x6865d4", "call": "0x68669a", "function": "0x676fa4",
-            "cleared_pointer_globals": ["0x729c90", "0x7294f0", "0x72999c", "0x729ce4"],
-            "assignments": ["0x676ff7", "0x677000", "0x677009", "0x677012"],
+            "cleared_pointer_globals": ["0x729c90", "0x7294f0", "0x72999c", "0x729ce4", "0x729d20"],
+            "assignments": ["0x676ff7", "0x677000", "0x677009", "0x677012", "0x67701b"],
             "other_cleanup": "free old scene actors except the local actor and clear scene-owned effect lists",
             "current_adapter": "validated SM_STARTGAMESCENE and map switches clear magic/follow/attack focus and summon spawn blockers",
             "lifecycle_scope": "reinitializing an existing main scene after reconnect also invalidates its previous targeting state",
