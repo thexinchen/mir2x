@@ -452,6 +452,12 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		# ground turn/run request. Alt's chat prefill is not a stop action.
 		if focus_uid == 0 or not event.ctrl_pressed:
 			_begin_ground_input(event, grid)
+		elif _ground_input.button == 0:
+			# 66DBA7/65F784 marks held repeats; 67B438 then skips the
+			# one-shot Ctrl actor request and falls through to ground movement.
+			# Retain the press without disturbing an existing route or left hold.
+			_ground_input.press(MOUSE_BUTTON_RIGHT, grid, true, event.shift_pressed, event.alt_pressed)
+			_ground_input.pending = false
 	elif event.button_index == MOUSE_BUTTON_LEFT:
 		# The hero's hit rectangle is useful to team targeting, but must not
 		# swallow the current-cell ground operation after that mode is handled.
