@@ -115,7 +115,7 @@ const U32_MASK := 0xFFFFFFFF
 const BUFF_TYPE_SHIELD := 1
 const BUFF_STATE_OFF := 2
 
-const SWING_MAGIC_NAMES := ["烈火剑法", "翔空剑法", "莲月剑法", "半月弯刀", "十方斩"]
+const SWING_MAGIC_NAMES := ["刺杀剑术", "烈火剑法", "翔空剑法", "莲月剑法", "半月弯刀", "十方斩"]
 const TARGET_MAGIC_NAMES := [
 	"圣言术", "治愈术", "困魔咒", "施毒术", "云寂术", "回生术", "雷电术", "火球术", "大火球", "冰咆哮",
 	"龙卷风", "霹雳掌", "风掌", "击风", "月魂断玉", "月魂灵波", "斗转星移", "爆裂火焰", "地狱雷光", "怒神霹雳",
@@ -976,7 +976,7 @@ func _send_attack_action(target_uid: int, ground_target := Vector2i(-1, -1)) -> 
 		"aimX": tx,
 		"aimY": ty,
 		"aimUID": target_uid,
-		"magicID": _consume_attack_magic_id(),
+		"magicID": _consume_attack_magic_id(_direction_to(game_state.player_x, game_state.player_y, tx, ty)),
 	}
 	var action_data := Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action)
 	NetworkClient.send_action(action_data)
@@ -1002,20 +1002,43 @@ func _send_mine_action() -> void:
 	_player_action_timer = _action_duration(14, action.speed, 2)
 
 
-func _consume_attack_magic_id() -> int:
+func _consume_attack_magic_id(facing := 0) -> int:
 	if _next_strike:
 		_next_strike = false
 		var next_magic: int = _resources.magic_id("攻杀剑术")
 		if next_magic > 0:
 			return next_magic
-	for magic_name in ["莲月剑法", "翔空剑法", "烈火剑法", "十方斩", "半月弯刀"]:
+	for magic_name in ["莲月剑法", "翔空剑法", "烈火剑法"]:
 		var swing_magic: int = _resources.magic_id(magic_name)
 		if swing_magic > 0 and bool(_swing_magic.get(swing_magic, false)):
-			if magic_name in ["莲月剑法", "翔空剑法", "烈火剑法"]:
-				_swing_magic[swing_magic] = false
+			_swing_magic[swing_magic] = false
+			return swing_magic
+	# 677EA3–677EBC / 67B760: persistent thrust requires a live attackable
+	# actor exactly two cells ahead; charged strikes above keep priority.
+	var thrust: int = _resources.magic_id("刺杀剑术")
+	if bool(_swing_magic.get(thrust, false)) and _has_learned_magic(thrust) and _thrust_target_ahead(facing):
+		return thrust
+	for magic_name in ["十方斩", "半月弯刀"]:
+		var swing_magic: int = _resources.magic_id(magic_name)
+		if swing_magic > 0 and bool(_swing_magic.get(swing_magic, false)):
 			return swing_magic
 	var physical_magic: int = _resources.magic_id("物理攻击")
 	return physical_magic
+
+
+func _thrust_target_ahead(facing: int) -> bool:
+	if facing < 1 or facing > 8:
+		return false
+	var target: Vector2i = Vector2i(game_state.player_x, game_state.player_y) + Mir3MovementScript.DIRECTIONS[facing - 1] * 2
+	for uid in game_state.creatures:
+		if int(uid) == game_state.player_uid:
+			continue
+		var actor: Dictionary = game_state.creatures[uid]
+		if int(actor.get("type", 0)) not in [1, 2] or int(actor.get("action_type", 2)) == 13:
+			continue
+		if Vector2i(actor.get("x", -1), actor.get("y", -1)) == target:
+			return true
+	return false
 
 
 func _magic_ready(magic_id: int) -> bool:
