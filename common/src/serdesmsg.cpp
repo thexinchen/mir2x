@@ -460,7 +460,8 @@ void SDInventory::merge(uint32_t itemID, uint32_t fromSeqID, uint32_t toSeqID)
 bool SDMagicKeyList::setMagicKey(uint32_t magicID, char key)
 {
     fflassert(DBCOM_MAGICRECORD(magicID));
-    fflassert((key >= 'a' && key <= 'z') || (key >= '0' && key <= '9'));
+    // Mir3 F1-F12: 49-60; Shift-F1-F12: 65-76. Keep legacy 0-9/a-z.
+    fflassert((key >= 'a' && key <= 'z') || (key >= '0' && key <= '<') || (key >= 'A' && key <= 'L'));
 
     bool changed = false;
     for(auto p = keyList.begin(); p != keyList.end();){
