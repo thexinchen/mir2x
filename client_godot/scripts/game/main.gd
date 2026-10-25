@@ -7,6 +7,7 @@ const Protocol = preload("res://scripts/network/protocol.gd")
 const CerealReader = preload("res://scripts/network/cereal_reader.gd")
 const ActorResourceScript = preload("res://scripts/game/actor_resource.gd")
 const WorldPathfinderScript = preload("res://scripts/game/world_pathfinder.gd")
+const Mir3TargetLockScript = preload("res://scripts/game/mir3_target_lock.gd")
 const Mir3MovementScript = preload("res://scripts/game/mir3_movement.gd")
 const RuntimeConfigPanelScript = preload("res://scripts/game/runtime_config_panel.gd")
 const MINIMAP_PANEL_PATH := "res://scenes/game/panels/minimap.tscn"
@@ -78,6 +79,7 @@ var _resources: RefCounted = ActorResourceScript.new()
 var _pathfinder: RefCounted = WorldPathfinderScript.new()
 var _next_strike := false
 var _swing_magic: Dictionary = {}
+var _locked_magic_target_uid := 0
 var _magic_focus_uid := 0
 var _last_impulse_magic_ms := -3000
 var _last_magic_request_ms := -500
@@ -209,6 +211,10 @@ func _process(delta: float) -> void:
 	if map_name.is_empty():
 		map_name = "未知地图"
 	location_label.text = "%s: %d %d" % [map_name, game_state.player_x, game_state.player_y]
+	var locked_uid := _valid_locked_magic_target()
+	if locked_uid != 0:
+		# 672413/672444 displays the valid locked actor's name.
+		location_label.text += "  锁定: %s" % game_state.get_creature(locked_uid).get("name", str(locked_uid))
 	
 	_process_ping()
 	
@@ -289,6 +295,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			quick_bar.call("activate_slot", quick_slot, MOUSE_BUTTON_RIGHT)
 			get_viewport().set_input_as_handled()
 			return
+	if event is InputEventKey and event.keycode == KEY_QUOTELEFT and _magic_target_lock_enabled():
+		_toggle_magic_target_lock()
+		get_viewport().set_input_as_handled()
+		return
 	if _player_input_blocked() or not _player_forced_action_queue.is_empty():
 		if event is InputEventKey:
 			if event.keycode == KEY_ESCAPE:
@@ -558,6 +568,8 @@ func _on_creature_removed(uid: int) -> void:
 	if uid == 0:
 		return
 	# 6799BE–679A5B clears matching target pointers when an actor leaves.
+	if _locked_magic_target_uid == uid:
+		_locked_magic_target_uid = 0
 	if _magic_focus_uid == uid:
 		_magic_focus_uid = 0
 	if _follow_focus_uid == uid:
@@ -748,6 +760,29 @@ func _mouse_grid() -> Vector2i:
 	return world_renderer.grid_from_screen(int(mouse.x), int(mouse.y))
 
 
+func _magic_target_lock_enabled() -> bool:
+	var data: PackedByteArray = game_state.runtime_config.get(49, PackedByteArray())
+	return data.size() >= 2 and data[0] != 0 and data[1] != 0
+
+
+func _toggle_magic_target_lock() -> void:
+	# 660BE8: same/empty hover clears; a different corpse leaves the lock.
+	var hovered: int = world_renderer.focus_uid_at_screen(get_viewport().get_mouse_position(), false, true)
+	if hovered == 0 or hovered == _locked_magic_target_uid:
+		_locked_magic_target_uid = 0
+	else:
+		var actor: Dictionary = game_state.get_creature(hovered)
+		if not actor.is_empty() and actor.get("action_type", 0) != 13:
+			_locked_magic_target_uid = hovered
+
+
+func _valid_locked_magic_target() -> int:
+	if not _magic_target_lock_enabled() or _locked_magic_target_uid == 0:
+		return 0
+	var actor: Dictionary = game_state.get_creature(_locked_magic_target_uid)
+	return _locked_magic_target_uid if not actor.is_empty() and actor.get("action_type", 0) != 13 else 0
+
+
 func _update_magic_focus(_mouse_grid: Vector2i, magic_id := 0) -> int:
 	# 67CA30 / 67CD24 allow the currently hovered corpse for legacy spell 77.
 	# The history fallback below still requires a live actor (67CA7D/67CD08).
@@ -789,6 +824,12 @@ func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 		_last_impulse_magic_ms = Time.get_ticks_msec()
 		_last_magic_request_ms = _last_impulse_magic_ms
 		return _send_spell_action(12, magic_id, mouse_grid, focus_uid)
+	# 67C98A/67CCB9 routes eligible self/ground spells through the same
+	# live scene-member lock override as target spells. Keep special commands out.
+	if magic_name in SELF_MAGIC_NAMES or magic_name in GROUND_MAGIC_NAMES or magic_name in TARGET_MAGIC_NAMES:
+		var locked_uid := _valid_locked_magic_target()
+		if locked_uid != 0 and Mir3TargetLockScript.ALLOWED.has(magic_name):
+			return _send_spell_action(9, magic_id, mouse_grid, locked_uid)
 	if magic_name in SELF_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, Vector2i(game_state.player_x, game_state.player_y), game_state.player_uid)
 	if magic_name in GROUND_MAGIC_NAMES:
@@ -1666,6 +1707,7 @@ func _handle_start_game_scene(payload: PackedByteArray) -> void:
 	_player_server_move_active = false
 	_player_post_forced_action = {}
 	# 68669A -> 676FA4 clears current/history targets with the old scene.
+	_locked_magic_target_uid = 0
 	_magic_focus_uid = 0
 	_follow_focus_uid = 0
 	_attack_focus_uid = 0
@@ -1982,6 +2024,7 @@ func _switch_player_map(map_uid: int, action: Dictionary) -> void:
 	_player_server_action_queue.clear()
 	_player_server_move_active = false
 	_player_post_forced_action = {}
+	_locked_magic_target_uid = 0
 	_magic_focus_uid = 0
 	_follow_focus_uid = 0
 	_attack_focus_uid = 0

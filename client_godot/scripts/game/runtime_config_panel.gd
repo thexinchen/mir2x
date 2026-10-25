@@ -254,6 +254,7 @@ func _build_game_page() -> void:
 		for index in GAME_CONFIGS.size():
 			var entry: Array = GAME_CONFIGS[index]
 			_add_check("Config%d" % int(entry[0]), int(entry[0]), str(entry[1]), Vector2(0, 40 + index * 25))
+		_add_check("Config49", 49, "·键锁定法术目标", Vector2(200, 40))
 	elif _game_tab == 1:
 		for index in AUXILIARY_CONFIGS.size():
 			var entry: Array = AUXILIARY_CONFIGS[index]
@@ -605,7 +606,7 @@ func _default_bool(key: int) -> bool:
 		return AudioService.bgm_enabled
 	if key == 3:
 		return AudioService.seff_enabled
-	return key not in [5, 6]
+	return key not in [5, 6, 49]
 
 
 func _default_float(key: int) -> float:

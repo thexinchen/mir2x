@@ -151,6 +151,8 @@ template<int, typename T> bool SDRuntimeConfig_setConfig(      SDRuntimeConfig &
     /**/ // 2: accept or reject manually
     /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_好友申请, int, 2)
     /**/
+    /**/ _MACRO_ADD_RTCFG_TYPE(RTCFG_MIR3_MAGIC_TARGET_LOCK, bool, false)
+    /**/
     /**/ // end of runtime config types
     /**/ // any config types should be put inside above region
 
