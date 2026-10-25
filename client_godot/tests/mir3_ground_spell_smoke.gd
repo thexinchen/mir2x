@@ -50,6 +50,19 @@ func _ready() -> void:
 	_expect(main.get("request").grid == Vector2i(5, 5) and main.get("request").uid == 101, "self spell keeps hero target")
 	main.call("_cast_magic", resources.magic_id("火球术"), Vector2i(-20, 99))
 	_expect(main.get("request").grid == Vector2i(-20, 99) and main.get("request").uid == 606, "actor-target branch is not rewritten by ground normalization")
+	main.set("test_focus", 0)
+	var fireball: int = resources.magic_id("火球术")
+	main.call("_cast_magic", fireball, Vector2i(-20, 99))
+	_expect(main.get("request").grid == Vector2i(0, 9) and main.get("request").uid == 0, "unowned actor spell clamps map bounds")
+	for direction in range(1, 9):
+		GameState.player_direction = direction
+		main.call("_cast_magic", fireball, Vector2i(5, 5))
+		_expect(main.get("request").grid == Vector2i(5, 5) + Movement.DIRECTIONS[direction - 1], "unowned actor spell steps forward in direction %d" % direction)
+	GameState.player_x = 0
+	GameState.player_y = 0
+	GameState.player_direction = 1
+	main.call("_cast_magic", fireball, Vector2i(-20, -30))
+	_expect(main.get("request").grid == Vector2i(0, -1), "unowned actor spell does not reclamp its front step")
 	if failures.is_empty(): print("MIR3 GROUND SPELL PASS: map bounds, same-cell eight directions, clamp-before-step, teleport front override, self/actor-target isolation")
 	get_tree().quit(0 if failures.is_empty() else 1)
 
