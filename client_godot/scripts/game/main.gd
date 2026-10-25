@@ -80,6 +80,7 @@ var _next_strike := false
 var _swing_magic: Dictionary = {}
 var _magic_focus_uid := 0
 var _last_impulse_magic_ms := -3000
+var _last_magic_request_ms := -500
 var _move_path: Array[Vector2i] = []
 var _move_step_timer := 0.0
 var _ground_input := Mir3MovementScript.new()
@@ -711,15 +712,20 @@ func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 		# Actual spells still refresh focus before the cooldown rejection.
 		focus_uid = _update_magic_focus(mouse_grid, magic_id)
 	if not _magic_ready(magic_id):
+		# Original command gate drops rapid repeats without adding chat feedback.
+		if (magic_name in SWING_MAGIC_NAMES or magic_name in ["野蛮冲撞", "空拳刀法"]) and Time.get_ticks_msec() - _last_magic_request_ms < 500:
+			return false
 		game_state.add_chat_log("%s尚未冷却" % _resources.magic_names.get(magic_id, "技能"), 3)
 		return false
 	if magic_name in SWING_MAGIC_NAMES:
+		_last_magic_request_ms = Time.get_ticks_msec()
 		_swing_magic[magic_id] = not bool(_swing_magic.get(magic_id, false))
 		game_state.add_chat_log("%s%s" % ["开启" if _swing_magic[magic_id] else "关闭", magic_name], 0)
 		return true
 	if magic_name == "空拳刀法":
 		# 67D070–67D081 updates the 27/36 shared gate before enqueueing.
 		_last_impulse_magic_ms = Time.get_ticks_msec()
+		_last_magic_request_ms = _last_impulse_magic_ms
 		return _send_spell_action(12, magic_id, mouse_grid, focus_uid)
 	if magic_name in SELF_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, Vector2i(game_state.player_x, game_state.player_y), game_state.player_uid)
@@ -756,6 +762,9 @@ func _ground_spell_grid(mouse_grid: Vector2i, force_front := false) -> Vector2i:
 
 
 func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
+	# 67D5A7 stamps ordinary cast acceptance before movement braking/enqueueing.
+	if action_type == 9:
+		_last_magic_request_ms = Time.get_ticks_msec()
 	var direction_override := 0
 	var magic_name: String = _resources.magic_names.get(magic_id, "")
 	var original_kick := action_type == 12 and magic_name == "空拳刀法"
@@ -1117,6 +1126,10 @@ func _thrust_target_ahead(facing: int) -> bool:
 
 func _magic_ready(magic_id: int, now_ms := -1) -> bool:
 	var now: int = Time.get_ticks_msec() if now_ms < 0 else now_ms
+	var magic_name: String = _resources.magic_names.get(magic_id, "")
+	# 67D050–67D061: command skills share a 500ms accepted-request gate.
+	if (magic_name in SWING_MAGIC_NAMES or magic_name in ["野蛮冲撞", "空拳刀法"]) and now - _last_magic_request_ms < 500:
+		return false
 	# 67D041: both legacy 27 and 36 require elapsed >= 3000 ms.
 	if _resources.magic_names.get(magic_id, "") in ["野蛮冲撞", "空拳刀法"] and now - _last_impulse_magic_ms < 3000:
 		return false
