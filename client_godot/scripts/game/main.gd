@@ -1869,6 +1869,9 @@ func _spinkick_direction(uid: int, action: Dictionary) -> int:
 func _attack_direction(uid: int, action: Dictionary) -> int:
 	var fallback: int = game_state.player_direction if uid == game_state.player_uid else int(game_state.get_creature(uid).get("direction", 5))
 	var aim_uid := int(action.get("aimUID", 0))
+	if aim_uid == 0:
+		var requested: int = action.get("direction", 0)
+		return requested if requested >= 1 and requested <= 8 else fallback
 	var aim: Dictionary
 	if aim_uid == game_state.player_uid:
 		aim = {"x": game_state.player_x, "y": game_state.player_y}

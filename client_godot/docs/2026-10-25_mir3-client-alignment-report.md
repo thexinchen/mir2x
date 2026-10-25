@@ -57,6 +57,16 @@ Godot 原先只在 `ground_items` 中发现目标格时才走鼠标拾取分支�
 
 验证：`mir3_current_cell_pickup_smoke` 用主场景子类计数现有拾取入口，检查自身命中框、空缓存、动作就绪、拖放优先级和按住状态。`network_current_cell_pickup_smoke` 使用既有联机物品往返夹具，物品确实落地后主动移除客户端缓存，再经 `_unhandled_input` 发左键；104 服务端返回物品，最终背包数量恢复到 10，地面条目消失。完整 `world_action_smoke` 回归通过。联机物品夹具也增加等待地图遮罩消失，避免加载阶段吞掉测试输入。
 
+## 批次 6：服务端方向攻击与观察端方向
+
+原版 `67AD78:67B035` 在 Shift 分支接受无选中角色的攻击；`67B169–67B266` 检查动作与攻击就绪后按指针方向入队攻击，不生成步行目标。mir2x 的 `Player::onCMActionAttack` 原先先查目标 UID，UID 为 0 时直接退出，因而只实现客户端挥刀动画不能完成这个能力。
+
+现对 UID=0 的方向攻击检查服务器当前坐标、合法方向、存活/移动锁状态以及当前 600 ms 攻击间隔，采用服务端自己的攻击速度。服务器查询正前一格目标；若存在活体类型的玩家/怪物候选则使用其位置重新核实，若为空则允许原地空挥。后续沿用 mir2x 已有近战魔法白名单、伤害目标选择和伤害派发，空 UID 不参与伤害派发。范围攻击也沿用现有格子选择，没有添加原版服务端伤害公式。
+
+攻击广播携带明确方向，Godot 在无 UID 的攻击上采用它；带 UID 的攻击继续按目标位置处理。新增能力并非网络结构体变更，仍使用现有 ACTION_ATTACK/ActionNode。
+
+104 使用已有依赖配置重编译 `server` 成功并运行新服务端。双客户端测试发送两次合法方向攻击，穿插冷却内重复、错误起点和方向 0 请求；观察端严格收到两次原地攻击、速度 100、合法方向。客户端试图上报速度 500，服务器仍广播 100。测试角色位置保持不变；完整 `world_action_smoke` 回归通过。这里验证了空挥与拒绝条件，尚不替代 Shift 输入或所有范围技能伤害验证。
+
 ## 当前边界与后续工作
 
 - 普通人物一次走 1 格、跑 2 格；原版特殊状态 3 格尚未迁移。
@@ -85,4 +95,10 @@ xvfb-run -a /home/czx/godot --path client_godot res://tests/mir3_movement_visual
 /home/czx/godot --headless --max-fps 60 --path client_godot res://tests/network_current_cell_pickup_smoke.tscn
 ```
 
-不要把一种验证范围替代另一种。客户端不支持的原版能力仍需恢复，例如 Shift 对空攻击与 Alt 尸体交互；不能仅添加本地动画就声称完成服务端行为。新发现的攻击就绪函数 `68F6F0` 使用角色属性计算间隔，尚不能直接将当前 mir2x 的动作时长替换成它的常量。
+方向攻击双客户端验证（需要本仓库标准测试账号及 104 上本机测试服务器）：
+
+```bash
+python3 client_godot/tests/run_network_directional_attack.py --godot /home/czx/godot --output-dir /tmp/mir3-directional-attack
+```
+
+不要把一种验证范围替代另一种。Shift 对空攻击的客户端输入和 Alt 尸体交互仍需继续恢复；不能仅添加本地动画就声称完成服务端行为。新发现的攻击就绪函数 `68F6F0` 使用原角色属性计算间隔，尚不能直接将当前 mir2x 的动作时长替换成它的常量。

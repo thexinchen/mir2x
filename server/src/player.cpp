@@ -1009,7 +1009,45 @@ corof::awaitable<> Player::onCMActionMine(CMAction stCMA)
 
 corof::awaitable<> Player::onCMActionAttack(CMAction stCMA)
 {
-    const auto coLocOpt = co_await getCOLocation(stCMA.action.aimUID);
+    const bool directionalAttack = !stCMA.action.aimUID;
+    std::optional<COLocation> coLocOpt;
+    if(directionalAttack){
+        // Mir3's Shift-ground branch swings in place without a selected UID.
+        // Resolve the front cell on the server; never turn a stale client
+        // origin into a movement request or trust a client-selected speed.
+        if(!canAttack(true) || stCMA.action.x != X() || stCMA.action.y != Y()
+                || !pathf::dirValid(stCMA.action.direction)){
+            co_return;
+        }
+        const auto duration = 600 * SYS_DEFSPEED / attackSpeed();
+        if(g_server->getCurrTick() < m_lastActionTime.at(ACTION_ATTACK) + duration){
+            co_return;
+        }
+        stCMA.action.speed = attackSpeed();
+        const auto [frontX, frontY] = pathf::getFrontGLoc(X(), Y(), stCMA.action.direction);
+        uint64_t frontUID = 0;
+        for(const auto &[uid, location]: m_inViewCOList){
+            if(uid != UID() && (uidf::getUIDType(uid) == UID_MON || uidf::getUIDType(uid) == UID_PLY)
+                    && location.mapUID == mapUID() && location.x == frontX && location.y == frontY
+                    && (!frontUID || uid < frontUID)){
+                frontUID = uid;
+            }
+        }
+        if(frontUID){
+            coLocOpt = co_await getCOLocation(frontUID);
+            if(!coLocOpt.has_value() || coLocOpt->mapUID != mapUID()
+                    || coLocOpt->x != frontX || coLocOpt->y != frontY){
+                co_return;
+            }
+            stCMA.action.aimUID = frontUID;
+        }
+        else{
+            coLocOpt = COLocation{.mapUID = mapUID(), .x = frontX, .y = frontY};
+        }
+    }
+    else{
+        coLocOpt = co_await getCOLocation(stCMA.action.aimUID);
+    }
     if(!coLocOpt.has_value()){
         co_return;
     }
@@ -1055,7 +1093,7 @@ corof::awaitable<> Player::onCMActionAttack(CMAction stCMA)
 
                                         // client reports 攻杀技术 but server need to validate if it's scheduled
                                         // if not scheduled then dispatch 物理攻击 instead, this is for client anti-cheat
-                                        dispatchAction(ActionAttack
+                                        ActionNode attack = ActionAttack
                                         {
                                             .speed = stCMA.action.speed,
                                             .x = stCMA.action.x,
@@ -1074,7 +1112,11 @@ corof::awaitable<> Player::onCMActionAttack(CMAction stCMA)
                                                 }(),
                                                 .modifierID = to_u32(modifierID),
                                             },
-                                        });
+                                        };
+                                        // The old target-based constructor leaves direction zero;
+                                        // an empty swing needs an explicit facing for observers.
+                                        attack.direction = Direction();
+                                        dispatchAction(attack);
 
                                         std::vector<uint64_t> aimUIDList;
                                         switch(nDCType){
@@ -1134,6 +1176,9 @@ corof::awaitable<> Player::onCMActionAttack(CMAction stCMA)
                                         }
 
                                         for(const auto uid: aimUIDList){
+                                            if(!uid){
+                                                continue;
+                                            }
                                             if(buffID){
                                                 sendBuff(uid, 0, buffID);
                                             }
