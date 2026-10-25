@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/mir3_magic_command_gate_smoke.gd" id="1"]
+
+[node name="Mir3MagicCommandGateSmoke" type="Node"]
+script = ExtResource("1")

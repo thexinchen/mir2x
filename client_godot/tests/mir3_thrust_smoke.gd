@@ -46,6 +46,8 @@ func _ready() -> void:
 	_expect(main.call("_consume_attack_magic_id", 3) == resources.magic_id("攻杀剑术"), "scheduled strike takes priority over thrust")
 	main.call("_send_attack_action", 0, Vector2i(12, 10))
 	_expect(GameState.player_action_type == 7 and GameState.player_action_magic_id == thrust and GameState.player_direction == 3, "directional attack carries thrust into real local action path")
+	# Separate toggle-off fixture occurs after the original command gate.
+	main.set("_last_magic_request_ms", Time.get_ticks_msec() - 500)
 	main.call("_try_magic_key", event)
 	_expect(not bool(main.get("_swing_magic").get(thrust, false)) and main.call("_consume_attack_magic_id", 3) == half, "second shortcut disables thrust and restores persistent fallback")
 	main.get("_swing_magic")[thrust] = true

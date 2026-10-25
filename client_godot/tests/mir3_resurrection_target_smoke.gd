@@ -68,11 +68,13 @@ func _ready() -> void:
 		GameState.learned_magic = [{"magicID": sword}]
 		GameState.magic_keys = {sword: 49}
 		GameState.magic_cast_times.clear()
+		main.set("_last_magic_request_ms", Time.get_ticks_msec() - 500)
 		main.set("_magic_focus_uid", 707)
 		key.keycode = KEY_F1
 		main.set("requested_uid", -1)
 		_expect(main.call("_try_magic_key", key) and bool(main.get("_swing_magic").get(sword, false)), "F1 enables sword: " + name)
 		_expect(main.get("_magic_focus_uid") == 707 and main.get("requested_uid") == -1, "sword toggle preserves spell history without a spell request: " + name)
+		main.set("_last_magic_request_ms", Time.get_ticks_msec() - 500)
 		main.call("_try_magic_key", key)
 		_expect(not bool(main.get("_swing_magic").get(sword, false)) and main.get("_magic_focus_uid") == 707, "disabling sword preserves spell history: " + name)
 	# Cooldown-rejected actual spells still refresh focus, as before.

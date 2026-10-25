@@ -1364,9 +1364,13 @@ func _test_magic_actions(main: Control, resources: RefCounted, physical_id: int)
 	if not main.call("_cast_magic", fireball_id, Vector2i(12, 10)) or GameState.magic_effects.back().get("aimUID", 0) != 505:
 		_fail("target spell did not retain focused creature UID")
 		return false
+	# Independent sword-consumption fixture starts after the shared command gate.
+	main.set("_last_magic_request_ms", Time.get_ticks_msec() - 500)
 	if not main.call("_cast_magic", flame_sword_id, Vector2i.ZERO) or main.call("_consume_attack_magic_id") != flame_sword_id or main.call("_consume_attack_magic_id") != physical_id:
 		_fail("single-use swing magic was not consumed once")
 		return false
+	# Independent sword-consumption fixture starts after the shared command gate.
+	main.set("_last_magic_request_ms", Time.get_ticks_msec() - 500)
 	if not main.call("_cast_magic", half_moon_id, Vector2i.ZERO) or main.call("_consume_attack_magic_id") != half_moon_id or main.call("_consume_attack_magic_id") != half_moon_id:
 		_fail("persistent swing magic was not retained")
 		return false

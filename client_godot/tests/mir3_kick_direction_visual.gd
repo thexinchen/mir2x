@@ -33,6 +33,7 @@ func _ready() -> void:
 	for sample in cases:
 		GameState.magic_cast_times.clear()
 		main.set("_last_impulse_magic_ms", -3000)
+		main.set("_last_magic_request_ms", Time.get_ticks_msec() - 500)
 		GameState.player_direction = 1
 		GameState.player_action_type = 2
 		Input.warp_mouse(anchor + sample[0])
