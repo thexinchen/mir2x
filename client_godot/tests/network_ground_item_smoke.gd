@@ -29,6 +29,8 @@ func _process(_delta: float) -> void:
 	var inventory_panel := _main.get_node("InventoryPanel") as Control
 	match _stage:
 		Stage.WAIT_READY:
+			if _main.get_node("MapLoadingOverlay").visible or not GameState.player_health_initialized:
+				return
 			var item := _inventory_item()
 			if not _inventory_received or int(item.get("count", 0)) != ITEM_COUNT or not GameState.grabbed_item.is_empty() or _ground_has_item():
 				return

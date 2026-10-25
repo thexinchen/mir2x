@@ -411,6 +411,10 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		else:
 			_begin_ground_input(event, grid)
 	elif event.button_index == MOUSE_BUTTON_LEFT:
+		# The hero's hit rectangle is useful to team targeting, but must not
+		# swallow the current-cell ground operation after that mode is handled.
+		if focus_uid == game_state.player_uid:
+			focus_uid = 0
 		if focus_uid != 0:
 			var creature: Dictionary = game_state.get_creature(focus_uid)
 			if creature.get("type", 0) == 3:
@@ -422,6 +426,15 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		if not game_state.grabbed_item.is_empty():
 			var grabbed: Dictionary = game_state.grabbed_item
 			NetworkClient.send_drop_item(grabbed.get("itemID", 0), grabbed.get("seqID", 0), grabbed.get("count", 0))
+			return
+		if grid == Vector2i(game_state.player_x, game_state.player_y):
+			# 67B26D–67B2B5 -> 68F984 sends pickup at the hero's current
+			# location when idle, without requiring a cached ground-item entry.
+			if _ground_input.button == 0 and _move_path.is_empty() and _move_step_timer <= 0.0 \
+					and _player_action_timer < 0.0 and _pickup_action_timer < 0.0 \
+					and _player_forced_action_queue.is_empty() and not _player_input_blocked():
+				_request_pickup()
+			_begin_ground_input(event, grid)
 			return
 		var ground_key := "%d,%d" % [grid.x, grid.y]
 		if game_state.ground_items.has(ground_key):

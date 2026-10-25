@@ -49,6 +49,14 @@ Godot `main.gd:_request_npc_dialogue` 采用相同边界与共享时间戳。真
 
 104 验证：`mir3_npc_interaction_smoke` 检查首次请求、1499/1500/1501 ms 边界、跨 NPC 共享间隔、拒绝不延长等待、真实命中框点击、停止旧地面按住状态而保留动作节拍；原 `npc_dialog_smoke` 与完整 `world_action_smoke` 均到达 PASS。
 
+## 批次 5：当前格左键拾取不依赖缓存
+
+`67B26D–67B2B5` 明确比较鼠标格和人物的当前 X/Y，要求普通移动模式为空及角色就绪，随后调用 `68F984`。该函数汇编从角色 `+15h/+19h` 取位置并以命令 `3E8h` 调用发送函数，没有查询客户端地面物品列表。`689164` 进一步表明同一发送入口既能不查物品列表直接调用，也能按物品缓存查到当前格后调用。
+
+Godot 原先只在 `ground_items` 中发现目标格时才走鼠标拾取分支；左键自身命中框又会提前返回。现对普通当前格左键采用就绪检查后请求现有 `CM_PICKUP`，并记录按住状态以保留后续改向。自身命中框只在团队指向模式处理之后排除；其他角色命中与拖放物品优先级保持原处理。移动未完成、攻击/施法动画未完成或强制动作进行时不提前拾取逻辑终点。右键当前格依旧是空请求。
+
+验证：`mir3_current_cell_pickup_smoke` 用主场景子类计数现有拾取入口，检查自身命中框、空缓存、动作就绪、拖放优先级和按住状态。`network_current_cell_pickup_smoke` 使用既有联机物品往返夹具，物品确实落地后主动移除客户端缓存，再经 `_unhandled_input` 发左键；104 服务端返回物品，最终背包数量恢复到 10，地面条目消失。完整 `world_action_smoke` 回归通过。联机物品夹具也增加等待地图遮罩消失，避免加载阶段吞掉测试输入。
+
 ## 当前边界与后续工作
 
 - 普通人物一次走 1 格、跑 2 格；原版特殊状态 3 格尚未迁移。
@@ -66,7 +74,15 @@ export MIR2X_AUDIO_RES="$PWD/client_godot/build/audio"
 /home/czx/godot --headless --path client_godot res://tests/mir3_action_validation_smoke.tscn
 /home/czx/godot --headless --path client_godot res://tests/mir3_movement_smoke.tscn
 /home/czx/godot --headless --path client_godot res://tests/minimap_movement_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/mir3_npc_interaction_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/mir3_current_cell_pickup_smoke.tscn
 xvfb-run -a /home/czx/godot --path client_godot res://tests/mir3_movement_visual.tscn
 ```
 
-这些是离线真实场景与输入/动作层验证；服务器持久化位置验证需另行运行联机测试。不要把一种验证范围替代另一种。
+以上是离线真实场景与输入/动作层验证。联机物品往返测试在服务端运行且现有测试角色物品夹具可用时执行：
+
+```bash
+/home/czx/godot --headless --max-fps 60 --path client_godot res://tests/network_current_cell_pickup_smoke.tscn
+```
+
+不要把一种验证范围替代另一种。客户端不支持的原版能力仍需恢复，例如 Shift 对空攻击与 Alt 尸体交互；不能仅添加本地动画就声称完成服务端行为。新发现的攻击就绪函数 `68F6F0` 使用角色属性计算间隔，尚不能直接将当前 mir2x 的动作时长替换成它的常量。
