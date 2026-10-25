@@ -640,6 +640,10 @@ func _cancel_movement(cancel_ground_input := true) -> void:
 
 
 func _try_magic_key(event: InputEventKey) -> bool:
+	# 67C1B0 clears 729CF0 after every function-key dispatch, including
+	# empty slots and rejected spells, without releasing held mouse input.
+	if event.keycode >= KEY_F1 and event.keycode <= KEY_F12:
+		_ground_input.pending = false
 	var key: int = preload("res://scripts/game/magic_shortcuts.gd").event_key(event)
 	if key == 0:
 		return false
