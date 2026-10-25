@@ -1748,6 +1748,9 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 		if action_type == 2 and not motion_transform.is_empty() and not correction_waits_for_form:
 			return
 	if action_type == 6:
+		if uid == game_state.player_uid:
+			# Original 683AAE -> 6DE2CA refreshes the command clock on self relocation.
+			_last_magic_request_ms = Time.get_ticks_msec()
 		var space_magic_id: int = _resources.magic_id("瞬息移动")
 		if space_magic_id > 0:
 			var space_effect := action.duplicate(true)
@@ -1897,6 +1900,8 @@ func _switch_player_map(map_uid: int, action: Dictionary) -> void:
 	else:
 		AudioService.stop_bgm()
 	_center_hero()
+	# 6866F2 -> 6DE2CA stamps after the new map and player location are ready.
+	_last_magic_request_ms = Time.get_ticks_msec()
 
 
 func _start_summon_spawn(uid: int, monster_id: int, action: Dictionary, magic_name: String) -> void:
