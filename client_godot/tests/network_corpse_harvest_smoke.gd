@@ -12,6 +12,7 @@ var exchange := ""
 var origin_map := 0
 var origin := Vector2i.ZERO
 var own_stands := 0
+var online_retries := 0
 
 func _ready() -> void:
 	exchange = OS.get_environment("MIR3_CORPSE_EXCHANGE")
@@ -38,6 +39,10 @@ func _message(head: int, payload: PackedByteArray) -> void:
 		main = load("res://scenes/game/main.tscn").instantiate()
 		add_child(main)
 		_run()
+	elif head == NetworkClient.SM_ONLINEERROR and payload.size() == 1 and payload[0] == 3 and online_retries < 8:
+		online_retries += 1
+		await get_tree().create_timer(0.25).timeout
+		NetworkClient.enter_game()
 	elif head in [NetworkClient.SM_LOGINERROR, NetworkClient.SM_ONLINEERROR]:
 		_fail("login rejected")
 	elif head == NetworkClient.SM_ACTION:
