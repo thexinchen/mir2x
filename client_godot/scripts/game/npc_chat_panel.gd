@@ -303,7 +303,7 @@ func _apply_layout() -> void:
 
 
 func _npc_id(uid: int) -> int:
-	return (uid >> 35) & 0xFFFFFF
+	return _state.uid_record_id(uid)
 
 
 func _xml_attribute(parser: XMLParser, name: String, fallback: String) -> String:

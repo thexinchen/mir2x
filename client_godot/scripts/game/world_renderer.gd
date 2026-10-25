@@ -72,6 +72,7 @@ const FOCUS_COLORS := [
 ]
 
 var game_state: Node = null
+var loading_map := false
 var draw_hp_bar := OS.get_cmdline_args().has("--draw-hp-bar") or OS.get_cmdline_user_args().has("--draw-hp-bar")
 var always_draw_name := OS.get_cmdline_args().has("--always-draw-name") or OS.get_cmdline_user_args().has("--always-draw-name")
 
@@ -174,7 +175,7 @@ func set_focus_channels(magic_uid: int, follow_uid: int, attack_uid: int) -> voi
 
 
 func _draw() -> void:
-	if game_state == null:
+	if game_state == null or loading_map:
 		return
 	_mouse_focus_uid = focus_uid_at_screen(get_local_mouse_position())
 	

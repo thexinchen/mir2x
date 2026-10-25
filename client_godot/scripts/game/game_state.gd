@@ -5,6 +5,9 @@ extends Node
 
 signal state_changed
 
+const UID_RECORD_ID_BIT_OFFSET := 35
+const UID_RECORD_ID_MASK := 0xFFFFFF
+
 # Player state
 var player_uid: int = 0
 var player_name: String = ""
@@ -781,8 +784,12 @@ func center_camera_on_grid(grid_position: Vector2) -> void:
 
 
 func _map_id_from_uid(map_uid: int) -> int:
-	# UID layout matches uidf::getUID(): the 24-bit record ID starts at bit 35.
-	return (map_uid >> 35) & 0xFFFFFF
+	return uid_record_id(map_uid)
+
+
+func uid_record_id(uid: int) -> int:
+	# common/src/uidf.cpp: 64 - reserved(1) - type(4) - record(24) = 35.
+	return (uid >> UID_RECORD_ID_BIT_OFFSET) & UID_RECORD_ID_MASK
 
 
 func _level_from_exp(exp: int) -> int:

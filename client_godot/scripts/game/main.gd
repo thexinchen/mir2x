@@ -7,6 +7,7 @@ const Protocol = preload("res://scripts/network/protocol.gd")
 const CerealReader = preload("res://scripts/network/cereal_reader.gd")
 const ActorResourceScript = preload("res://scripts/game/actor_resource.gd")
 const WorldPathfinderScript = preload("res://scripts/game/world_pathfinder.gd")
+const Mir3MovementScript = preload("res://scripts/game/mir3_movement.gd")
 const RuntimeConfigPanelScript = preload("res://scripts/game/runtime_config_panel.gd")
 const MINIMAP_PANEL_PATH := "res://scenes/game/panels/minimap.tscn"
 const QUEST_PANEL_PATH := "res://scenes/game/panels/quest.tscn"
@@ -80,6 +81,10 @@ var _swing_magic: Dictionary = {}
 var _magic_focus_uid := 0
 var _move_path: Array[Vector2i] = []
 var _move_step_timer := 0.0
+var _ground_input := Mir3MovementScript.new()
+var _ground_path_active := false
+var _ground_path_goal := Vector2i(-1, -1)
+var _last_attack_ms := -10000
 var _pending_spell_action: Dictionary = {}
 var _chase_target_uid := 0
 var _follow_focus_uid := 0
@@ -93,17 +98,17 @@ var _player_post_forced_action: Dictionary = {}
 var _team_flag_active := false
 var _summon_spawn_blockers: Dictionary = {}
 var _map_loading_hide_serial := 0
-var _map_loading_progress_samples: Array[Dictionary] = []
-var _capturing_map_loading_progress := false
 
 # C++ walk motion is six frames at SYS_DEFSPEED (100 ms per frame). Dispatch the
 # next one-hop action at the same boundary so a path has no artificial idle gap.
 const MOVE_STEP_SECONDS := 0.60
 const FORCED_MOVE_SPEED := 500
 const PING_INTERVAL_MS := 10_000
-const MAP_LOADING_PROGRESS_STEP_SECONDS := 0.012
-const MAP_LOADING_INITIAL_HOLD_SECONDS := 0.08
 const MAP_LOADING_COMPLETE_HOLD_SECONDS := 0.15
+const MAP_PRELOAD_WINDOW_WIDTH := 1200
+const MAP_PRELOAD_WINDOW_HEIGHT := 1200
+const MAP_OBJECT_MAX_WIDTH := 3
+const MAP_OBJECT_MAX_HEIGHT := 25
 const U32_MASK := 0xFFFFFFFF
 const BUFF_TYPE_SHIELD := 1
 const BUFF_STATE_OFF := 2
@@ -169,7 +174,11 @@ func _ready() -> void:
 
 
 func _resume_message_dispatch_after_loading_frame() -> void:
-	await RenderingServer.frame_post_draw
+	# Linux receives frame_post_draw reliably here, while the Windows/RDP
+	# Compatibility renderer can leave this await suspended forever. Advance the
+	# scene once, then mirror C++ ModalStringBoard::drawScreen(true) explicitly.
+	await get_tree().process_frame
+	RenderingServer.force_draw()
 	NetworkClient.resume_message_dispatch()
 
 
@@ -181,6 +190,7 @@ func _process(delta: float) -> void:
 	var motion_delta: float = world_renderer.advance_movement_clocks(delta)
 	_process_player_action(motion_delta)
 	_process_pickup_action(motion_delta)
+	_process_ground_input(delta)
 	_process_movement(motion_delta)
 	# Update camera
 	game_state.scroll_camera_to(world_renderer.player_draw_grid(), motion_delta)
@@ -223,6 +233,25 @@ func _refresh_grabbed_item_icon() -> void:
 	grabbed_item_icon.texture = icon.texture
 	grabbed_item_icon.size = icon.texture.get_size()
 	grabbed_item_icon.show()
+
+
+func _input(event: InputEvent) -> void:
+	# Releases must reach us even when a panel consumes the GUI event.
+	if event is InputEventMouseButton and not event.pressed and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
+		_release_ground_input()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		_release_ground_input()
+
+
+func _release_ground_input() -> void:
+	_ground_input.release()
+	if _ground_path_active:
+		_move_path.clear()
+	_ground_path_active = false
+	# Preserve the in-flight animation/cooldown; only unsent work is cancelled.
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -378,8 +407,8 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		_follow_focus_uid = 0
 		if focus_uid != 0:
 			_follow_focus_uid = focus_uid
-		elif grid != Vector2i(game_state.player_x, game_state.player_y):
-			_start_move_to(grid)
+		else:
+			_begin_ground_input(event, grid)
 	elif event.button_index == MOUSE_BUTTON_LEFT:
 		if focus_uid != 0:
 			var creature: Dictionary = game_state.get_creature(focus_uid)
@@ -399,6 +428,71 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 			var weapon: Dictionary = game_state.wear.get(3, {})
 			if _resources.item_can_mine(int(weapon.get("itemID", 0))):
 				_start_mining(grid)
+			else:
+				_begin_ground_input(event, grid)
+
+
+func _begin_ground_input(event: InputEventMouseButton, grid: Vector2i) -> void:
+	var remaining := _move_step_timer
+	var previous_button: int = _ground_input.button
+	var previous_held: float = _ground_input.held_seconds
+	_cancel_movement()
+	_move_step_timer = remaining
+	_ground_input.button = previous_button
+	_ground_input.held_seconds = previous_held
+	_ground_input.press(event.button_index, grid, event.ctrl_pressed)
+
+
+func _ground_occupied() -> Dictionary:
+	var occupied := {}
+	for uid in game_state.creatures:
+		if int(uid) == game_state.player_uid:
+			continue
+		var creature: Dictionary = game_state.creatures[uid]
+		if int(creature.get("action_type", 2)) != 13:
+			occupied[Vector2i(creature.get("x", -1), creature.get("y", -1))] = true
+	return occupied
+
+
+func _process_ground_input(delta: float) -> void:
+	if _ground_input.button == 0:
+		return
+	if _player_input_blocked() or not _player_forced_action_queue.is_empty() or map_loading_overlay.visible:
+		_release_ground_input()
+		return
+	var hovered := get_viewport().gui_get_hovered_control()
+	var over_world := hovered == world_renderer or (hovered != null and world_renderer.is_ancestor_of(hovered))
+	_ground_input.advance(delta, _mouse_grid(), Input.is_key_pressed(KEY_CTRL), over_world, _ground_path_active)
+	if not _ground_input.pending:
+		return
+	# Consume a request, not an entire click-to-destination path. Held input
+	# regenerates it after 300 ms. Existing animation gates control step cadence.
+	_ground_input.pending = false
+	if _move_step_timer > 0.0 or _player_action_timer >= 0.0 or _pickup_action_timer >= 0.0:
+		return
+	if _ground_input.button == MOUSE_BUTTON_LEFT and Time.get_ticks_msec() - _last_attack_ms <= 1000:
+		return
+	var from := Vector2i(game_state.player_x, game_state.player_y)
+	var occupied := _ground_occupied()
+	var decision: Dictionary = _ground_input.decide(from, world_renderer.can_walk, occupied)
+	if decision.has("path"):
+		_ground_path_goal = decision.path
+		_move_path = _pathfinder.find_mir3_path(from, _ground_path_goal, world_renderer.can_walk, occupied)
+		_ground_path_active = not _move_path.is_empty()
+		if _ground_path_active:
+			return
+		# Mir3 falls back to a walking decision when a run path cannot start.
+		_ground_input.running = false
+		decision = _ground_input.decide(from, world_renderer.can_walk, occupied)
+	if decision.has("move"):
+		var next: Vector2i = decision.move
+		_send_move_action(next.x, next.y)
+		_move_step_timer = MOVE_STEP_SECONDS
+	elif decision.has("turn") and int(decision.turn) != game_state.player_direction:
+		var stand := {"type": 2, "speed": 100, "direction": int(decision.turn), "x": from.x, "y": from.y, "aimX": from.x, "aimY": from.y, "aimUID": 0}
+		NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, stand))
+		game_state.player_direction = int(decision.turn)
+		_set_player_action(2)
 
 
 func _start_move_to(destination: Vector2i) -> void:
@@ -428,6 +522,7 @@ func _start_pickup_at(target: Vector2i) -> void:
 
 
 func _cancel_movement() -> void:
+	_release_ground_input()
 	_move_path.clear()
 	_move_step_timer = 0.0
 	_pending_spell_action.clear()
@@ -708,8 +803,20 @@ func _process_movement(delta: float) -> void:
 	if _move_step_timer > 0.0:
 		return
 	var next: Vector2i = _move_path.pop_front()
+	if _ground_path_active:
+		var from := Vector2i(game_state.player_x, game_state.player_y)
+		var offset := Vector2i(signi(next.x - from.x), signi(next.y - from.y))
+		var occupied := _ground_occupied()
+		for distance in range(1, _grid_distance(from, next) + 1):
+			var crossed := from + offset * distance
+			if occupied.has(crossed) or not world_renderer.can_walk(crossed.x, crossed.y):
+				_move_path = _pathfinder.find_mir3_path(from, _ground_path_goal, world_renderer.can_walk, occupied)
+				_ground_path_active = not _move_path.is_empty()
+				return
 	_send_move_action(next.x, next.y)
 	_move_step_timer = MOVE_STEP_SECONDS
+	if _move_path.is_empty():
+		_ground_path_active = false
 
 
 func _send_move_action(aim_x: int, aim_y: int) -> void:
@@ -750,6 +857,7 @@ func _grid_distance(from: Vector2i, to: Vector2i) -> int:
 
 
 func _send_attack_action(target_uid: int) -> void:
+	_last_attack_ms = Time.get_ticks_msec()
 	# ACTION_ATTACK = 7
 	var creature: Dictionary = game_state.get_creature(target_uid)
 	var tx: int = creature.get("x", game_state.player_x)
@@ -1441,7 +1549,7 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 		# Update or create creature
 		var continued_monster_action := false
 		var creature_type: int = creature.get("type", _creature_type_from_uid(uid))
-		var monster_id: int = creature.get("monster_id", (uid >> 35) & 0xFFFFFF if creature_type == 1 else 0)
+		var monster_id: int = creature.get("monster_id", game_state.uid_record_id(uid) if creature_type == 1 else 0)
 		var stored_action_type := _creature_stored_action_type(action_type, creature_type, monster_id)
 		if is_new_creature and creature_type == 1 and action_type == 1:
 			var monster_name: String = _resources.monster_name(monster_id)
@@ -1476,7 +1584,7 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 				if action_type == 1 and _resources.monster_spawn_look(monster_id) > 0:
 					creature["monster_stand_look"] = _resources.monster_spawn_look(monster_id)
 			elif inferred_type == 3:
-				creature["npc_id"] = (uid >> 35) & 0xFFFFFF
+				creature["npc_id"] = game_state.uid_record_id(uid)
 		else:
 			if action_type == 14 or (action_type == 11 and creature_type == 2):
 				creature["action_from_x"] = creature.get("x", x)
@@ -1618,32 +1726,68 @@ func _load_world_map(map_id: int) -> bool:
 	AudioService.stop_seff()
 	map_loading_overlay.show()
 	_map_loading_hide_serial += 1
-	_map_loading_progress_samples.clear()
-	_capturing_map_loading_progress = true
-	var loaded: bool = world_renderer.load_map(map_id, _on_map_load_progress)
-	_capturing_map_loading_progress = false
-	_present_map_loading_progress(_map_loading_hide_serial, _map_loading_progress_samples.duplicate(true))
+	world_renderer.loading_map = true
+	_on_map_load_progress(0, "")
+	var loaded: bool = world_renderer.load_map(map_id)
+	if loaded:
+		call_deferred("_preload_visible_map_textures", _map_loading_hide_serial, game_state.player_x, game_state.player_y)
+	else:
+		world_renderer.loading_map = false
+		map_loading_overlay.hide()
 	return loaded
 
 
-func _present_map_loading_progress(serial: int, samples: Array[Dictionary]) -> void:
-	if samples.is_empty():
-		samples.append({"progress": 100, "map_name": ""})
-	for sample in samples:
-		if serial != _map_loading_hide_serial:
-			return
-		_set_map_loading_progress(int(sample.progress), str(sample.map_name))
-		var delay := MAP_LOADING_INITIAL_HOLD_SECONDS if int(sample.progress) == 0 else MAP_LOADING_PROGRESS_STEP_SECONDS
-		await get_tree().create_timer(delay).timeout
+func _preload_visible_map_textures(serial: int, center_grid_x: int, center_grid_y: int) -> void:
+	# Mirrors ProcessRun::loadMap(): map data accounts for 0..40%, then textures
+	# around the hero are retrieved grid-by-grid for 40..100%.
+	var resource: RefCounted = world_renderer.world_resource
+	_on_map_load_progress(40, resource.map_name)
+	await get_tree().process_frame
+
+	var map_width: int = resource.width
+	var map_height: int = resource.height
+	var x0: int = clampi(center_grid_x - MAP_PRELOAD_WINDOW_WIDTH / 2 / GameState.GRID_XP - MAP_OBJECT_MAX_WIDTH, 0, map_width)
+	var x1: int = clampi(center_grid_x + MAP_PRELOAD_WINDOW_WIDTH / 2 / GameState.GRID_XP + MAP_OBJECT_MAX_WIDTH, 0, map_width)
+	var y0: int = clampi(center_grid_y - MAP_PRELOAD_WINDOW_HEIGHT / 2 / GameState.GRID_YP - MAP_OBJECT_MAX_HEIGHT, 0, map_height)
+	var y1: int = clampi(center_grid_y + MAP_PRELOAD_WINDOW_HEIGHT / 2 / GameState.GRID_YP + MAP_OBJECT_MAX_HEIGHT, 0, map_height)
+	var total_grid_count: int = maxi(1, (y1 - y0 + 1) * (x1 - x0 + 1))
+	var done_grid_count := 0
+	var last_ratio := 0
+
+	for y in range(y0, y1):
+		for x in range(x0, x1 + 1):
+			if x < map_width and y < map_height:
+				var cell_key: int = x + y * map_width
+				if x % 2 == 0 and y % 2 == 0 and resource.tiles.has(cell_key):
+					resource.texture(int(resource.tiles[cell_key]))
+				for depth in [0, 1]:
+					var cell_objects: Array = resource.objects[depth].get(cell_key, [])
+					for object_data_value in cell_objects:
+						var object_data: PackedInt32Array = object_data_value
+						if not object_data.is_empty():
+							resource.texture(object_data[0])
+
+			var current_ratio := roundi(float(done_grid_count) * 60.0 / float(total_grid_count))
+			done_grid_count += 1
+			if current_ratio > last_ratio:
+				last_ratio = current_ratio
+				if serial != _map_loading_hide_serial:
+					return
+				_on_map_load_progress(40 + current_ratio, resource.map_name)
+				await get_tree().process_frame
+
+	if serial != _map_loading_hide_serial:
+		return
+	_on_map_load_progress(100, resource.map_name)
+	await get_tree().process_frame
 	await get_tree().create_timer(MAP_LOADING_COMPLETE_HOLD_SECONDS).timeout
 	if serial == _map_loading_hide_serial:
+		world_renderer.loading_map = false
+		world_renderer.queue_redraw()
 		map_loading_overlay.hide()
 
 
 func _on_map_load_progress(progress: int, map_name: String) -> void:
-	if _capturing_map_loading_progress:
-		_map_loading_progress_samples.append({"progress": clampi(progress, 0, 100), "map_name": map_name})
-		return
 	_set_map_loading_progress(progress, map_name)
 
 
@@ -1652,7 +1796,6 @@ func _set_map_loading_progress(progress: int, map_name: String) -> void:
 	if display_name.is_empty():
 		display_name = "地图%d" % game_state.player_map_id
 	map_loading_text.text = "[center]加载地图[color=red]%s[/color]\n完成[color=red]%%%d[/color][/center]" % [display_name, clampi(progress, 0, 100)]
-	RenderingServer.force_draw()
 
 
 func _spinkick_direction(uid: int, action: Dictionary) -> int:
@@ -2171,7 +2314,7 @@ func _handle_corecord(payload: PackedByteArray) -> void:
 			3:  # NPC: NPCID (u32)
 				creature["npc_id"] = union_data.decode_u32(0)
 	if c_type == 1:
-		var monster_id: int = creature.get("monster_id", (uid >> 35) & 0xFFFFFF)
+		var monster_id: int = creature.get("monster_id", game_state.uid_record_id(uid))
 		creature["action_type"] = _creature_stored_action_type(action_type, c_type, monster_id)
 		var spawn_direction: int = _resources.monster_spawn_direction(monster_id) if is_new and action_type == 1 else 0
 		if spawn_direction > 0:

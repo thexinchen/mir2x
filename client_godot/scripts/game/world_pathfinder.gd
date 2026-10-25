@@ -168,6 +168,48 @@ func _push_heap(heap: Array[Dictionary], entry: Dictionary) -> void:
 	heap[index] = entry
 
 
+# Mir3 4AB72C/4AAF14: weighted wavefront without a target heuristic.
+# Existing chase/pickup search stays unchanged; this is for ground run fallback.
+func find_mir3_path(start: Vector2i, goal: Vector2i, can_walk: Callable, occupied: Dictionary, max_nodes := 50000) -> Array[Vector2i]:
+	if goal == start or occupied.has(goal) or not can_walk.call(goal.x, goal.y):
+		return []
+	var open: Array[Dictionary] = [{"point": start, "score": 0}]
+	var costs := {start: 0}
+	var parents := {}
+	var expanded := 0
+	while not open.is_empty() and expanded < max_nodes:
+		var entry := _pop_heap(open)
+		var point: Vector2i = entry.point
+		var cost: int = entry.score
+		if cost != int(costs[point]):
+			continue
+		if point == goal:
+			var result: Array[Vector2i] = []
+			while point != start:
+				result.push_front(point)
+				point = parents[point]
+			return _normalize_straight_segments(start, result, 2)
+		expanded += 1
+		for d in range(8):
+			var next: Vector2i = point + DIRECTIONS[d]
+			if occupied.has(next) or not can_walk.call(next.x, next.y):
+				continue
+			var weight := 4
+			for neighbor in DIRECTIONS:
+				var adjacent: Vector2i = next + neighbor
+				if not can_walk.call(adjacent.x, adjacent.y):
+					weight += 1
+			if d % 2 == 1:
+				weight += weight >> 1
+			var candidate := cost + weight
+			if candidate >= int(costs.get(next, 0x7FFFFFFF)):
+				continue
+			costs[next] = candidate
+			parents[next] = point
+			_push_heap(open, {"point": next, "score": candidate})
+	return []
+
+
 func _pop_heap(heap: Array[Dictionary]) -> Dictionary:
 	var result: Dictionary = heap[0]
 	var tail: Dictionary = heap.pop_back()

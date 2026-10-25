@@ -6,6 +6,10 @@ var _transition_heads: Array[int] = []
 
 
 func _ready() -> void:
+	var local_map_uid := (1 << 59) | (1 << 35) | 13
+	if GameState.call("_map_id_from_uid", local_map_uid) != 1 or GameState.uid_record_id(local_map_uid) != 1:
+		_fail("local server UID layout did not decode map 1 from bits 58..35")
+		return
 	var select := load("res://scenes/account/select_character.tscn").instantiate() as Control
 	add_child(select)
 	await get_tree().process_frame
@@ -204,7 +208,10 @@ func _ready() -> void:
 	if not NetworkClient.get("_message_dispatch_paused"):
 		_fail("queued map messages resumed before the loading page rendered its first frame")
 		return
-	NetworkClient.resume_message_dispatch()
+	await get_tree().process_frame
+	if NetworkClient.get("_message_dispatch_paused"):
+		_fail("game scene did not resume queued map messages after its first visible frame")
+		return
 	get_tree().current_scene = self
 	mounted_game.queue_free()
 	await get_tree().process_frame

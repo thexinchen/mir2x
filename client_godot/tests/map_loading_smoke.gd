@@ -78,6 +78,9 @@ func _ready() -> void:
 	if not saw_intermediate or not saw_visible_complete:
 		_fail("progress did not render intermediate and completed states: intermediate=%s complete=%s text=%s" % [saw_intermediate, saw_visible_complete, loading_text.text])
 		return
+	if main.get_node("WorldRenderer").world_resource.get("_texture_cache").is_empty():
+		_fail("C++-style visible map texture preload did not populate the texture cache")
+		return
 	await get_tree().create_timer(0.25).timeout
 	if overlay.visible:
 		_fail("completed map loading overlay did not close after the visible 100%% hold")

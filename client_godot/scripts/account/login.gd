@@ -8,6 +8,7 @@ const AutoLogin = preload("res://scripts/account/auto_login.gd")
 @onready var build_version: Label = %BuildVersion
 
 var auto_login_sent := false
+var login_after_connect := false
 
 
 func _ready() -> void:
@@ -39,6 +40,13 @@ func _on_login_pressed() -> void:
 		_show_notice("无效的账号或密码")
 	else:
 		_hide_notice()
+		if not NetworkClient.is_connected_to_server():
+			login_after_connect = true
+			_show_notice("正在连接服务器…")
+			if NetworkClient.connect_to_server() != OK:
+				login_after_connect = false
+				_show_notice("连接服务器失败，请重试")
+			return
 		var error := NetworkClient.login(account_input.text, password_input.text)
 		if error != OK:
 			_show_notice("服务器尚未连接")
@@ -63,9 +71,16 @@ func _on_server_message(head_code: int, payload: PackedByteArray) -> void:
 		_show_notice("该账号已经登录" if not payload.is_empty() and payload[0] == 2 else "无效的账号或密码")
 
 
-func _on_connection_changed(connected: bool, _message: String) -> void:
+func _on_connection_changed(connected: bool, message: String) -> void:
 	if connected:
-		_try_auto_login()
+		if login_after_connect:
+			login_after_connect = false
+			_on_login_pressed()
+		else:
+			_try_auto_login()
+	elif login_after_connect:
+		login_after_connect = false
+		_show_notice(message)
 
 
 func _try_auto_login() -> void:

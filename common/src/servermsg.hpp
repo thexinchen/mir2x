@@ -362,6 +362,9 @@ struct SMPlayerBroadcast
 };
 
 #pragma pack(pop)
+static_assert(sizeof(SMOnlineOK) == 176, "SMOnlineOK wire layout mismatch");
+static_assert(sizeof(SMAction) == 43, "SMAction wire layout mismatch");
+static_assert(sizeof(SMCORecord) == 48, "SMCORecord wire layout mismatch");
 
 namespace
 {
