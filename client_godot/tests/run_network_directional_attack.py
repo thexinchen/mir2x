@@ -10,6 +10,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--godot", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--input", action="store_true", help="Use real Shift/mouse input in an Xvfb actor window")
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -17,12 +18,19 @@ def main():
     env.setdefault("MIR2X_WORLD_RES", str(project / "build/world_res"))
     env.setdefault("MIR2X_TEXTURE_RES", str(project.parent / "build/Release/res/texture"))
     env.setdefault("MIR2X_AUDIO_RES", str(project / "build/audio"))
+    if args.input:
+        env["MIR2X_DIRECTIONAL_INPUT"] = "1"
     command = [args.godot, "--headless", "--max-fps", "60", "--path", str(project),
                "res://tests/network_directional_attack_smoke.tscn"]
     children = []
     try:
         for role in ("observer", "actor"):
-            process = subprocess.Popen(command, env={**env, "MIR2X_DIRECTIONAL_ROLE": role},
+            role_command = command
+            role_env = {**env, "MIR2X_DIRECTIONAL_ROLE": role}
+            if args.input and role == "actor":
+                role_command = ["xvfb-run", "-a", *[part for part in command if part != "--headless"]]
+                role_env["MIR2X_DIRECTIONAL_SCREENSHOT"] = str(args.output_dir / "actor.png")
+            process = subprocess.Popen(role_command, env=role_env,
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             children.append((role, process))
             if role == "observer":

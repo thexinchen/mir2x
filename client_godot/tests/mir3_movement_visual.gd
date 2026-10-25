@@ -105,7 +105,7 @@ func _point(tile: Vector2i) -> Vector2:
 	return Vector2(tile.x * 48 + 24 - int(GameState.view_x), tile.y * 32 + 16 - int(GameState.view_y))
 
 
-func _press(button: int, point: Vector2) -> void:
+func _press(button: int, point: Vector2, shift := false) -> void:
 	Input.warp_mouse(point)
 	var motion := InputEventMouseMotion.new()
 	motion.position = point
@@ -114,6 +114,7 @@ func _press(button: int, point: Vector2) -> void:
 	event.button_index = button
 	event.position = point
 	event.pressed = true
+	event.shift_pressed = shift
 	Input.parse_input_event(event)
 
 

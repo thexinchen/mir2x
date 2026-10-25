@@ -78,6 +78,18 @@ func _ready() -> void:
 	walls[Vector2i.ZERO] = true
 	_expect(finder.resolve_mir3_goal(Vector2i.ZERO, _walkable, {}, bounds) == Vector2i(1, 0), "boundary adjustment skips outside-map candidates")
 	_expect(finder.find_mir3_path(Vector2i(5, 5), Vector2i(-1, 0), _walkable, {}, 50000, bounds).is_empty(), "outside-map target is rejected before adjustment")
+	walls.clear()
+	for offset in Movement.DIRECTIONS:
+		walls[Vector2i(5, 5) + offset] = true
+	input.release()
+	input.press(MOUSE_BUTTON_LEFT, Vector2i(12, 5), true, true)
+	_expect(input.decide(Vector2i(5, 5), _walkable, {}).get("attack") == 3, "Shift overrides Ctrl run and blocked-ground pathfinding")
+	input.advance(0.301, Vector2i(5, 5), false, true, false, true)
+	_expect(input.decide(Vector2i(5, 5), _walkable, {}).get("attack") == 5, "held Shift can attack on the current cell")
+	input.advance(0.1, Vector2i(12, 5), false, true, false, false)
+	_expect(not input.force_attack, "releasing Shift updates held left intent")
+	input.release()
+	_expect(not input.force_attack, "mouse release clears forced attack")
 	if failures.is_empty():
 		print("MIR3 MOVEMENT RULES PASS: click/hold/release/turn/run/occupancy/weighted path/five-neighbor gate/bounded goal adjustment")
 	get_tree().quit(0 if failures.is_empty() else 1)

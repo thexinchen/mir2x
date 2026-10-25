@@ -88,6 +88,7 @@ var _last_attack_ms := -10000
 var _last_npc_dialogue_ms := -1501
 var _pending_spell_action: Dictionary = {}
 var _chase_target_uid := 0
+var _shift_chase_active := false
 var _follow_focus_uid := 0
 var _attack_focus_uid := 0
 var _pickup_target := Vector2i(-1, -1)
@@ -238,6 +239,8 @@ func _refresh_grabbed_item_icon() -> void:
 
 func _input(event: InputEvent) -> void:
 	# Releases must reach us even when a panel consumes the GUI event.
+	if event is InputEventKey and event.keycode == KEY_SHIFT and not event.pressed:
+		_cancel_shift_chase()
 	if event is InputEventMouseButton and not event.pressed and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 		_release_ground_input()
 
@@ -248,11 +251,19 @@ func _notification(what: int) -> void:
 
 
 func _release_ground_input() -> void:
+	_cancel_shift_chase()
 	_ground_input.release()
 	if _ground_path_active:
 		_move_path.clear()
 	_ground_path_active = false
 	# Preserve the in-flight animation/cooldown; only unsent work is cancelled.
+
+
+func _cancel_shift_chase() -> void:
+	if _shift_chase_active:
+		_move_path.clear()
+		_chase_target_uid = 0
+	_shift_chase_active = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -422,10 +433,16 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 				_request_npc_dialogue(focus_uid)
 			elif creature.get("type", 0) == 1:
 				_start_chase(focus_uid)
+			elif creature.get("type", 0) == 2 and event.shift_pressed and not event.alt_pressed:
+				_start_chase(focus_uid)
+				_shift_chase_active = _chase_target_uid != 0
 			return
 		if not game_state.grabbed_item.is_empty():
 			var grabbed: Dictionary = game_state.grabbed_item
 			NetworkClient.send_drop_item(grabbed.get("itemID", 0), grabbed.get("seqID", 0), grabbed.get("count", 0))
+			return
+		if event.shift_pressed and not event.alt_pressed:
+			_begin_ground_input(event, grid)
 			return
 		if grid == Vector2i(game_state.player_x, game_state.player_y):
 			# 67B26D–67B2B5 -> 68F984 sends pickup at the hero's current
@@ -460,10 +477,11 @@ func _request_npc_dialogue(uid: int, now_ms := -1) -> bool:
 
 
 func _begin_ground_input(event: InputEventMouseButton, grid: Vector2i) -> void:
-	if grid == Vector2i(game_state.player_x, game_state.player_y):
+	var force_attack := event.button_index == MOUSE_BUTTON_LEFT and event.shift_pressed and not event.alt_pressed
+	if grid == Vector2i(game_state.player_x, game_state.player_y) and not force_attack:
 		# The decision layer treats the current cell as a no-op. Preserve the
 		# current operation, but remember the press for later held redirection.
-		_ground_input.press(event.button_index, grid, event.ctrl_pressed)
+		_ground_input.press(event.button_index, grid, event.ctrl_pressed, force_attack)
 		return
 	var remaining := _move_step_timer
 	var previous_button: int = _ground_input.button
@@ -472,7 +490,7 @@ func _begin_ground_input(event: InputEventMouseButton, grid: Vector2i) -> void:
 	_move_step_timer = remaining
 	_ground_input.button = previous_button
 	_ground_input.held_seconds = previous_held
-	_ground_input.press(event.button_index, grid, event.ctrl_pressed)
+	_ground_input.press(event.button_index, grid, event.ctrl_pressed, force_attack)
 
 
 func _ground_occupied() -> Dictionary:
@@ -494,7 +512,7 @@ func _process_ground_input(delta: float) -> void:
 		return
 	var hovered := get_viewport().gui_get_hovered_control()
 	var over_world := hovered == world_renderer or (hovered != null and world_renderer.is_ancestor_of(hovered))
-	_ground_input.advance(delta, _mouse_grid(), Input.is_key_pressed(KEY_CTRL), over_world, _ground_path_active)
+	_ground_input.advance(delta, _mouse_grid(), Input.is_key_pressed(KEY_CTRL), over_world, _ground_path_active, Input.is_key_pressed(KEY_SHIFT) and not Input.is_key_pressed(KEY_ALT))
 	if not _ground_input.pending:
 		return
 	var from := Vector2i(game_state.player_x, game_state.player_y)
@@ -509,10 +527,14 @@ func _process_ground_input(delta: float) -> void:
 	_ground_input.pending = false
 	if _move_step_timer > 0.0 or _player_action_timer >= 0.0 or _pickup_action_timer >= 0.0:
 		return
-	if _ground_input.button == MOUSE_BUTTON_LEFT and Time.get_ticks_msec() - _last_attack_ms <= 1000:
+	if _ground_input.button == MOUSE_BUTTON_LEFT and not _ground_input.force_attack and Time.get_ticks_msec() - _last_attack_ms <= 1000:
 		return
 	var occupied := _ground_occupied()
 	var decision: Dictionary = _ground_input.decide(from, world_renderer.can_walk, occupied)
+	if decision.has("attack"):
+		var front: Vector2i = from + Mir3MovementScript.DIRECTIONS[int(decision.attack) - 1]
+		_send_attack_action(0, front)
+		return
 	if decision.has("path"):
 		_ground_path_goal = decision.path
 		_move_path = _find_ground_path(from, occupied)
@@ -905,12 +927,12 @@ func _grid_distance(from: Vector2i, to: Vector2i) -> int:
 	return maxi(absi(from.x - to.x), absi(from.y - to.y))
 
 
-func _send_attack_action(target_uid: int) -> void:
+func _send_attack_action(target_uid: int, ground_target := Vector2i(-1, -1)) -> void:
 	_last_attack_ms = Time.get_ticks_msec()
 	# ACTION_ATTACK = 7
 	var creature: Dictionary = game_state.get_creature(target_uid)
-	var tx: int = creature.get("x", game_state.player_x)
-	var ty: int = creature.get("y", game_state.player_y)
+	var tx: int = ground_target.x if target_uid == 0 and ground_target != Vector2i(-1, -1) else creature.get("x", game_state.player_x)
+	var ty: int = ground_target.y if target_uid == 0 and ground_target != Vector2i(-1, -1) else creature.get("y", game_state.player_y)
 	var action := {
 		"type": 7,  # ACTION_ATTACK
 		"speed": 100,  # SYS_DEFSPEED
