@@ -58,7 +58,28 @@ func _ready() -> void:
 	renderer.get("_actor_target_rects").clear()
 	main.call("_cast_magic", fireball, Vector2i(13, 10))
 	_expect(main.get("requested_uid") == 707, "live history behavior is preserved")
-	if failures.is_empty(): print("MIR3 RESURRECTION TARGET PASS: separate corpse hitboxes, F12 corpse UID, ordinary-spell exclusion, dead-history clearing, stale-scene rejection and live fallback")
+	# A hovered new actor must not replace the spell history when toggling swords.
+	GameState.update_creature(808, {"uid": 808, "type": 2, "x": 13, "y": 10, "action_type": 2})
+	renderer.call("_record_actor_target", 808, 2, 11, 2, body, origin.x, origin.y)
+	_expect(renderer.focus_uid_at_screen(mouse) == 808, "toggle fixture hovers a different live actor")
+	for name in ["刺杀剑术", "烈火剑法", "翔空剑法", "莲月剑法", "半月弯刀", "十方斩"]:
+		var sword: int = resources.magic_id(name)
+		_expect(sword > 0, "sword toggle metadata exists: " + name)
+		GameState.learned_magic = [{"magicID": sword}]
+		GameState.magic_keys = {sword: 49}
+		GameState.magic_cast_times.clear()
+		main.set("_magic_focus_uid", 707)
+		key.keycode = KEY_F1
+		main.set("requested_uid", -1)
+		_expect(main.call("_try_magic_key", key) and bool(main.get("_swing_magic").get(sword, false)), "F1 enables sword: " + name)
+		_expect(main.get("_magic_focus_uid") == 707 and main.get("requested_uid") == -1, "sword toggle preserves spell history without a spell request: " + name)
+		main.call("_try_magic_key", key)
+		_expect(not bool(main.get("_swing_magic").get(sword, false)) and main.get("_magic_focus_uid") == 707, "disabling sword preserves spell history: " + name)
+	# Cooldown-rejected actual spells still refresh focus, as before.
+	GameState.magic_cast_times[fireball] = Time.get_ticks_msec()
+	main.call("_cast_magic", fireball, Vector2i(13, 10))
+	_expect(main.get("_magic_focus_uid") == 808, "cooldown-rejected spell still refreshes hovered target")
+	if failures.is_empty(): print("MIR3 RESURRECTION TARGET PASS: separate corpse hitboxes, F12 corpse UID, ordinary-spell exclusion, dead-history clearing, stale-scene rejection, live fallback and sword-toggle focus isolation")
 	get_tree().quit(0 if failures.is_empty() else 1)
 
 func _expect(value: bool, message: String) -> void:
