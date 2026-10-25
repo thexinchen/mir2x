@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "request": {
+    "entry": "0x67b398",
+    "message": 82,
+    "minimum_interval_ms": 1500,
+    "inclusive_boundary": true,
+    "requires": [
+      "Ctrl takes priority over Alt",
+      "initial event, not held repeat",
+      "live actor"
+    ],
+    "accepted": "send actor UID plus coordinates, then exit right-button handler",
+    "rejected": "continue ground turn/run processing",
+    "instruction_checks": [
+      {
+        "va": "0x67b434",
+        "hex": "807d08000f858d000000",
+        "role": "held repeat skips one-shot query"
+      },
+      {
+        "va": "0x67b43e",
+        "hex": "807e7c000f8583000000",
+        "role": "dead actor falls through"
+      },
+      {
+        "va": "0x67b452",
+        "hex": "81f9dc0500007271",
+        "role": "elapsed <1500 falls through; equality allowed"
+      },
+      {
+        "va": "0x67b475",
+        "hex": "8b4e0cba52000000e882100500",
+        "role": "actor UID to ECX; message82 to EDX; command builder call"
+      }
+    ]
+  },
+  "returned_state": {
+    "message": 751,
+    "registration": {
+      "call": "0x67f09c",
+      "register_function": "0x67ea1c",
+      "message": 751,
+      "registration_ecx": 6,
+      "handler": "0x68761c"
+    },
+    "handler": "0x68761c",
+    "panel_loader": "0x62dc2c",
+    "panel_owner_offset": 28,
+    "show": "0x520650",
+    "legacy_payload_bytes": 7259,
+    "name": {
+      "offset": 4,
+      "maximum_bytes": 25
+    },
+    "equipment": {
+      "offset": 115,
+      "records": 32,
+      "stride_source": "off_729174",
+      "loop": "0x62de2a..0x62de70"
+    },
+    "appearance_fields": "0x62dca3/0x62dcb5/0x62dcc9; 0x62de97; 0x62debd"
+  },
+  "protocol_name_reference": "https://github.com/ndljava/mir/blob/master/MirOnline2/src/com/leyou/net/MirProtocol.as",
+  "pairing_confidence": "Sample proves request shape and independent equipment/name panel for751; related protocol source names82 CM_QUERYUSERSTATE and751 SM_SENDUSERSTATE. No original server roundtrip was captured.",
+  "current_adapter": {
+    "query": "CM_QUERYPLAYERNAME + CM_QUERYPLAYERWLDESP",
+    "reply": "SM_PLAYERWLDESP",
+    "slots": 11,
+    "readonly": true,
+    "nonplayer_query_sent": false,
+    "invalidations": [
+      "close",
+      "actor removal",
+      "map/session reset",
+      "pending response timeout"
+    ]
+  },
+  "limits": [
+    "Related protocol source is supporting nomenclature, not proof that its entire version matches this binary.",
+    "Legacy7259-byte record is not decoded as the current Cereal record; unsupported original state fields are not fabricated.",
+    "Current query only supports player UIDs; nonplayer initial consumption and held fallback are retained without sending an invalid request."
+  ]
+}
