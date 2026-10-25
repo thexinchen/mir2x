@@ -285,3 +285,20 @@ xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network
 ```bash
 /home/czx/godot --headless --max-fps 60 --path client_godot res://tests/network_combat_job_smoke.tscn
 ```
+
+## 批次 25：补齐治愈术学习、施法与持久化夹具（2026-10-26）
+
+上一批 `network_magic_smoke` 因标准角色没有已学技能而停在stage0，本批让场景通过现有测试接口准备自身前提：角色必须包含道士职业，未满足时补足7级所需累计经验26800，生成并消费230号《治愈术》技能书，等待服务端确认已学17号治愈术。保留职业、等级和前置技能学习检查，不直接改数据库。若角色已经满血，则提高到下一等级；当前服务端升级增加HP上限但不补满当前HP，由此提供回血检验所需的缺血状态。测试经验与技能会保留，应使用标准测试角色。
+
+另外修复了测试时序：新版夹具准备很快，原测试会在地图加载遮罩尚未消失时发送施法事件，导致输入被正常拦截，出现stage2/local_action=false。现在明确等地图就绪再绑定、施法；没有绕过运行时输入保护。新增 `MIR2X_NETWORK_MAGIC_ACCOUNT` 供隔离标准夹具，默认仍为id_4。
+
+104结果：id_4学习夹具后通过治愈术17、buff1、X键、权威回血224->245和HUD图标检查；此前没有治愈术的id_3完成从零准备后通过56->76。随后重登id_3，在 `MIR2X_NETWORK_MAGIC_EXPECT_PERSISTED=1` 下确认X键从服务端配置读回，窗口复跑通过120->141，并保存治疗特效和HUD图标截图。完整动作回归通过。窗口验证调用既有技能面板按键处理及主场景施法事件入口；没有声称模拟了操作系统物理键盘按键。
+
+```bash
+export MIR2X_NETWORK_MAGIC_ACCOUNT=id_3
+/home/czx/godot --headless --max-fps 60 --path client_godot res://tests/network_magic_smoke.tscn
+export MIR2X_NETWORK_MAGIC_EXPECT_PERSISTED=1
+xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_magic_smoke.tscn
+```
+
+本批没有改游戏运行逻辑，不需要原生重编译。治愈术链路的此前缺口已补验证，其他技能、宠物比较、原版数值与技能动作仍不因这项通过而视为完成。部分测试退出仍有ObjectDB实例泄漏警告，未计为本批修复。

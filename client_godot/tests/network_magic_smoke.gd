@@ -19,6 +19,7 @@ var _capture_started := false
 var _cast_started_msec := 0
 var _initial_hp := 0
 var _expected_buff_id := 0
+var _fixture_started := false
 
 
 func _ready() -> void:
@@ -33,9 +34,18 @@ func _process(_delta: float) -> void:
 		return
 	match _stage:
 		Stage.WAIT_READY:
-			if not _learned_received or not _config_received or not _health_received:
+			if _main.get_node("MapLoadingOverlay").visible:
 				return
-			if not _has_learned_magic() or GameState.player_hp <= 0:
+			if not _config_received or not _health_received:
+				return
+			if GameState.player_hp <= 0:
+				return
+			if not _has_learned_magic() or GameState.player_hp >= GameState.player_hp_max:
+				if not _fixture_started:
+					_fixture_started = true
+					_prepare_healing_fixture()
+				return
+			if not _learned_received:
 				return
 			_initial_hp = GameState.player_hp
 			if _initial_hp >= GameState.player_hp_max:
@@ -121,6 +131,49 @@ func _has_learned_magic() -> bool:
 	return false
 
 
+func _prepare_healing_fixture() -> void:
+	if (GameState.player_job & 2) == 0:
+		_fail("healing fixture requires a Taoist test character", 16)
+		return
+	var target_level := maxi(7, GameState.player_level)
+	if GameState.player_hp >= GameState.player_hp_max:
+		target_level = maxi(target_level, GameState.player_level + 1)
+	# SYS_LEVEL reaches N at SYS_SUMEXP(N-1). Raising max HP without
+	# filling current HP produces a damaged fixture through normal messages.
+	var previous := target_level - 1
+	var required_exp := 100 * previous * previous * previous + 100 * previous * previous + 100 * previous + 1000
+	if GameState.player_exp < required_exp:
+		NetworkClient.send_request_add_exp(required_exp - GameState.player_exp)
+		for _i in range(40):
+			await get_tree().create_timer(0.05).timeout
+			if GameState.player_level >= target_level: break
+	if GameState.player_level < target_level or GameState.player_hp >= GameState.player_hp_max:
+		_fail("could not prepare healing level and missing-HP fixture", 17)
+		return
+	if _has_learned_magic(): return
+	var book := _healing_book()
+	if book.is_empty():
+		NetworkClient.send_make_item(230)
+		for _i in range(40):
+			await get_tree().create_timer(0.05).timeout
+			book = _healing_book()
+			if not book.is_empty(): break
+	if book.is_empty():
+		_fail("could not create healing skill book fixture", 18)
+		return
+	NetworkClient.send_consume_item(230, int(book.seqID), 1)
+	for _i in range(40):
+		await get_tree().create_timer(0.05).timeout
+		if _has_learned_magic(): return
+	_fail("server did not confirm learning healing from its book", 19)
+
+
+func _healing_book() -> Dictionary:
+	for item in GameState.inventory:
+		if int(item.get("itemID", 0)) == 230: return item
+	return {}
+
+
 func _buff_id_by_name(resources: RefCounted, buff_name: String) -> int:
 	var names: Dictionary = resources.get("buff_names")
 	for id_value in names:
@@ -138,7 +191,10 @@ func _magic_button(panel: Control) -> TextureButton:
 
 
 func _on_connection_changed(connected: bool, _message: String) -> void:
-	if connected and NetworkClient.login("id_4", "123456") != OK:
+	var account := OS.get_environment("MIR2X_NETWORK_MAGIC_ACCOUNT")
+	if account.is_empty():
+		account = "id_4"
+	if connected and NetworkClient.login(account, "123456") != OK:
 		_fail("failed to send login", 2)
 
 
