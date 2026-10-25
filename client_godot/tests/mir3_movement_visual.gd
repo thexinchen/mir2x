@@ -54,6 +54,25 @@ func _ready() -> void:
 	await get_tree().create_timer(0.8).timeout
 	_expect(_position() == after, "HUD press does not move", _position())
 	_release(MOUSE_BUTTON_LEFT, Vector2(400, 570))
+	# A no-op press must not cancel another operation. Holding it and later
+	# moving the pointer must still produce a new ground request after 300 ms.
+	before = _position()
+	var mine_target := before + Vector2i.LEFT
+	main.set("_mine_target", mine_target)
+	main.set("_player_action_timer", 0.9)
+	main.call("_set_player_action", 14)
+	await _click(MOUSE_BUTTON_RIGHT, _point(before))
+	_expect(main.get("_mine_target") == mine_target, "current-cell right click preserves active operation", main.get("_mine_target"))
+	_press(MOUSE_BUTTON_RIGHT, _point(before))
+	await get_tree().create_timer(0.35).timeout
+	var redirected := _point(before + Vector2i(6, 0))
+	Input.warp_mouse(redirected)
+	var motion := InputEventMouseMotion.new()
+	motion.position = redirected
+	Input.parse_input_event(motion)
+	await get_tree().create_timer(1.3).timeout
+	_release(MOUSE_BUTTON_RIGHT, redirected)
+	_expect(main.get("_mine_target") == Vector2i(-1, -1) and _position().x > before.x and _position().y == before.y, "held current-cell press redirects and cancels the old operation", _position())
 	await get_tree().process_frame
 	var output := OS.get_environment("MIR2X_MOVEMENT_SCREENSHOT")
 	if not output.is_empty() and DisplayServer.get_name() != "headless":

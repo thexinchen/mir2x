@@ -311,7 +311,7 @@ func _ready() -> void:
 		return
 	if not _test_monster_jump_stands(main):
 		return
-	if not _test_self_action_map_transition(main):
+	if not await _test_self_action_map_transition(main):
 		return
 
 	if not _test_inventory_transaction_feedback(main, resources):
@@ -3753,6 +3753,14 @@ func _test_self_action_map_transition(main: Control) -> bool:
 	var renderer: Control = main.get_node("WorldRenderer")
 	if renderer.world_resource.map_id != 24 or renderer.map_width <= 0 or AudioService.current_bgm_id != renderer.world_resource.bgm_id:
 		_fail("map transition did not reload map resources and BGM")
+		return false
+	# Resource data is synchronous, but visible texture preload/overlay completion
+	# is asynchronous. Later input tests must not run through the loading modal.
+	var deadline := Time.get_ticks_msec() + 5000
+	while main.get_node("MapLoadingOverlay").visible and Time.get_ticks_msec() < deadline:
+		await get_tree().process_frame
+	if main.get_node("MapLoadingOverlay").visible:
+		_fail("map transition did not finish visible preload before input tests")
 		return false
 	return true
 

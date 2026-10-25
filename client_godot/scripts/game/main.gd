@@ -433,6 +433,11 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 
 
 func _begin_ground_input(event: InputEventMouseButton, grid: Vector2i) -> void:
+	if grid == Vector2i(game_state.player_x, game_state.player_y):
+		# The decision layer treats the current cell as a no-op. Preserve the
+		# current operation, but remember the press for later held redirection.
+		_ground_input.press(event.button_index, grid, event.ctrl_pressed)
+		return
 	var remaining := _move_step_timer
 	var previous_button: int = _ground_input.button
 	var previous_held: float = _ground_input.held_seconds
@@ -465,6 +470,13 @@ func _process_ground_input(delta: float) -> void:
 	_ground_input.advance(delta, _mouse_grid(), Input.is_key_pressed(KEY_CTRL), over_world, _ground_path_active)
 	if not _ground_input.pending:
 		return
+	var from := Vector2i(game_state.player_x, game_state.player_y)
+	if _ground_input.target != from and (_mine_target.x >= 0 or _pickup_target.x >= 0 or _chase_target_uid != 0):
+		# A press at the current cell may later become a real held request.
+		# Cancel its old operation once, without losing the held-button state.
+		var remaining := _move_step_timer
+		_cancel_movement(false)
+		_move_step_timer = remaining
 	# Consume a request, not an entire click-to-destination path. Held input
 	# regenerates it after 300 ms. Existing animation gates control step cadence.
 	_ground_input.pending = false
@@ -472,7 +484,6 @@ func _process_ground_input(delta: float) -> void:
 		return
 	if _ground_input.button == MOUSE_BUTTON_LEFT and Time.get_ticks_msec() - _last_attack_ms <= 1000:
 		return
-	var from := Vector2i(game_state.player_x, game_state.player_y)
 	var occupied := _ground_occupied()
 	var decision: Dictionary = _ground_input.decide(from, world_renderer.can_walk, occupied)
 	if decision.has("path"):
@@ -527,8 +538,11 @@ func _start_pickup_at(target: Vector2i) -> void:
 		_pickup_target = Vector2i(-1, -1)
 
 
-func _cancel_movement() -> void:
-	_release_ground_input()
+func _cancel_movement(cancel_ground_input := true) -> void:
+	if cancel_ground_input:
+		_release_ground_input()
+	else:
+		_ground_path_active = false
 	_move_path.clear()
 	_move_step_timer = 0.0
 	_pending_spell_action.clear()
