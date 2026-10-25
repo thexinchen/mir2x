@@ -829,6 +829,9 @@ func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 	if magic_name in SELF_MAGIC_NAMES or magic_name in GROUND_MAGIC_NAMES or magic_name in TARGET_MAGIC_NAMES:
 		var locked_uid := _valid_locked_magic_target()
 		if locked_uid != 0 and Mir3TargetLockScript.ALLOWED.has(magic_name):
+			# 67CCCC writes the resolved lock into current spell focus before
+			# the busy gate. Independent lock storage does not bypass focus.
+			_magic_focus_uid = locked_uid
 			return _send_spell_action(9, magic_id, mouse_grid, locked_uid)
 	if magic_name in SELF_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, Vector2i(game_state.player_x, game_state.player_y), game_state.player_uid)
