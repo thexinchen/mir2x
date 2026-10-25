@@ -57,7 +57,8 @@ func _test_state_ordering() -> bool:
 	return _expect(self_cpid == ((2 << 32) | 42), "self CPID did not use original player DBID: %d" % self_cpid) \
 		and _expect(messages.size() == 2, "conversation message count mismatch") \
 		and _expect(messages[0].seq.id == 1 and messages[1].seq.id == 2, "message ordering mismatch") \
-		and _expect(state.chat_message_text(messages[0]) == "先到", "message plain text mismatch")
+		and _expect(state.chat_message_text(messages[0]) == "先到", "message plain text mismatch") \
+		and _expect(state.chat_message_text({"message": NetworkClient._serialize_cereal_string("<layout><par>&lt;标记&gt;&amp;</par></layout>")}) == "<标记>&", "plain-text preview did not decode XML entities after removing tags")
 
 
 func _test_wire_builders() -> bool:

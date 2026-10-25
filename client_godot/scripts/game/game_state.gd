@@ -490,7 +490,7 @@ func chat_message_text(message: Dictionary) -> String:
 			in_tag = false
 		elif not in_tag and character != "\r" and character != "\n":
 			result += character
-	return result
+	return result.xml_unescape()
 
 
 func chat_message_xml(message: Dictionary) -> String:
