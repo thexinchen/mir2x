@@ -277,6 +277,15 @@ func send_action(action_data: PackedByteArray) -> Error:
 	return _send_fixed_message(CM_ACTION, action_data)
 
 
+# Optional processing receipt, separate from authoritative action/correction
+# broadcasts. SM_OK means processing ended, not that the action succeeded.
+func send_action_request(action_data: PackedByteArray, callback: Callable) -> Error:
+	if action_data.size() != 43:
+		return ERR_INVALID_DATA
+	# Original elapsed > 10000 expires on tick 10001; other requests keep 1s.
+	return _send_request(CM_ACTION, action_data, false, callback, 10001)
+
+
 func send_player_say(content: String) -> Error:
 	var payload := PackedByteArray()
 	payload.resize(128)
@@ -667,11 +676,11 @@ func _send_u64_request(head_code: int, value: int, callback: Callable) -> Error:
 	return _send_request(head_code, payload, false, callback)
 
 
-func _send_request(head_code: int, payload: PackedByteArray, variable: bool, callback: Callable) -> Error:
+func _send_request(head_code: int, payload: PackedByteArray, variable: bool, callback: Callable, timeout_ms := 1000) -> Error:
 	var response_id := _next_response_id
 	_next_response_id += 1
 	if callback.is_valid():
-		_response_callbacks[response_id] = {"callback": callback, "expires": Time.get_ticks_msec() + 1000}
+		_response_callbacks[response_id] = {"callback": callback, "expires": Time.get_ticks_msec() + timeout_ms}
 	var error := _send_variable_message(head_code, payload, response_id) if variable else _send_fixed_message(head_code, payload, response_id)
 	if error != OK:
 		_response_callbacks.erase(response_id)

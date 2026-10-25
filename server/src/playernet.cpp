@@ -37,30 +37,31 @@ corof::awaitable<> Player::net_CM_HARVESTCORPSE(uint8_t, const uint8_t *buf, siz
 }
 
 
-corof::awaitable<> Player::net_CM_ACTION(uint8_t, const uint8_t *pBuf, size_t, uint64_t)
+corof::awaitable<> Player::net_CM_ACTION(uint8_t, const uint8_t *pBuf, size_t, uint64_t respID)
 {
     CMAction cmA;
     std::memcpy(&cmA, pBuf, sizeof(cmA));
-
-    if(true
-            && cmA.UID == UID()
-            && cmA.mapUID == mapUID()){
-
-        // don't do dispatchAction(cmA.action) here
-        // we may need to filter some actions to anti-cheat, dispatch in onCMActionXXXX(cmA) if legeal
-
+    bool processed = false;
+    if(cmA.UID == UID() && cmA.mapUID == mapUID()){
+        // Keep action validation/correction in each handler. A receipt means the
+        // handler completed, not that movement, damage or a spell succeeded.
+        processed = true;
         switch(to_d(cmA.action.type)){
-            case ACTION_STAND   : return onCMActionStand   (cmA);
-            case ACTION_MOVE    : return onCMActionMove    (cmA);
-            case ACTION_MINE    : return onCMActionMine    (cmA);
-            case ACTION_ATTACK  : return onCMActionAttack  (cmA);
-            case ACTION_SPELL   : return onCMActionSpell   (cmA);
-            case ACTION_PICKUP  : return onCMActionPickUp  (cmA);
-            case ACTION_SPINKICK: return onCMActionSpinKick(cmA);
-            default             : break;
+            case ACTION_STAND   : co_await onCMActionStand   (cmA); break;
+            case ACTION_MOVE    : co_await onCMActionMove    (cmA); break;
+            case ACTION_MINE    : co_await onCMActionMine    (cmA); break;
+            case ACTION_ATTACK  : co_await onCMActionAttack  (cmA); break;
+            case ACTION_SPELL   : co_await onCMActionSpell   (cmA); break;
+            case ACTION_PICKUP  : co_await onCMActionPickUp  (cmA); break;
+            case ACTION_SPINKICK: co_await onCMActionSpinKick(cmA); break;
+            default             : processed = false;              break;
         }
     }
-    return {};
+    // Old clients use respID=0 and retain the original fire-and-forget path.
+    if(respID){
+        postNetMessage(processed ? SM_OK : SM_ERROR, respID);
+    }
+    co_return;
 }
 
 corof::awaitable<> Player::net_CM_QUERYCORECORD(uint8_t, const uint8_t *pBuf, size_t, uint64_t)
