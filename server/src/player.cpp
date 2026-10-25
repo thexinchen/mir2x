@@ -1061,6 +1061,10 @@ corof::awaitable<> Player::onCMActionAttack(CMAction stCMA)
     int nDCType = stCMA.action.extParam.attack.magicID;
     uint64_t nAimUID = stCMA.action.aimUID;
 
+    if(to_u32(nDCType) == DBCOM_MAGICID(u8"刺杀剑术") && !m_sdLearnedMagicList.has(to_u32(nDCType))){
+        co_return;
+    }
+
     if(coLoc.mapUID != mapUID()){
         co_return;
     }

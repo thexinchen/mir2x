@@ -211,7 +211,7 @@ corof::awaitable<> Player::on_AM_ATTACK(const ActorMsgPack &mpk)
         return {};
     }
 
-    if(const auto &mr = DBCOM_MAGICRECORD(amA.damage.magicID); !pathf::inDCCastRange(mr.castRange, X(), Y(), amA.X, amA.Y)){
+    if(const auto &mr = DBCOM_MAGICRECORD(amA.rangeMagicID ? amA.rangeMagicID : to_u32(amA.damage.magicID)); !pathf::inDCCastRange(mr.castRange, X(), Y(), amA.X, amA.Y)){
         switch(uidf::getUIDType(amA.UID)){
             case UID_MON:
             case UID_PLY:

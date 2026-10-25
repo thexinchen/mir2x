@@ -640,6 +640,11 @@
         .job = u8"战士",
         .prior = u8"攻杀剑术",
     },
+    .castRange
+    {
+        .type = CRT_DIR,
+        .distance = 2,
+    },
     .gfxList
     {
         {

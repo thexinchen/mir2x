@@ -594,6 +594,9 @@ struct AMAttack
     int X;
     int Y;
 
+    // Optional range identity; physical damage keeps its AC/hit semantics.
+    // Zero uses damage.magicID, preserving existing attack producers.
+    uint32_t rangeMagicID;
     DamageNode damage;
 };
 

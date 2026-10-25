@@ -632,6 +632,10 @@ void BattleObject::dispatchAttackDamage(uint64_t nUID, int nDC, int modifierID)
         amA.X = X();
         amA.Y = Y();
 
+        // Thrust reaches the second cell but remains physical damage.
+        if(to_u32(nDC) == DBCOM_MAGICID(u8"刺杀剑术")){
+            amA.rangeMagicID = to_u32(nDC);
+        }
         amA.damage = getAttackDamage(nDC, modifierID);
         m_actorPod->post(nUID, {AM_ATTACK, amA});
     }

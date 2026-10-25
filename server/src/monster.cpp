@@ -1254,7 +1254,7 @@ corof::awaitable<> Monster::onAMAttack(const ActorMsgPack &mpk)
     switch(const auto friendType = co_await checkFriend(amA.UID); friendType){
         case FT_ENEMY:
             {
-                if(const auto &mr = DBCOM_MAGICRECORD(amA.damage.magicID); !pathf::inDCCastRange(mr.castRange, X(), Y(), amA.X, amA.Y)){
+                if(const auto &mr = DBCOM_MAGICRECORD(amA.rangeMagicID ? amA.rangeMagicID : to_u32(amA.damage.magicID)); !pathf::inDCCastRange(mr.castRange, X(), Y(), amA.X, amA.Y)){
                     switch(uidf::getUIDType(amA.UID)){
                         case UID_MON:
                         case UID_PLY:
