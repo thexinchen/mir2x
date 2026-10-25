@@ -732,9 +732,8 @@ bool Monster::struckDamage(uint64_t fromUID, const DamageNode &node)
                 }
         }
 
-        if(m_sdHealth.dead()){
-            onDie();
-        }
+        // updateHealth() dispatches the virtual onDie() on a lethal hit.
+        // Calling it again would roll drops and grant experience twice.
     }
     return true;
 }
