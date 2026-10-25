@@ -818,6 +818,10 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 			direction = _direction_to(game_state.player_x, game_state.player_y, target_grid.x, target_grid.y)
 	if direction == 0:
 		direction = game_state.player_direction
+	# Legacy heal 2 keeps the mouse-derived facing but sends self coordinates
+	# with UID 0 when no actor was selected (67CD5A–67CD75).
+	if action_type == 9 and requested_aim_uid == 0 and _resources.magic_names.get(magic_id, "") == "治愈术":
+		target_grid = Vector2i(game_state.player_x, game_state.player_y)
 	if action_type != 12 and direction != game_state.player_direction:
 		var stand := {
 			"type": 2, "speed": 100, "direction": direction,
