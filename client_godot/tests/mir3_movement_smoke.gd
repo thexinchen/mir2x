@@ -50,8 +50,36 @@ func _ready() -> void:
 			var crossed := previous + offset * n
 			_expect(_walkable(crossed.x, crossed.y), "path hop cannot cross blocked tile")
 		previous = point
+	# 67849C only accepts the five neighbors in the requested forward half.
+	for facing in range(8):
+		walls.clear()
+		for turn in range(-2, 3):
+			walls[Vector2i(5, 5) + Movement.DIRECTIONS[posmod(facing + turn, 8)]] = true
+		input.release()
+		input.press(MOUSE_BUTTON_RIGHT, Vector2i(5, 5) + Movement.DIRECTIONS[facing] * 5, false)
+		_expect(input.decide(Vector2i(5, 5), _walkable, {}).is_empty(), "rear exit must not pass five-neighbor entry check")
+		var edge: Vector2i = Vector2i(5, 5) + Movement.DIRECTIONS[posmod(facing + 2, 8)]
+		walls.erase(edge)
+		_expect(Movement.can_approach(Vector2i(5, 5), facing, _walkable, {}), "90-degree boundary counts as forward entry")
+	walls.clear()
+	var finder := Pathfinder.new()
+	var bounds := Rect2i(0, 0, 30, 30)
+	var blocked_goal := Vector2i(12, 5)
+	walls[blocked_goal] = true
+	_expect(finder.resolve_mir3_goal(blocked_goal, _walkable, {}, bounds) == Vector2i(12, 4), "blocked goal chooses north first")
+	path = finder.find_mir3_path(Vector2i(5, 5), blocked_goal, _walkable, {}, 50000, bounds)
+	_expect(not path.is_empty() and path.back() == Vector2i(12, 4), "weighted fallback reaches adjusted blocked goal")
+	var occupied := {Vector2i(12, 4): true}
+	_expect(finder.resolve_mir3_goal(blocked_goal, _walkable, occupied, bounds) == Vector2i(13, 4), "occupied north candidate tries northeast next")
+	for offset in Movement.DIRECTIONS:
+		walls[blocked_goal + offset] = true
+	_expect(finder.find_mir3_path(Vector2i(5, 5), blocked_goal, _walkable, {}, 50000, bounds).is_empty(), "blocked goal adjustment never expands beyond radius one")
+	walls.clear()
+	walls[Vector2i.ZERO] = true
+	_expect(finder.resolve_mir3_goal(Vector2i.ZERO, _walkable, {}, bounds) == Vector2i(1, 0), "boundary adjustment skips outside-map candidates")
+	_expect(finder.find_mir3_path(Vector2i(5, 5), Vector2i(-1, 0), _walkable, {}, 50000, bounds).is_empty(), "outside-map target is rejected before adjustment")
 	if failures.is_empty():
-		print("MIR3 MOVEMENT RULES PASS: click/hold/release/turn/run/occupancy/weighted path")
+		print("MIR3 MOVEMENT RULES PASS: click/hold/release/turn/run/occupancy/weighted path/five-neighbor gate/bounded goal adjustment")
 	get_tree().quit(0 if failures.is_empty() else 1)
 
 

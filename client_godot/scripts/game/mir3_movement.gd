@@ -64,6 +64,10 @@ func decide(from: Vector2i, can_walk: Callable, occupied: Dictionary) -> Diction
 	var offset: Vector2i = DIRECTIONS[d]
 	if button == MOUSE_BUTTON_RIGHT and not run_latched and maxi(absi(target.x - from.x), absi(target.y - from.y)) < 2:
 		return {"turn": d + 1}
+	# 67849C: a ground request needs at least one free neighbor within
+	# +/-90 degrees of the requested facing; a rear exit is not sufficient.
+	if not can_approach(from, d, can_walk, occupied):
+		return {}
 	run_latched = running
 	var front := from + offset
 	if running:
@@ -84,6 +88,13 @@ func decide(from: Vector2i, can_walk: Callable, occupied: Dictionary) -> Diction
 
 static func _free(point: Vector2i, can_walk: Callable, occupied: Dictionary) -> bool:
 	return not occupied.has(point) and can_walk.call(point.x, point.y)
+
+
+static func can_approach(from: Vector2i, facing: int, can_walk: Callable, occupied: Dictionary) -> bool:
+	for turn in range(-2, 3):
+		if _free(from + DIRECTIONS[posmod(facing + turn, 8)], can_walk, occupied):
+			return true
+	return false
 
 
 static func can_step(from: Vector2i, to: Vector2i, can_walk: Callable, occupied: Dictionary) -> bool:

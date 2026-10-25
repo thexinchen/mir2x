@@ -170,8 +170,12 @@ func _push_heap(heap: Array[Dictionary], entry: Dictionary) -> void:
 
 # Mir3 4AB72C/4AAF14: weighted wavefront without a target heuristic.
 # Existing chase/pickup search stays unchanged; this is for ground run fallback.
-func find_mir3_path(start: Vector2i, goal: Vector2i, can_walk: Callable, occupied: Dictionary, max_nodes := 50000) -> Array[Vector2i]:
-	if goal == start or occupied.has(goal) or not can_walk.call(goal.x, goal.y):
+func find_mir3_path(start: Vector2i, goal: Vector2i, can_walk: Callable, occupied: Dictionary, max_nodes := 50000, bounds := Rect2i()) -> Array[Vector2i]:
+	# 4AB72C rejects out-of-map endpoints before its blocked-goal adjustment.
+	if bounds.has_area() and (not bounds.has_point(start) or not bounds.has_point(goal)):
+		return []
+	goal = resolve_mir3_goal(goal, can_walk, occupied, bounds)
+	if goal == Vector2i(-1, -1) or goal == start:
 		return []
 	var open: Array[Dictionary] = [{"point": start, "score": 0}]
 	var costs := {start: 0}
@@ -208,6 +212,23 @@ func find_mir3_path(start: Vector2i, goal: Vector2i, can_walk: Callable, occupie
 			parents[next] = point
 			_push_heap(open, {"point": next, "score": candidate})
 	return []
+
+
+func resolve_mir3_goal(goal: Vector2i, can_walk: Callable, occupied: Dictionary, bounds := Rect2i()) -> Vector2i:
+	if bounds.has_area() and not bounds.has_point(goal):
+		return Vector2i(-1, -1)
+	if can_walk.call(goal.x, goal.y) and not occupied.has(goal):
+		return goal
+	# 4AB2A8 receives its parent's Delphi stack frame. Parent +0x10 is
+	# target X and +0x0C is target Y: N, NE, E, SE, S, SW, W, NW. Radius
+	# starts at 1 and the loop exits on 2; it never searches another ring.
+	for offset in DIRECTIONS:
+		var candidate: Vector2i = goal + offset
+		if bounds.has_area() and not bounds.has_point(candidate):
+			continue
+		if can_walk.call(candidate.x, candidate.y) and not occupied.has(candidate):
+			return candidate
+	return Vector2i(-1, -1)
 
 
 func _pop_heap(heap: Array[Dictionary]) -> Dictionary:

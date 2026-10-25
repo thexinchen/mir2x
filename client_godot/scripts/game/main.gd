@@ -477,7 +477,7 @@ func _process_ground_input(delta: float) -> void:
 	var decision: Dictionary = _ground_input.decide(from, world_renderer.can_walk, occupied)
 	if decision.has("path"):
 		_ground_path_goal = decision.path
-		_move_path = _pathfinder.find_mir3_path(from, _ground_path_goal, world_renderer.can_walk, occupied)
+		_move_path = _find_ground_path(from, occupied)
 		_ground_path_active = not _move_path.is_empty()
 		if _ground_path_active:
 			return
@@ -766,6 +766,11 @@ func _find_path(goals: Array[Vector2i]) -> Array[Vector2i]:
 	return _pathfinder.find_path(player_position, goals, world_renderer.can_walk, occupied, 50000, 2)
 
 
+func _find_ground_path(from: Vector2i, occupied: Dictionary) -> Array[Vector2i]:
+	var resource: RefCounted = world_renderer.world_resource
+	return _pathfinder.find_mir3_path(from, _ground_path_goal, world_renderer.can_walk, occupied, 50000, Rect2i(0, 0, resource.width, resource.height))
+
+
 func _process_movement(delta: float) -> void:
 	if _pickup_action_timer >= 0.0 or _player_action_timer >= 0.0:
 		return
@@ -808,7 +813,7 @@ func _process_movement(delta: float) -> void:
 		# computed hop. Replan before consuming it or starting another cooldown.
 		var from := Vector2i(game_state.player_x, game_state.player_y)
 		if _ground_path_active:
-			_move_path = _pathfinder.find_mir3_path(from, _ground_path_goal, world_renderer.can_walk, _ground_occupied())
+			_move_path = _find_ground_path(from, _ground_occupied())
 			_ground_path_active = not _move_path.is_empty()
 		else:
 			var goals: Array[Vector2i] = [_move_path.back()]
