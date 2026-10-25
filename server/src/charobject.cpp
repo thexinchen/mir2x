@@ -10,6 +10,7 @@
 #include "server.hpp"
 #include "charobject.hpp"
 #include "battleobject.hpp"
+#include "player.hpp"
 #include "actormsgpack.hpp"
 #include "protocoldef.hpp"
 
@@ -139,6 +140,9 @@ void CharObject::trimInViewCO()
             p++;
         }
         else{
+            if(isPlayer()){
+                dynamic_cast<Player *>(this)->reportOffline(p->first, p->second.mapUID);
+            }
             p = m_inViewCOList.erase(p);
         }
     }
@@ -208,6 +212,11 @@ int CharObject::updateInViewCO(const COLocation &coLoc, bool forceDelete)
         });
     }
     else{
+        if(isPlayer()){
+            if(const auto p = m_inViewCOList.find(coLoc.uid); p != m_inViewCOList.end()){
+                dynamic_cast<Player *>(this)->reportOffline(coLoc.uid, p->second.mapUID);
+            }
+        }
         m_inViewCOList.erase(coLoc.uid);
     }
     return to_d(m_inViewCOList.size()) - oldSize;

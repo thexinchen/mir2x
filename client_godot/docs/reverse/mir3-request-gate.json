@@ -492,7 +492,7 @@
       },
       "native_playerop": {
         "file": "playerop.cpp",
-        "sha256_lf": "083f4978d1dd8e1927953b3c0934b8871af2928e2003d5e0301006058aa58306"
+        "sha256_lf": "eb25e9187765c5804d3fbeeb7bb452a227d119b121f634a515f221e8d9fdaf57"
       },
       "native_playernet": {
         "file": "playernet.cpp",

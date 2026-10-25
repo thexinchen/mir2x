@@ -128,6 +128,10 @@ corof::awaitable<> Player::on_AM_ACTION(const ActorMsgPack &mpk)
         co_await m_buffList.updateAura(amA.UID);
     }
 
+    if(!inView(amA.mapUID, dstX, dstY)){
+        co_return;
+    }
+
     if(addedInView > 0){
         dispatchAction(amA.UID, makeActionStand());
     }
@@ -436,6 +440,10 @@ corof::awaitable<> Player::on_AM_REMOVEGROUNDITEM(const ActorMsgPack &rstMPK)
 corof::awaitable<> Player::on_AM_CORECORD(const ActorMsgPack &mpk)
 {
     const auto amCOR = mpk.conv<AMCORecord>();
+    const bool moving = amCOR.action.type == ACTION_MOVE || amCOR.action.type == ACTION_SPACEMOVE;
+    if(!inView(amCOR.mapUID, moving ? amCOR.action.aimX : amCOR.action.x, moving ? amCOR.action.aimY : amCOR.action.y)){
+        return {};
+    }
 
     SMCORecord smCOR;
     std::memset(&smCOR, 0, sizeof(smCOR));
@@ -470,8 +478,8 @@ corof::awaitable<> Player::on_AM_CORECORD(const ActorMsgPack &mpk)
         for(uint32_t index = 0; index < 2; ++index){
             const SMBuff buff {
                 .uid = amCOR.UID,
-                .type = index == 0 ? BFT_SHIELD : BFT_YINYANG_RING,
-                .state = (amCOR.Player.auraMask & (1U << index)) ? BFS_ON : BFS_OFF,
+                .type = to_u32(index == 0 ? BFT_SHIELD : BFT_YINYANG_RING),
+                .state = to_u32((amCOR.Player.auraMask & (1U << index)) ? BFS_ON : BFS_OFF),
             };
             postNetMessage(SM_BUFF, buff);
         }
