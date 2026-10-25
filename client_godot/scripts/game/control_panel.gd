@@ -3,6 +3,7 @@ extends Control
 const ActorResourceScript = preload("res://scripts/game/actor_resource.gd")
 const CombatCalculatorScript = preload("res://scripts/game/combat_calculator.gd")
 const WorldResourceScript = preload("res://scripts/game/world_resource.gd")
+const CerealReader = preload("res://scripts/network/cereal_reader.gd")
 const AC_TEXTURE := preload("res://assets/ui/game/control_panel/00000046.png")
 const DC_TEXTURE := preload("res://assets/ui/game/control_panel/00000047.png")
 const MA_TEXTURE := preload("res://assets/ui/game/control_panel/00000048.png")
@@ -440,6 +441,13 @@ func focus_command() -> void:
 	command.caret_column = command.text.length()
 
 
+func prefill_private_message(player_name: String) -> void:
+	if player_name.is_empty():
+		return
+	command.text = "/%s " % player_name
+	focus_command()
+
+
 func _on_command_gui_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		command.release_focus()
@@ -472,7 +480,9 @@ func _on_command_submitted(text: String) -> void:
 	var full_text := text.strip_edges(true, false)
 	if full_text.is_empty():
 		return
-	if full_text.begins_with("!"):
+	if full_text.begins_with("/"):
+		_send_private_command(full_text)
+	elif full_text.begins_with("!"):
 		var content := full_text.substr(1).strip_edges(true, false)
 		if not content.is_empty():
 			NetworkClient.send_player_broadcast(content)
@@ -483,6 +493,51 @@ func _on_command_submitted(text: String) -> void:
 	else:
 		game_state.add_chat_log(full_text, 0)
 		NetworkClient.send_player_say(full_text)
+
+
+func _send_private_command(text: String) -> void:
+	var separator := text.find(" ", 1)
+	if separator <= 1 or text.substr(separator + 1).strip_edges().is_empty():
+		game_state.add_chat_log("私聊用法：/角色名 内容", 3)
+		return
+	var recipient := text.substr(1, separator - 1)
+	var content := text.substr(separator + 1).strip_edges(true, false)
+	var error := NetworkClient.query_chat_peers(recipient, func(head: int, payload: PackedByteArray):
+		if head != NetworkClient.SM_OK:
+			game_state.add_chat_log("私聊目标查询失败", 3)
+			return
+		var reader := CerealReader.new(payload)
+		var peers := reader.read_sd_chat_peer_list()
+		if not reader.valid or not reader.at_end():
+			game_state.add_chat_log("私聊目标响应无效", 3)
+			return
+		for peer in peers:
+			if int(peer.get("type", 0)) == 2 and str(peer.get("name", "")) == recipient:
+				game_state.add_chat_peer(peer)
+				_send_private_message(int(peer.cpid), recipient, content)
+				return
+		game_state.add_chat_log("找不到私聊角色：%s" % recipient, 3)
+	)
+	if error != OK:
+		game_state.add_chat_log("尚未连接服务器，私聊未发送", 3)
+
+
+func _send_private_message(cpid: int, recipient: String, content: String) -> void:
+	var escaped := content.xml_escape()
+	var error := NetworkClient.send_chat_message(cpid, escaped, null, func(head: int, payload: PackedByteArray):
+		if head != NetworkClient.SM_OK:
+			game_state.add_chat_log("私聊发送失败：%s" % recipient, 3)
+			return
+		var reader := CerealReader.new(payload)
+		var seq := reader.read_sd_chat_message_db_seq()
+		if not reader.valid or not reader.at_end() or int(seq.get("id", 0)) == 0:
+			game_state.add_chat_log("私聊发送确认无效", 3)
+			return
+		game_state.add_chat_message({"seq": seq, "refer": null, "from": game_state.self_chat_cpid(), "to": cpid, "message": NetworkClient._serialize_cereal_string("<layout><par>%s</par></layout>" % escaped)})
+		game_state.add_chat_log("对%s说：%s" % [recipient, content], 0)
+	)
+	if error != OK:
+		game_state.add_chat_log("尚未连接服务器，私聊未发送", 3)
 
 
 func _handle_user_command(command_text: String) -> void:

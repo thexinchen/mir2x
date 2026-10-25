@@ -423,6 +423,10 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		_follow_focus_uid = 0
 		if focus_uid != 0:
 			_follow_focus_uid = focus_uid
+			if event.alt_pressed and not event.ctrl_pressed:
+				var target: Dictionary = game_state.get_creature(focus_uid)
+				if int(target.get("type", 0)) == 2:
+					control_panel.call("prefill_private_message", str(target.get("name", "")))
 		# 67B423–67B4DE: plain and Alt actor hits both fall through to the
 		# ground turn/run request. Alt's chat prefill is not a stop action.
 		if focus_uid == 0 or not event.ctrl_pressed:

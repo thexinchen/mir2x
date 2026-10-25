@@ -180,3 +180,22 @@ xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/mir3_ri
 Alt 分支的两个字符串操作数分别为 `67B670` 的“/”和 `67B67C` 的空格，`67B48D–67B4BB` 拼接“/目标名 ”并调用 `6726A4` 设置输入控件、焦点及光标，随后在 `67B4C0` 跳到地面分支 `67B4CB`。因此 Alt 命中角色也不能吞掉转向/跑动。本批把已确认的地面路由扩展到 Alt 右键；三个对象类型的 Alt 请求和首步跑动决策测试通过，普通右键窗口测试与完整动作回归通过。
 
 尚未实现 Alt 私聊预填与提交闭环：当前 `control_panel.gd` 把普通“/名字 内容”交给附近聊天，而原版私聊命令不能直接映射到这个路径；须接到现有私聊协议再启用。Ctrl 成功与冷却失败分支也尚未迁移。本批仅完成 Alt 后续移动路由，不代表两种特殊交互已经全部恢复。原始汇编取证脚本和输出保存在工作案例的 `export_right_modifiers.py`、`read_right_strings.py` 与 `assembly/67b423.asm`、`assembly/6cc504.asm`。
+
+## 批次 15–16：Alt 私聊输入与现有私聊协议（2026-10-26）
+
+原版证据沿用 `67B48D–67B4BB` 的“/目标名 ”拼接和 `6726A4` 的输入控件设置、焦点、光标行为。Godot 对已知姓名的玩家目标，在 Alt 且未按 Ctrl 的右键事件中预填命令并把光标放到末尾，仍保留上一批确认的地面请求。只为现有协议支持的玩家身份提供这一入口，未将 NPC、怪物映射成私聊接收者。
+
+提交 `/角色名 内容` 时，通过现有 `CM_QUERYCHATPEERLIST` 查询并精确匹配玩家姓名及玩家类型，再使用已有 `CM_CHATMESSAGE`。群组、模糊匹配结果和不存在的角色不能被误选；失败只显示私聊错误，不回退到 `CM_PLAYERSAY` 附近聊天。收到有效发送确认后缓存既有私聊会话记录并显示发送反馈。手动输入同样走这条路，不只依赖 Alt 点击。新消息仍通过现有好友聊天面板阅读。
+
+输入内容在 XML 消息包装前转义，发送、接收都按原文显示 `<>&`；相应修复 `GameState.chat_message_text()` 在去除 XML 标签后解码实体，避免会话预览显示 `&lt;` 等编码文字。实体预览修复与 Alt 私聊入口分两笔提交。未更改服务端协议或私聊授权规则。
+
+104 验证：`run_network_private_command.py` 启动 id_4 发送端和 id_3 接收端，使用独立随机标识；验证 Alt 预填及光标、地面请求保留、输入框提交信号、发送确认的接收者、另一客户端实际收到的双方身份及原文、两端均无附近聊天泄漏，以及不存在目标时的错误反馈。无窗口模式与 Xvfb 发送端模式均通过；后者使用实际 `Input.parse_input_event` Alt 右键事件。夹具中的64位 UID 以字符串跨 JSON 传递，避免 Godot JSON 浮点数丢失低位造成错误断言。
+
+好友聊天、HUD 和完整动作回归通过。窗口双客户端退出仍有2个 ObjectDB 实例泄漏警告，不影响收发断言；它不是本批已修复项。测试账号会保留测试私聊记录，不要用正式账号运行。
+
+```bash
+python3 client_godot/tests/run_network_private_command.py --godot /home/czx/godot --output-dir /tmp/mir3-private-command
+python3 client_godot/tests/run_network_private_command.py --godot /home/czx/godot --output-dir /tmp/mir3-private-command-window --input
+```
+
+Ctrl 命令82的业务含义、冷却成功/失败的完整对象操作仍待恢复。当前私聊接收面板沿用 mir2x UI，不声称与原版聊天窗口逐像素一致。
