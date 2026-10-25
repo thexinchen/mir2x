@@ -17,6 +17,9 @@ var target_map := 0
 var own_stands := 0
 var finished := false
 var stage := "login"
+var aura_casts := 0
+var aura_offs := 0
+var last_map_stand_ms := 0
 
 func _ready() -> void:
 	NetworkClient.connection_changed.connect(func(connected, _message):
@@ -43,6 +46,13 @@ func _message(head: int, payload: PackedByteArray) -> void:
 		var data := Protocol.decode_sm_action(payload)
 		if int(data.get("uid", 0)) == GameState.player_uid and int(data.get("action", {}).get("type", 0)) == 2:
 			own_stands += 1
+			last_map_stand_ms = Time.get_ticks_msec()
+	elif head == NetworkClient.SM_CASTMAGIC:
+		var data := Protocol.decode_sm_cast_magic(payload)
+		if data.get("uid", 0) == GameState.player_uid and data.get("magic", 0) == 13: aura_casts += 1
+	elif head == NetworkClient.SM_BUFF:
+		var data := Protocol.decode_sm_buff(payload)
+		if data.get("uid", 0) == GameState.player_uid and data.get("type", 0) == 1 and data.get("state", 0) == 2: aura_offs += 1
 	elif head in [NetworkClient.SM_LOGINERROR, NetworkClient.SM_ONLINEERROR]:
 		_fail("login rejected")
 
@@ -85,6 +95,9 @@ func _run() -> void:
 	if target_map == 0:
 		_fail("destination map UID unavailable")
 		return
+	if OS.get_environment("MIR3_AURA_MAP_RECAST") == "1":
+		await _run_aura_map(target_position)
+		return
 	main.call("_send_player_action", _stand())
 	var old := await _receipt()
 	if old.is_empty() or _pending() == 0:
@@ -119,6 +132,58 @@ func _run() -> void:
 		_fail("new map receipt did not release input")
 		return
 	print("NETWORK REQUEST GATE MAP PASS: maps=%d->%d->%d pos=%s; real Stand transitions, pending reset, old-map/same-map generation isolation, loaded world matches map and origin restored" % [GameState.player_map_id, target_id, GameState.player_map_id, origin])
+	finished = true
+	NetworkClient.disconnect_from_server()
+	get_tree().quit()
+
+func _cast_aura() -> bool:
+	var action := {"type": 9, "speed": 100, "direction": 3,
+		"x": GameState.player_x, "y": GameState.player_y, "aimX": GameState.player_x, "aimY": GameState.player_y,
+		"aimUID": GameState.player_uid, "magicID": 13}
+	if main.call("_send_player_action", Protocol.encode_cm_action(GameState.player_uid, GameState.player_map_uid, action)) != OK:
+		return false
+	var receipt := await _receipt()
+	if receipt.is_empty() or receipt.head != NetworkClient.SM_OK: return false
+	main.call("deliver", receipt)
+	return true
+
+func _run_aura_map(target_position: Vector2i) -> void:
+	stage = "initial active aura"
+	if not await _cast_aura():
+		_fail("initial aura request not processed")
+		return
+	for _attempt in 150:
+		if aura_casts == 1: break
+		await get_tree().create_timer(0.02).timeout
+	if aura_casts != 1:
+		_fail("initial shield did not actually start")
+		return
+	stage = "recast before map change"
+	var recast_ms := Time.get_ticks_msec()
+	if not await _cast_aura() or not await _relocate(target_map, target_position):
+		_fail("pending recast/map transition failed")
+		return
+	if last_map_stand_ms - recast_ms >= 800:
+		_fail("map transition missed pending aura start window")
+		return
+	await get_tree().create_timer(1.5).timeout
+	var renderer: Node = main.get("world_renderer")
+	var active: Dictionary = renderer.call("_resolve_attached_magic", Time.get_ticks_msec())
+	if aura_casts != 1 or active.get(GameState.player_uid, []).size() != 1:
+		_fail("stale-map recast started or removed original active shield")
+		return
+	stage = "original aura expiry after cancelled recast"
+	for _attempt in 600:
+		if aura_offs >= 1: break
+		await get_tree().create_timer(0.02).timeout
+	active = renderer.call("_resolve_attached_magic", Time.get_ticks_msec())
+	if aura_offs != 1 or not active.get(GameState.player_uid, []).is_empty():
+		_fail("cancelled recast suppressed original aura expiry: OFF=%d effects=%s" % [aura_offs, active])
+		return
+	if not await _relocate(origin_map, origin):
+		_fail("aura map fixture did not restore origin")
+		return
+	print("NETWORK AURA MAP PASS: active shield carried across map, pending old-map recast cancelled, original OFF preserved, origin restored map=%d pos=%s" % [GameState.player_map_id, origin])
 	finished = true
 	NetworkClient.disconnect_from_server()
 	get_tree().quit()
