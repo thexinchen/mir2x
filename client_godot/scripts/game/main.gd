@@ -703,13 +703,16 @@ func _update_magic_focus(_mouse_grid: Vector2i, magic_id := 0) -> int:
 
 
 func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
-	# C++ refreshes FOCUS_MAGIC before the cooldown check so the next cast keeps
-	# the target selected by a cooldown-blocked key press.
-	var focus_uid := _update_magic_focus(mouse_grid, magic_id)
+	var magic_name: String = _resources.magic_names.get(magic_id, "")
+	# Original 67CF44 resolves a spell target only in its casting branch.
+	# Sword toggles take the command branch and must not replace magic focus.
+	var focus_uid := 0
+	if magic_name not in SWING_MAGIC_NAMES:
+		# Actual spells still refresh focus before the cooldown rejection.
+		focus_uid = _update_magic_focus(mouse_grid, magic_id)
 	if not _magic_ready(magic_id):
 		game_state.add_chat_log("%s尚未冷却" % _resources.magic_names.get(magic_id, "技能"), 3)
 		return false
-	var magic_name: String = _resources.magic_names.get(magic_id, "")
 	if magic_name in SWING_MAGIC_NAMES:
 		_swing_magic[magic_id] = not bool(_swing_magic.get(magic_id, false))
 		game_state.add_chat_log("%s%s" % ["开启" if _swing_magic[magic_id] else "关闭", magic_name], 0)
