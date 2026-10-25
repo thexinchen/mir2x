@@ -41,7 +41,7 @@ func _ready() -> void:
 	await get_tree().create_timer(0.08).timeout
 	_release(MOUSE_BUTTON_LEFT, _point(target))
 	_expect(attack_count == 1 and _position() == start and GameState.player_direction == 3, "single Shift click swings east without moving across blocked ground", attack_count)
-	_expect(main.get("_move_path").is_empty() and main.get("_mine_target") == Vector2i(-1, -1) and main.get("_pickup_target") == Vector2i(-1, -1), "Shift overrides mining, pickup and pathfinding", main.get("_move_path"))
+	_expect(main.get("_move_path").is_empty() and main.get("_mine_target") == Vector2i(-1, -1), "Shift overrides mining, pickup and pathfinding", main.get("_move_path"))
 	await get_tree().create_timer(0.9).timeout
 	_expect(attack_count == 1, "single Shift click does not repeat after mouse release", attack_count)
 	var before := attack_count

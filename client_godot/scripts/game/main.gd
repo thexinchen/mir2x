@@ -92,7 +92,6 @@ var _chase_target_uid := 0
 var _shift_chase_active := false
 var _follow_focus_uid := 0
 var _attack_focus_uid := 0
-var _pickup_target := Vector2i(-1, -1)
 var _mine_target := Vector2i(-1, -1)
 var _pickup_action_timer := -1.0
 var _player_action_timer := -1.0
@@ -462,10 +461,13 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 					and _player_forced_action_queue.is_empty() and not _player_input_blocked():
 				_request_pickup()
 			_begin_ground_input(event, grid)
+			# This click already attempted the current-cell operation. Further
+			# requests come from the held-input poll after its 300 ms threshold.
+			_ground_input.pending = false
 			return
 		var ground_key := "%d,%d" % [grid.x, grid.y]
 		if game_state.ground_items.has(ground_key):
-			_start_pickup_at(grid)
+			_begin_ground_input(event, grid)
 		else:
 			var weapon: Dictionary = game_state.wear.get(3, {})
 			if _resources.item_can_mine(int(weapon.get("itemID", 0))):
@@ -527,7 +529,7 @@ func _process_ground_input(delta: float) -> void:
 	if not _ground_input.pending:
 		return
 	var from := Vector2i(game_state.player_x, game_state.player_y)
-	if _ground_input.target != from and (_mine_target.x >= 0 or _pickup_target.x >= 0 or _chase_target_uid != 0):
+	if _ground_input.target != from and (_mine_target.x >= 0 or _chase_target_uid != 0):
 		# A press at the current cell may later become a real held request.
 		# Cancel its old operation once, without losing the held-button state.
 		var remaining := _move_step_timer
@@ -537,6 +539,10 @@ func _process_ground_input(delta: float) -> void:
 	# regenerates it after 300 ms. Existing animation gates control step cadence.
 	_ground_input.pending = false
 	if _move_step_timer > 0.0 or _player_action_timer >= 0.0 or _pickup_action_timer >= 0.0:
+		return
+	if _ground_input.button == MOUSE_BUTTON_LEFT and not _ground_input.force_attack and not _ground_input.harvest and _ground_input.target == from:
+		if _move_path.is_empty() and _chase_target_uid == 0 and _mine_target.x < 0:
+			_request_pickup()
 		return
 	if _ground_input.button == MOUSE_BUTTON_LEFT and not _ground_input.force_attack and not _ground_input.harvest and Time.get_ticks_msec() - _last_attack_ms <= 1000:
 		return
@@ -619,18 +625,6 @@ func _start_chase(target_uid: int) -> void:
 	_plan_chase_path()
 
 
-func _start_pickup_at(target: Vector2i) -> void:
-	_cancel_movement()
-	_pickup_target = target
-	if target == Vector2i(game_state.player_x, game_state.player_y):
-		_pickup_target = Vector2i(-1, -1)
-		_begin_pickup_action()
-		return
-	_move_path = _find_path([target])
-	if _move_path.is_empty():
-		_pickup_target = Vector2i(-1, -1)
-
-
 func _cancel_movement(cancel_ground_input := true) -> void:
 	if cancel_ground_input:
 		_release_ground_input()
@@ -640,7 +634,6 @@ func _cancel_movement(cancel_ground_input := true) -> void:
 	_move_step_timer = 0.0
 	_pending_spell_action.clear()
 	_chase_target_uid = 0
-	_pickup_target = Vector2i(-1, -1)
 	_mine_target = Vector2i(-1, -1)
 
 
@@ -882,15 +875,6 @@ func _process_movement(delta: float) -> void:
 	if _pickup_action_timer >= 0.0 or _player_action_timer >= 0.0:
 		return
 	if _move_path.is_empty():
-		if _pickup_target.x >= 0:
-			_move_step_timer -= delta
-			if _move_step_timer > 0.0:
-				return
-			var target := _pickup_target
-			_pickup_target = Vector2i(-1, -1)
-			if target == Vector2i(game_state.player_x, game_state.player_y):
-				_begin_pickup_action()
-			return
 		if _mine_target.x >= 0:
 			_move_step_timer -= delta
 			if _move_step_timer > 0.0:

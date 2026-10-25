@@ -40,6 +40,7 @@ func _ready() -> void:
 	_expect(main.get("pickup_requests") == 1, "idle current-cell click requests pickup without cached items even through hero hitbox")
 	_expect(main.get("_move_path").is_empty() and GameState.player_action_type == 2, "current-cell pickup request does not add a path or restart an animation")
 	_expect(main.get("_ground_input").button == MOUSE_BUTTON_LEFT, "current-cell click retains held input for later redirection")
+	_expect(not main.get("_ground_input").pending, "current-cell click does not leave a duplicate immediate pickup request")
 	main.call("_release_ground_input")
 	main.set("_move_step_timer", 0.4)
 	main.call("_handle_mouse_click", click)
