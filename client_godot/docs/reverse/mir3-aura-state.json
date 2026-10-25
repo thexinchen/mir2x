@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "registrations": [
+    {
+      "call": "0x67f0db",
+      "register_function": "0x67ea1c",
+      "message": 657,
+      "registration_ecx": 6,
+      "handler": "0x6876dc",
+      "context_va": "0x67f0c3",
+      "context_hex": "008bc6e839e004005368dc76680066b9060066ba91028bc6e824e00400"
+    },
+    {
+      "call": "0x67f2fd",
+      "register_function": "0x67ea1c",
+      "message": 1500,
+      "registration_ecx": 6,
+      "handler": "0x68281c",
+      "context_va": "0x67f2e5",
+      "context_hex": "028bc6e817de040053681c28680066b9060066badc058bc6e802de0400"
+    }
+  ],
+  "instruction_checks": [
+    {
+      "va": "0x6876e4",
+      "hex": "0fb75a060fb74a080fb7db0fb7c9c1e1100bd98bcb",
+      "role": "combine header words6/8 into actor148 value"
+    },
+    {
+      "va": "0x6876fb",
+      "hex": "8b5d0885db790383c303c1fb0253",
+      "role": "payload byte count divided by4, truncated toward zero"
+    },
+    {
+      "va": "0x687709",
+      "hex": "8b5dfc53510fb74a0a516a006a006a000fb74a048b1287cae8be19ffff",
+      "role": "forward payload, header fields and actor UID to shared dispatch"
+    },
+    {
+      "va": "0x679219",
+      "hex": "8bc383e82974092d680200007417",
+      "role": "dispatch branch41+616 equals message657"
+    },
+    {
+      "va": "0x679248",
+      "hex": "8b45188986940000008b451c8b00898684000000",
+      "role": "actor148 from header value; actor132 from first payload dword"
+    },
+    {
+      "va": "0x67925c",
+      "hex": "8b4d1c8b55208bc6e8c7330600",
+      "role": "copy payload state-vector words to actor"
+    },
+    {
+      "va": "0x679269",
+      "hex": "0fb645148886c6010000",
+      "role": "header word10 low byte becomes actor454; semantics unproven"
+    },
+    {
+      "va": "0x67928a",
+      "hex": "8bc68b10ff5248",
+      "role": "message657 invokes actor VMT+72 reconciliation"
+    },
+    {
+      "va": "0x6dc63c",
+      "hex": "8d433c33c9ba2c000000e88173d2ff",
+      "role": "state vector clears44 bytes at actor60"
+    },
+    {
+      "va": "0x6dc64f",
+      "hex": "8bce03c903c98d533c8bc7e8756dd2ff",
+      "role": "copy4 times supplied word count to actor60"
+    },
+    {
+      "va": "0x682863",
+      "hex": "0fb74606508d5590b9580000008d45f0e820cae0ff",
+      "role": "message1500 reads up to88-byte snapshot using header length"
+    },
+    {
+      "va": "0x682893",
+      "hex": "8b45948983940000008b4598898384000000",
+      "role": "snapshot dwords4/8 become actor148/132"
+    },
+    {
+      "va": "0x6828af",
+      "hex": "8bc38b10ff5248",
+      "role": "message1500 invokes same reconciliation"
+    },
+    {
+      "va": "0x48f2b9",
+      "hex": "8b7df83bdf7d028bfb",
+      "role": "stream helper chooses minimum of record and field lengths"
+    },
+    {
+      "va": "0x48f2d3",
+      "hex": "8b45fc03c78b55f82bd733c9e8e846f7ff",
+      "role": "short snapshot field is padded with zero"
+    },
+    {
+      "va": "0x4f70ad",
+      "hex": "6880724f006894724f00",
+      "role": "appearance map filename uses ActorBuff plus.dat literals"
+    },
+    {
+      "va": "0x4f7280",
+      "hex": "4163746f724275666600",
+      "role": "ActorBuff filename literal"
+    },
+    {
+      "va": "0x4f7294",
+      "hex": "2e64617400",
+      "role": "dat suffix literal"
+    },
+    {
+      "va": "0x4f7209",
+      "hex": "8943048b45f48b40608bd3e87773f2ff",
+      "role": "store mapping value and append pair to manager96 list"
+    },
+    {
+      "va": "0x4f6bf9",
+      "hex": "8b003b45fc7518",
+      "role": "lookup compares pair key"
+    },
+    {
+      "va": "0x4f6c0a",
+      "hex": "8b40048b55f88902",
+      "role": "lookup returns matched pair value"
+    },
+    {
+      "va": "0x6e27e9",
+      "hex": "8b5770e8db43e1ff",
+      "role": "reconciliation uses actor112 as appearance mapping key"
+    },
+    {
+      "va": "0x6dc66f",
+      "hex": "8b7b70897370",
+      "role": "appearance setter replaces actor112 key"
+    },
+    {
+      "va": "0x6e27f5",
+      "hex": "0fb645e43c2f770783e07f0fab45fa",
+      "role": "mapped byte requests effect index no greater than47"
+    }
+  ],
+  "message657": {
+    "handler": "0x6876dc",
+    "shared_dispatch": "0x6790e4",
+    "actor_uid": "header dword0",
+    "actor148": "header dword6",
+    "actor132": "first payload dword",
+    "state_vector_actor_offset": 60,
+    "actor454": "header word10 low byte; semantics unproven",
+    "state_vector_clear_bytes": 44,
+    "copied_words": "payload byte length divided by4",
+    "reconcile": "actor VMT+72"
+  },
+  "message1500": {
+    "handler": "0x68281c",
+    "snapshot_bytes": 88,
+    "actor148_field_offset": 4,
+    "actor132_field_offset": 8,
+    "short_fields": "zero padded when stream has the declared field length",
+    "reconcile": "actor VMT+72"
+  },
+  "aura_bits": {
+    "shield": {
+      "actor_offset": 148,
+      "mask": "0x100000",
+      "effect": 1
+    },
+    "ring": {
+      "actor_offset": 132,
+      "mask": "0x80000000",
+      "effect": 2
+    }
+  },
+  "appearance_mapping": {
+    "loader": "0x4f7084",
+    "lookup": "0x4f6bcc",
+    "actor_key_setter": "0x6dc664",
+    "actor_key_offset": 112,
+    "filename": "ActorBuff.dat",
+    "sha256": "19f12ea396eca7a0ecf9d6b9dff6237cc920c3002f32124fb8d2bc4d5111a3f2",
+    "mappings": [
+      {
+        "appr": 186,
+        "effect": 40
+      },
+      {
+        "appr": 216,
+        "effect": 47
+      }
+    ],
+    "selects_shield_or_ring": false
+  },
+  "limits": [
+    "Static sample and current local configuration evidence; no original server roundtrip was captured.",
+    "Message657 vector copies and message1500 snapshots are different original representations, not current mir2x wire structs.",
+    "State-driven creation/removal is proven; original server duration and damage absorption remain unknown.",
+    "Current ActorBuff mappings do not select1/2; other configurations may map different effects.",
+    "Do not infer a fixed44-byte payload limit from a helper which clears44 bytes then copies the supplied word count."
+  ]
+}

@@ -179,9 +179,9 @@
   ],
   "limits": [
     "Negative cycle counter proves local animation persistence, not permanent gameplay protection.",
-    "Original authoritative aura removal, duration, absorption and map replay remain unproven.",
+    "State-driven removal is proven; original server duration, absorption and map replay remain unproven.",
     "Current server10s duration is an adapter behavior, not recovered original duration.",
     "Resource122 mapping uses existing independently verified skill identity; it is not an original network capture.",
-    "Reconciliation also adds one externally selected effect via0x4f6bcc; that selector and its possible overrides remain unproven."
+    "External appearance mapping provenance is documented by mir3-aura-state.json; this lifetime extractor alone does not inspect its configuration."
   ]
 }
