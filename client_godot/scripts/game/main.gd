@@ -79,6 +79,7 @@ var _pathfinder: RefCounted = WorldPathfinderScript.new()
 var _next_strike := false
 var _swing_magic: Dictionary = {}
 var _magic_focus_uid := 0
+var _last_impulse_magic_ms := -3000
 var _move_path: Array[Vector2i] = []
 var _move_step_timer := 0.0
 var _ground_input := Mir3MovementScript.new()
@@ -700,6 +701,8 @@ func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 		game_state.add_chat_log("%s%s" % ["开启" if _swing_magic[magic_id] else "关闭", magic_name], 0)
 		return true
 	if magic_name == "空拳刀法":
+		# 67D070–67D081 updates the 27/36 shared gate before enqueueing.
+		_last_impulse_magic_ms = Time.get_ticks_msec()
 		return _send_spell_action(12, magic_id, mouse_grid, focus_uid)
 	if magic_name in SELF_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, Vector2i(game_state.player_x, game_state.player_y), game_state.player_uid)
@@ -1041,12 +1044,16 @@ func _thrust_target_ahead(facing: int) -> bool:
 	return false
 
 
-func _magic_ready(magic_id: int) -> bool:
+func _magic_ready(magic_id: int, now_ms := -1) -> bool:
+	var now: int = Time.get_ticks_msec() if now_ms < 0 else now_ms
+	# 67D041: both legacy 27 and 36 require elapsed >= 3000 ms.
+	if _resources.magic_names.get(magic_id, "") in ["野蛮冲撞", "空拳刀法"] and now - _last_impulse_magic_ms < 3000:
+		return false
 	var layout: PackedInt32Array = _resources.skill_layout(magic_id)
 	var cool_down := layout[5] if layout.size() >= 6 else 0
 	if cool_down <= 0 or not game_state.magic_cast_times.has(magic_id):
 		return true
-	return Time.get_ticks_msec() - int(game_state.magic_cast_times[magic_id]) >= cool_down
+	return now - int(game_state.magic_cast_times[magic_id]) >= cool_down
 
 
 func _direction_to(from_x: int, from_y: int, to_x: int, to_y: int) -> int:
