@@ -1402,11 +1402,14 @@ corof::awaitable<> Player::onCMActionSpell(CMAction cmA)
                     if(m_auraCastGeneration[auraIndex] != generation || m_sdHealth.dead() || mapUID() != smFM.mapUID){
                         return;
                     }
-                    m_auraExpiresAt[auraIndex] = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+                    const auto expiresAt = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+                    m_auraExpiresAt[auraIndex] = expiresAt;
                     dispatchNetPackage(true, SM_CASTMAGIC, smFM);
-                    addDelay(10000, [this, auraIndex, generation, buffType](bool)
+                    addDelay(10000, [this, auraIndex, expiresAt, buffType](bool)
                     {
-                        if(m_auraCastGeneration[auraIndex] != generation){
+                        // A pending recast must not cancel the active aura's
+                        // expiry until it actually replaces that aura.
+                        if(m_auraExpiresAt[auraIndex] != expiresAt){
                             return;
                         }
                         m_auraExpiresAt[auraIndex] = {};
