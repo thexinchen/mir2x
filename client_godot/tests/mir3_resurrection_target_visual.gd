@@ -11,7 +11,7 @@ func _ready() -> void:
 	GameState.player_x = 441
 	GameState.player_y = 381
 	GameState.creatures.clear()
-	GameState.update_creature(CORPSE_UID, {"uid": CORPSE_UID, "type": 2, "gender": 0, "desp": {}, "x": 443, "y": 381, "direction": 5, "action_type": 13, "action_started_ms": 1, "action_speed": 100})
+	GameState.update_creature(CORPSE_UID, {"uid": CORPSE_UID, "type": 2, "gender": 0, "desp": {}, "x": 442, "y": 385, "direction": 5, "action_type": 13, "action_started_ms": 1, "action_speed": 100})
 	main = load("res://scenes/game/main.tscn").instantiate()
 	add_child(main)
 	if not main.call("_load_world_map", 1):
@@ -53,16 +53,16 @@ func _ready() -> void:
 	Input.parse_input_event(key)
 	var matched := false
 	for effect in GameState.magic_effects:
-		if int(effect.get("magicID", 0)) == revive and int(effect.get("aimUID", 0)) == CORPSE_UID: matched = true
-	if not matched or GameState.player_action_type != 9 or main.get("_magic_focus_uid") != CORPSE_UID:
-		_fail("F12 did not cast at the rendered corpse: action=%d focus=%s effects=%s" % [GameState.player_action_type, main.get("_magic_focus_uid"), GameState.magic_effects])
+		if int(effect.get("magicID", 0)) == revive and int(effect.get("aimUID", 0)) == CORPSE_UID and int(effect.get("direction", 0)) == 5: matched = true
+	if not matched or GameState.player_action_type != 9 or GameState.player_direction != 5 or main.get("_magic_focus_uid") != CORPSE_UID:
+		_fail("F12 did not cast downward at the rendered near-axis corpse: action=%d focus=%s effects=%s" % [GameState.player_action_type, main.get("_magic_focus_uid"), GameState.magic_effects])
 		return
 	if OS.has_environment("MIR2X_RESURRECTION_SCREENSHOT"):
 		await RenderingServer.frame_post_draw
 		if get_viewport().get_texture().get_image().save_png(OS.get_environment("MIR2X_RESURRECTION_SCREENSHOT")) != OK:
 			_fail("could not save target screenshot")
 			return
-	print("MIR3 RESURRECTION TARGET VISUAL PASS: actual corpse sprite/hitbox, cursor warp and F12 event, local spell retains corpse UID; no server revival claimed")
+	print("MIR3 RESURRECTION TARGET VISUAL PASS: actual corpse sprite/hitbox, cursor warp and F12 event, local spell retains corpse UID and original near-axis down direction; no server revival claimed")
 	get_tree().quit()
 
 func _fail(message: String) -> void:
