@@ -723,7 +723,12 @@ func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 	if magic_name in GROUND_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, _ground_spell_grid(mouse_grid, magic_name == "瞬息移动"), 0)
 	if magic_name in TARGET_MAGIC_NAMES:
-		return _send_spell_action(9, magic_id, mouse_grid, focus_uid)
+		# 67CB50 / 67CD89 normalize unowned targets just like ground casts.
+		# Legacy healing (2) has a separate self-coordinate branch.
+		var target_grid := mouse_grid
+		if focus_uid == 0 and magic_name != "治愈术":
+			target_grid = _ground_spell_grid(mouse_grid)
+		return _send_spell_action(9, magic_id, target_grid, focus_uid)
 	return false
 
 
