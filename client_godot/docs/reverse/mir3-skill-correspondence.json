@@ -1,0 +1,786 @@
+{
+  "schema_version": 1,
+  "scope": "Exact-name correspondence only; current_id is not an original Mir3 ID. Description entries include non-skill text and duplicates.",
+  "source_sha256": "1aa5b84cad5c06c276f519bccc6e1af6ce3aeb7a55a04d87bd82d0a0168bd9b2",
+  "name_metadata_sha256": "b383378379250be38e1eb7f549184af7d4216bc86b6f63b743a3f8fd273cfda1",
+  "skill_metadata_sha256": "d84d2c85dce7c981794b32e7ad4d4a968fa9802526103ae8a7019fdde2968ba0",
+  "main_sha256": "d6914ff7fa9ee2aa8a13d47036e6344d1d2f3bc0646e35ab94e1e8476b6cb8f3",
+  "description_key_count": 793,
+  "description_entry_count": 798,
+  "duplicate_keys": {
+    "斗转星移": [
+      15,
+      387
+    ],
+    "灭魂火符": [
+      108,
+      111
+    ],
+    "施毒大法": [
+      109,
+      112,
+      123
+    ],
+    "撕裂术": [
+      137,
+      560
+    ]
+  },
+  "skills": [
+    {
+      "current_id": 12,
+      "name": "雷电术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 41,
+          "text": "\\说明：用雷攻击敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 13,
+      "name": "魔法盾",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 51,
+          "text": "\\说明：用魔力在自己周围形成保护膜，在一定时间内减少伤害的技能。修炼等级越高，持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 14,
+      "name": "召唤骷髅",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 89,
+          "text": "\\说明：在护身符中注入神气，召唤具有强大力量的灵魂为自己所用，修炼等级越高，可以召唤越强大的灵魂。"
+        }
+      ]
+    },
+    {
+      "current_id": 15,
+      "name": "火球术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 33,
+          "text": "\\说明：火系列最基本的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 16,
+      "name": "大火球",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 40,
+          "text": "\\说明：火球术的强化技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 17,
+      "name": "治愈术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 84,
+          "text": "\\说明：通过运气来治疗自己或他人的技能，修炼等级越高，可以恢复的量越多。"
+        }
+      ]
+    },
+    {
+      "current_id": 18,
+      "name": "基本剑术",
+      "current_policy": "passive",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 2,
+          "text": "\\说明：提高命中率的技能，级别越高就会越准确。"
+        }
+      ]
+    },
+    {
+      "current_id": 19,
+      "name": "精神力战法",
+      "current_policy": "passive",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 85,
+          "text": "\\说明：提高自身命中率的技能，修炼等级越高，命中率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 20,
+      "name": "施毒术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 86,
+          "text": "\\说明：根据毒粉的能力来降低防御力或持续减少一定量的体力，修炼等级越高，持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 21,
+      "name": "攻杀剑术",
+      "current_policy": "passive",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 3,
+          "text": "\\说明：提高命中率和破坏力的技能，修炼等级越高，命中率也高并且会发挥很强的破坏力。"
+        }
+      ]
+    },
+    {
+      "current_id": 22,
+      "name": "抗拒火环",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 37,
+          "text": "\\说明：可以将等级低于自己的敌人按一定几率推开的护身技能。修炼等级提升，推开的距离和成功率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 23,
+      "name": "疾光电影",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 45,
+          "text": "\\说明：施放直线闪电攻击多数敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 24,
+      "name": "刺杀剑术",
+      "current_policy": "unsupported",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 4,
+          "text": "\\说明：使用剑气对攻击范围以外的敌人进行攻击的技能，修炼等级越高，破坏力越大。"
+        }
+      ]
+    },
+    {
+      "current_id": 25,
+      "name": "灵魂火符",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 87,
+          "text": "\\说明：在护身符中注入带有爆发力的道力使用的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 26,
+      "name": "幽灵盾",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 91,
+          "text": "\\说明：通过运气，提高对外部技能攻击防御的技能，修炼等级越高，防御力越强，持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 27,
+      "name": "神圣战甲术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 94,
+          "text": "\\说明：通过运气，短时间提高对外部物理攻击的防御力，修炼等级越高，防御力提高持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 28,
+      "name": "困魔咒",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 95,
+          "text": "\\说明：使用护身符，在一定的空间范围内使用道力锁住其中敌人的技能，修炼等级越高，效果持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 29,
+      "name": "隐身术",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 90,
+          "text": "\\说明：可以暂时在敌人面前隐身的技能，修炼等级越高，隐身效果持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 30,
+      "name": "集体隐身术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 92,
+          "text": "\\说明：升级版的隐身术，可以使一定区域内（3*3）的人全部隐身。修炼等级越高，隐身效果持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 31,
+      "name": "诱惑之光",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 38,
+          "text": "\\说明：用强烈的电击麻痹敌人的灵魂，使之成为自己的帮手，修炼等级提升，持续时间和成功率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 32,
+      "name": "瞬息移动",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 39,
+          "text": "\\说明：用强烈的技能贯通时空，随机移动到某一地点。修炼等级越高，成功率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 33,
+      "name": "火墙",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 48,
+          "text": "\\说明：一定的时间内在指定地方点燃火焰连续攻击此处敌人的技能，修炼等级提升，持续时间和威力将增加。"
+        }
+      ]
+    },
+    {
+      "current_id": 34,
+      "name": "地狱火",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 44,
+          "text": "\\说明：施放强烈直线火焰攻击多数敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 35,
+      "name": "爆裂火焰",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 52,
+          "text": "\\说明：攻击指定（3*3）范围内所有敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 36,
+      "name": "地狱雷光",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 53,
+          "text": "\\说明：用雷攻击指定（3*3）范围内所有敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 37,
+      "name": "半月弯刀",
+      "current_policy": "swing",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 5,
+          "text": "\\说明：用快速挥动剑时产生的剑风攻击周围敌群（4个）的高级剑术，修炼等级越高，破坏力越大。"
+        }
+      ]
+    },
+    {
+      "current_id": 38,
+      "name": "烈火剑法",
+      "current_policy": "swing",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 7,
+          "text": "\\说明：聚集体内热气注入到武器而加强破坏力，修炼等级越高，破坏力越大。"
+        }
+      ]
+    },
+    {
+      "current_id": 39,
+      "name": "野蛮冲撞",
+      "current_policy": "unsupported",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 6,
+          "text": "\\说明：是用肩部把等级低于自己的敌人撞开的武功，随修炼等级提升，增加撞开的距离和敌人的数量。"
+        }
+      ]
+    },
+    {
+      "current_id": 40,
+      "name": "群体治愈术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 99,
+          "text": "\\说明：可以治疗一定区域内（3*3）的人，修炼等级越高，体力恢复量就越多。"
+        }
+      ]
+    },
+    {
+      "current_id": 41,
+      "name": "召唤神兽",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 98,
+          "text": "<1级：召唤1级神兽/C=GREEN>\\<2级：召唤2级神兽/C=GREEN>\\<3级：召唤7级神兽/C=GREEN>\\说明：在护身符里注入神气，召唤神圣动物的技能，修炼等级越高，可以召唤越强的神兽。"
+        }
+      ]
+    },
+    {
+      "current_id": 42,
+      "name": "圣言术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 49,
+          "text": "\\说明：是可以将死者系列的敌人一次性消灭的技能，修炼等级越高，成功率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 43,
+      "name": "冰咆哮",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 54,
+          "text": "\\说明：用寒气攻击指定（3*3）范围内所有敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 44,
+      "name": "莲月剑法",
+      "current_policy": "swing",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 9,
+          "text": "<1级：技能伤害增加23%/C=GREEN>\\<2级：技能伤害增加47%/C=GREEN>\\<3级：技能伤害增加76%/C=GREEN>\\说明：用快速的剑法连续攻击两次的技能，修炼等级越高，破坏力越大。"
+        }
+      ]
+    },
+    {
+      "current_id": 45,
+      "name": "翔空剑法",
+      "current_policy": "swing",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 8,
+          "text": "\\说明：运气丹田喷向空中，在从半空落下攻击敌人的技能，修炼等级越高，破坏力越大。"
+        }
+      ]
+    },
+    {
+      "current_id": 46,
+      "name": "空拳刀法",
+      "current_policy": "spinkick",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 96,
+          "text": "\\说明：用脚大力推开对方的技能，修炼等级越高，可以推开的概率和杀伤力越大。"
+        }
+      ]
+    },
+    {
+      "current_id": 47,
+      "name": "月魂断玉",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 88,
+          "text": "\\说明：将神圣气息凝聚在手中攻击敌人，佩戴神圣护身符使用威力更强。修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 48,
+      "name": "月魂灵波",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 93,
+          "text": "\\说明：比月魂断玉更加强大的技能，修炼等级越高越强大。如果使用神圣护身符，威力更大。"
+        }
+      ]
+    },
+    {
+      "current_id": 49,
+      "name": "冰月神掌",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 35,
+          "text": "\\说明：冰系列的最基本技能，将敌人冻僵使对方行动变得缓慢，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 50,
+      "name": "冰月震天",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 42,
+          "text": "\\说明：冰月神掌的强化技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 51,
+      "name": "霹雳掌",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 34,
+          "text": "\\说明：雷系列最基本的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 52,
+      "name": "冰沙掌",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 46,
+          "text": "\\说明：施放直线冰气攻击敌人的技能，还会一定时间内使敌人动作迟钝。修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 53,
+      "name": "风掌",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 36,
+          "text": "\\说明：风系列最基本的技能，有将敌人推开的效果。修炼等级越高，威力越强，成功率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 54,
+      "name": "龙卷风",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 55,
+          "text": "\\说明：用龙卷风攻击指定（3*3）范围内所有敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 55,
+      "name": "风震天",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 47,
+          "text": "\\说明：施放直线风力攻击多数敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 56,
+      "name": "击风",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 43,
+          "text": "\\说明：用龙卷风攻击一名敌人的技能，修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 57,
+      "name": "回生术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 102,
+          "text": "<1级：回生概率提高10%/C=GREEN>\\<2级：回生概率提高20%/C=GREEN>\\<3级：回生概率提高30%/C=GREEN>\\说明：使用灵魂护身符让死人复活的技能，修炼等级与灵魂越高，可以使死人复活的概率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 58,
+      "name": "强魔震法",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 97,
+          "text": "\\说明：使用护身符提高自己或他人的技能攻击力，或用元素护身符在一定时间内增加攻击元素的技能。修炼等级越高，效果持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 59,
+      "name": "猛虎强势",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 101,
+          "text": "\\说明：通过运气，暂时提高物理攻击力，修炼等级提升，攻击力增加量和持续时间也相应增多加长。"
+        }
+      ]
+    },
+    {
+      "current_id": 60,
+      "name": "铁布衫",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 14,
+          "text": "<1级：额外提高6-6魔防与物防/C=GREEN>\\<2级：额外提高12-12魔防与物防/C=GREEN>\\<3级：额外提高18-18魔防与物防/C=GREEN>\\说明：消耗自己的破坏力而提高防御力和技能防御力的技能，随修炼等级提升，防御力和技能防御力的增加量和持续时间将增加。"
+        }
+      ]
+    },
+    {
+      "current_id": 61,
+      "name": "十方斩",
+      "current_policy": "swing",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 10,
+          "text": "\\说明：用剑光攻击包围自己的所有敌人的技能，修炼等级越高，破坏力越大。"
+        }
+      ]
+    },
+    {
+      "current_id": 62,
+      "name": "异形换位",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": []
+    },
+    {
+      "current_id": 63,
+      "name": "超强召唤骷髅",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 100,
+          "text": "\\说明：在护身符中注入神气，召唤带有强大力量的灵魂为自己所用，已经召唤了神兽或骷髅的状态下也可以使用。修炼等级越高，可以召唤越强大的灵魂。"
+        }
+      ]
+    },
+    {
+      "current_id": 64,
+      "name": "破血狂杀",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 12,
+          "text": "\\说明：消耗自己的防御力而临时提高破坏力的技能，随修炼等级提升，破坏力和持续时间将增加。"
+        }
+      ]
+    },
+    {
+      "current_id": 65,
+      "name": "乾坤大挪移",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 11,
+          "text": "\\说明：与对方互相换位置的技能，修炼等级越高，成功率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 66,
+      "name": "斗转星移",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 15,
+          "text": "\\说明：将远处的敌人吸到自己面前的技能,修炼等级越高,成功率越高。"
+        },
+        {
+          "line": 387,
+          "text": "将远处的敌人吸到自己面前的技能,修炼等级越高,成功率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 67,
+      "name": "魄冰刺",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 56,
+          "text": "\\说明：施放三股寒气给大范围内敌人造成伤害，并且使对方行动变缓的技能。修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 68,
+      "name": "怒神霹雳",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 57,
+          "text": "\\说明：可以对大范围的（9*9）敌人进行雷电攻击，但距离越远杀伤力越小。修炼等级越高，威力越强。"
+        }
+      ]
+    },
+    {
+      "current_id": 69,
+      "name": "凝血离魂",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 69,
+          "text": "\\说明：在一定时间内削弱大量体力而提高魔力的技能，修炼等级越高，单次提高魔力幅度越大。"
+        }
+      ]
+    },
+    {
+      "current_id": 70,
+      "name": "焰天火雨",
+      "current_policy": "ground",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 58,
+          "text": "<1级：技能伤害增加9%/C=GREEN>\\<2级：技能伤害增加19%/C=GREEN>\\<3级：技能伤害提高25%/C=GREEN>\\说明：可以给一定区域内多数敌人带来火焰伤害。修炼等级越高，威力越强，可以攻击更多敌人并且可以使释放技能中心点的敌人受到额外伤害。"
+        }
+      ]
+    },
+    {
+      "current_id": 71,
+      "name": "云寂术",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 103,
+          "text": "\\说明：可以消除技能和物理攻击效果，不仅可以取消中毒麻痹，还可以取消能力值提高效果，灵魂越高，云寂术的成功率越高。"
+        }
+      ]
+    },
+    {
+      "current_id": 72,
+      "name": "妙影无踪",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 105,
+          "text": "\\说明：不仅对怪物隐身，对他人也可以隐身，修炼等级越高，隐身持续时间越长。"
+        }
+      ]
+    },
+    {
+      "current_id": 73,
+      "name": "阴阳法环",
+      "current_policy": "self",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 106,
+          "text": "\\说明：调出体内潜在的力量，受到超过体力值的伤害时，可以抵御进攻并恢复少量体力值。"
+        }
+      ]
+    },
+    {
+      "current_id": 74,
+      "name": "移花接玉",
+      "current_policy": "target",
+      "original_id": null,
+      "original_descriptions": [
+        {
+          "line": 104,
+          "text": "\\说明：牺牲自身的破坏力，提高属下怪物一定时间内的攻击力，修炼等级越高，属下怪物攻击力提高量越大。"
+        }
+      ]
+    }
+  ]
+}
