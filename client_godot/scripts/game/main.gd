@@ -1647,6 +1647,11 @@ func _handle_start_game_scene(payload: PackedByteArray) -> void:
 	_player_server_action_queue.clear()
 	_player_server_move_active = false
 	_player_post_forced_action = {}
+	# 68669A -> 676FA4 clears current/history targets with the old scene.
+	_magic_focus_uid = 0
+	_follow_focus_uid = 0
+	_attack_focus_uid = 0
+	_summon_spawn_blockers.clear()
 	game_state.start_game_scene(data)
 	NetworkClient.send_query_gold()
 	if _load_world_map(game_state.player_map_id):
