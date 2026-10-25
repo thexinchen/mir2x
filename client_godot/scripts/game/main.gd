@@ -165,6 +165,7 @@ func _ready() -> void:
 	NetworkClient.message_received.connect(_on_server_message)
 	NetworkClient.connection_changed.connect(_on_action_connection_changed)
 	game_state.state_changed.connect(_refresh_grabbed_item_icon)
+	game_state.creature_removed.connect(_on_creature_removed)
 	world_renderer.gui_input.connect(_on_world_gui_input)
 	control_panel.connect("minimized_changed", _on_control_panel_minimized_changed)
 	_refresh_grabbed_item_icon()
@@ -551,6 +552,23 @@ func _on_action_timeout(_head: int, _payload: PackedByteArray, token: int, uid: 
 
 func _on_action_connection_changed(_connected: bool, _message: String) -> void:
 	_action_request_gate.reset()
+
+
+func _on_creature_removed(uid: int) -> void:
+	if uid == 0:
+		return
+	# 6799BE–679A5B clears matching target pointers when an actor leaves.
+	if _magic_focus_uid == uid:
+		_magic_focus_uid = 0
+	if _follow_focus_uid == uid:
+		_follow_focus_uid = 0
+	if _attack_focus_uid == uid:
+		_attack_focus_uid = 0
+	if _chase_target_uid == uid:
+		_chase_target_uid = 0
+		_move_path.clear()
+		_shift_chase_active = false
+	_summon_spawn_blockers.erase(uid)
 
 
 func _process_ground_input(delta: float) -> void:

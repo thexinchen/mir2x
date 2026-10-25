@@ -4,6 +4,7 @@ extends Node
 # Corresponds to ProcessRun in the C++ client
 
 signal state_changed
+signal creature_removed(uid: int)
 
 const UID_RECORD_ID_BIT_OFFSET := 35
 const UID_RECORD_ID_MASK := 0xFFFFFF
@@ -512,6 +513,7 @@ func update_creature(uid: int, data: Dictionary) -> void:
 func remove_creature(uid: int) -> void:
 	creatures.erase(uid)
 	player_say_messages.erase(uid)
+	creature_removed.emit(uid)
 	state_changed.emit()
 
 
