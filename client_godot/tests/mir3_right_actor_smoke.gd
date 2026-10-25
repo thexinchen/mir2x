@@ -52,6 +52,7 @@ func _ready() -> void:
 		click.alt_pressed = false
 		click.ctrl_pressed = true
 		old_path = [start + Vector2i.DOWN]
+		main.set("_last_actor_inspection_ms", -1500)
 		main.set("_move_path", old_path.duplicate())
 		main.set("_move_step_timer", 0.4)
 		main.call("_handle_mouse_click", click)
@@ -87,6 +88,7 @@ func _ready() -> void:
 		renderer.set("_mouse_focus_uid", 707)
 		main.set_process(true)
 		var ctrl := InputEventKey.new()
+		main.set("_last_actor_inspection_ms", -1500)
 		ctrl.keycode = KEY_CTRL
 		ctrl.pressed = true
 		Input.parse_input_event(ctrl)
