@@ -46,9 +46,9 @@ struct ActionNode
 {
     uint16_t type      : 5;
     uint16_t speed     : 9;
-    // A separate byte on the wire. MSVC reserves a full uint16_t unit here
-    // otherwise, making ActionNode 28 bytes instead of the GCC wire size 27.
-    uint8_t direction : 5;
+    // An ordinary byte forces offset 2 on both GCC and MSVC. A bitfield
+    // can reuse the two remaining bits of the type/speed storage unit.
+    uint8_t direction;
 
     int16_t x;
     int16_t y;
@@ -239,6 +239,7 @@ struct ActionNode
 #pragma pack(pop)
 static_assert(std::is_trivially_copyable_v<ActionNode>);
 static_assert(sizeof(ActionNode) == 27, "ActionNode wire layout must match all clients");
+static_assert(offsetof(ActionNode, direction) == 2);
 static_assert(offsetof(ActionNode, x) == 3);
 
 struct ActionSpawn
