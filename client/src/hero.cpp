@@ -637,6 +637,9 @@ bool Hero::parseAction(const ActionNode &action)
                     .type = MOTION_SPINKICK,
                     .direction = [&action, this]() -> int
                     {
+                        if(pathf::dirValid(action.direction)){
+                            return action.direction;
+                        }
                         if(action.aimUID){
                             if(auto coPtr = m_processRun->findUID(action.aimUID)){
                                 if(mathf::CDistance<int>(coPtr->x(), coPtr->y(), x(), y()) == 1){

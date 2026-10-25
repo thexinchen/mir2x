@@ -705,9 +705,9 @@ func _update_magic_focus(_mouse_grid: Vector2i, magic_id := 0) -> int:
 func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 	var magic_name: String = _resources.magic_names.get(magic_id, "")
 	# Original 67CF44 resolves a spell target only in its casting branch.
-	# Sword toggles take the command branch and must not replace magic focus.
+	# Sword toggles and the special kick command must not replace magic focus.
 	var focus_uid := 0
-	if magic_name not in SWING_MAGIC_NAMES:
+	if magic_name not in SWING_MAGIC_NAMES and magic_name != "空拳刀法":
 		# Actual spells still refresh focus before the cooldown rejection.
 		focus_uid = _update_magic_focus(mouse_grid, magic_id)
 	if not _magic_ready(magic_id):
@@ -757,10 +757,18 @@ func _ground_spell_grid(mouse_grid: Vector2i, force_front := false) -> Vector2i:
 
 func _send_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, aim_uid: int) -> bool:
 	var direction_override := 0
-	if action_type == 9 and aim_uid == 0 and _resources.magic_names.get(magic_id, "") == "治愈术":
-		# 677548 / 67CC59 capture screen-facing before the legacy heal exception.
+	var magic_name: String = _resources.magic_names.get(magic_id, "")
+	var original_kick := action_type == 12 and magic_name == "空拳刀法"
+	if original_kick:
+		aim_uid = 0
+		aim_grid = Vector2i(game_state.player_x, game_state.player_y)
+	if original_kick or (action_type == 9 and aim_uid == 0 and magic_name == "治愈术"):
+		# 677548 / 67CC59 / 67D0C2 capture screen-facing before enqueueing.
 		var draw_grid: Vector2 = world_renderer.player_draw_grid()
 		var anchor := Vector2i(roundi(draw_grid.x * 48) - int(game_state.view_x), roundi(draw_grid.y * 32) - int(game_state.view_y))
+		# 67D0AC shifts the kick origin 32 screen pixels upward.
+		if original_kick:
+			anchor.y -= 32
 		direction_override = Mir3MovementScript.screen_direction(Vector2i(get_viewport().get_mouse_position()) - anchor)
 	elif action_type == 9 and aim_uid == 0:
 		# 67CBED / 67CE26 call the same sector routine on TILE deltas here.
@@ -822,7 +830,7 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 			target_grid = Vector2i(target.get("x", aim_grid.x), target.get("y", aim_grid.y))
 	var direction: int = int(game_state.player_direction)
 	if action_type == 12:
-		direction = _spinkick_direction(game_state.player_uid, {
+		direction = direction_override if direction_override >= 1 and direction_override <= 8 else _spinkick_direction(game_state.player_uid, {
 			"x": game_state.player_x,
 			"y": game_state.player_y,
 			"aimUID": aim_uid,
@@ -856,7 +864,7 @@ func _execute_spell_action(action_type: int, magic_id: int, aim_grid: Vector2i, 
 		NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, stand))
 		game_state.player_direction = direction
 	var action := {
-		"type": action_type, "speed": 100, "direction": 0 if action_type == 12 else direction,
+		"type": action_type, "speed": 100, "direction": direction_override if action_type == 12 else direction,
 		"x": game_state.player_x, "y": game_state.player_y,
 		"aimX": target_grid.x, "aimY": target_grid.y, "aimUID": aim_uid,
 		"magicID": magic_id,
@@ -2028,6 +2036,9 @@ func _set_map_loading_progress(progress: int, map_name: String) -> void:
 
 
 func _spinkick_direction(uid: int, action: Dictionary) -> int:
+	var explicit_direction := int(action.get("direction", 0))
+	if explicit_direction >= 1 and explicit_direction <= 8:
+		return explicit_direction
 	var fallback: int = game_state.player_direction if uid == game_state.player_uid else int(game_state.get_creature(uid).get("direction", 5))
 	var aim_uid := int(action.get("aimUID", 0))
 	var aim: Dictionary

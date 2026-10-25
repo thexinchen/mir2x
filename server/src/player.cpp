@@ -1236,6 +1236,10 @@ corof::awaitable<> Player::onCMActionAttack(CMAction stCMA)
 corof::awaitable<> Player::onCMActionSpinKick(CMAction cmA)
 {
     fflassert(cmA.action.type == ACTION_SPINKICK);
+    // Explicit original-client heading; zero retains the legacy spin-kick path.
+    if(pathf::dirValid(cmA.action.direction)){
+        m_direction = cmA.action.direction;
+    }
     dispatchAction(cmA.action);
     return {};
 }
