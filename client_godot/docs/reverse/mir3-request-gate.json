@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "wait_gate": {
+    "check": "0x691738",
+    "mark_sent": "0x691260",
+    "clear": "0x693c4c",
+    "pending_byte_offset": 3312,
+    "sent_tick_u32_offset": 3320,
+    "timeout_check": "0x68f808",
+    "timeout_pointer": "0x729734",
+    "timeout_storage": "0x71ebc8",
+    "sample_default_timeout_ms": 10000,
+    "states": {
+      "idle": "pending == 0: allow",
+      "pending_not_expired": "elapsed <= timeout: deny, keep pending",
+      "pending_expired": "elapsed > timeout: clear pending, still deny this check",
+      "next_check_after_clear": "pending == 0: allow"
+    },
+    "elapsed_arithmetic": "unsigned 32-bit tick difference",
+    "exceptional_timeout_assignment": {
+      "instruction": "0x6cbf40",
+      "value": 864000000,
+      "note": "conditional packet-dispatch path; not evidence of measured RTT"
+    }
+  },
+  "result_message": {
+    "message": 99,
+    "handler": "0x69404c",
+    "registration": {
+      "call": "0x69101c",
+      "register_function": "0x690d74",
+      "message": 99,
+      "registration_ecx": 6,
+      "handler": "0x69404c"
+    },
+    "tracker_argument": {
+      "offset": 0,
+      "bytes": 4,
+      "consumer": "0x4e7198"
+    },
+    "status_word_offset": 6,
+    "nonzero_status": "clear pending through 0x693c4c, update UI",
+    "zero_status": "0x68f5ec resets action state, then clear pending through 0x693c4c",
+    "zero_status_restore_position_action_ids": [
+      3006,
+      3007,
+      3011,
+      3013,
+      3056,
+      3057
+    ],
+    "status_word_semantic_name": null,
+    "note": "Do not assign success/error names without recovering the wire contract."
+  },
+  "cast_permission": {
+    "function": "0x68f7ac",
+    "outer_guard": "global timeout value <= 10000",
+    "actor_status_selector": {
+      "function": "0x6dc440",
+      "u32_offset": 128,
+      "helper": "0x6ff670",
+      "expression": "(actor_u32_128 >> 30) & 3",
+      "semantic_name": null
+    },
+    "selected_status_branch": "selector != 0 AND dispatch_magic_id != 232: elapsed > shared_cast_delay",
+    "other_branch": "actor_byte_134 bit7 must be clear",
+    "shared_request_tick_pointer": "0x729380",
+    "shared_delay_pointer": "0x7299b0",
+    "ordinary_cast_delay_assignment": {
+      "instruction": "0x67d5e5",
+      "expression": "(skill_record_u32_64 + 1200) modulo 2^32"
+    },
+    "command_delay_assignment": {
+      "instruction": "0x67d06a",
+      "value": 0
+    },
+    "note": "Status selector, request pending flag and local animation are different inputs."
+  },
+  "current_transport_gap": {
+    "source_snapshots": {
+      "godot_network": {
+        "file": "network_client.gd",
+        "sha256_lf": "99176c2372ff5577f6c030e2bb92f2532296caf143303e1b6ae6505a95ae56e3"
+      },
+      "native_playerop": {
+        "file": "playerop.cpp",
+        "sha256_lf": "49e4cb78b2f39cacf466d8f77dd174c5f706b563ca95eba297b9f8d3356f0624"
+      },
+      "native_playernet": {
+        "file": "playernet.cpp",
+        "sha256_lf": "9f0cf1eb32c6983291581a2160d8060a54b813930c5fcf10ee301f4a08f67b86"
+      }
+    },
+    "godot_send_action": "CM_ACTION uses fixed send without a response ID",
+    "godot_generic_request_timeout_ms": 1000,
+    "native_cm_action": "handler ignores incoming response ID and has no generic correlated result reply",
+    "native_owner_action": "on_AM_ACTION returns immediately when amA.UID == UID()",
+    "required_before_runtime_wait_gate": [
+      "Define a correlated action-result response for this transport.",
+      "Distinguish acceptance, failure/state correction and owner action broadcasts.",
+      "Carry the documented timeout and next-check behavior without reusing the generic 1s timeout.",
+      "Test lost/reordered/stale replies and reconnect/map transitions before blocking user input."
+    ]
+  },
+  "limits": [
+    "No runtime ACK gate is enabled by this artifact.",
+    "No RTT meaning is inferred for the original timeout global.",
+    "Actor status bit meanings and original result status semantic labels remain unresolved."
+  ]
+}
