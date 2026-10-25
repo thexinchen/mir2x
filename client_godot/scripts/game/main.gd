@@ -893,8 +893,10 @@ func _process_movement(delta: float) -> void:
 			_plan_mine_path()
 			return
 		if _chase_target_uid == 0:
+			# A server stand can leave a retry delay without a move animation.
+			# Advance that delay while idle too, or held input remains blocked.
+			_move_step_timer = maxf(0.0, _move_step_timer - delta)
 			if game_state.player_action_type in [3, 5]:
-				_move_step_timer -= delta
 				if _move_step_timer <= 0.0:
 					_set_player_action(2)
 					_release_pending_spell()

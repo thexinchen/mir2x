@@ -63,6 +63,11 @@ func _ready() -> void:
 	_expect(_position() == start and main.get("_move_path").is_empty(), "server stand restores authoritative grid and discards old route", _position())
 	_expect(not main.get("_ground_path_active"), "server stand clears ground path latch so held input can retry", main.get("_ground_path_active"))
 	_expect(held.button == MOUSE_BUTTON_RIGHT, "server rejection does not synthesize mouse release", held.button)
+	main.call("_process_player_action", 0.001)
+	main.call("_process_movement", 0.249)
+	_expect(main.get("_move_step_timer") > 0.0 and _position() == start, "idle correction preserves remaining retry delay without moving", main.get("_move_step_timer"))
+	main.call("_process_movement", 0.002)
+	_expect(main.get("_move_step_timer") == 0.0, "idle retry delay expires even without a move animation", main.get("_move_step_timer"))
 	held.advance(0.301, start + Vector2i.DOWN * 4, false, true, main.get("_ground_path_active"))
 	_expect(held.pending and held.target == start + Vector2i.DOWN * 4, "held cursor redirection resumes after server rejection", held.target)
 	# The final queued path node may have been sent before the stand arrives.
