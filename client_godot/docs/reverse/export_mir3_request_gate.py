@@ -140,8 +140,16 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
     if "postNetMessage(processed ? SM_OK : SM_ERROR, respID)" not in playernet_path.read_text(encoding="utf-8"):
         raise ValueError("current server snapshot lacks correlated processing receipts")
     return {
-        "schema_version": 6, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 7, "sample_sha256": EXPECTED_SAMPLE,
         "actor_action_translation": extract_action_translation(sample),
+        "scene_target_reset": {
+            "scene_setup": "0x6865d4", "call": "0x68669a", "function": "0x676fa4",
+            "cleared_pointer_globals": ["0x729c90", "0x7294f0", "0x72999c", "0x729ce4"],
+            "assignments": ["0x676ff7", "0x677000", "0x677009", "0x677012"],
+            "other_cleanup": "free old scene actors except the local actor and clear scene-owned effect lists",
+            "current_adapter": "validated SM_STARTGAMESCENE and map switches clear magic/follow/attack focus and summon spawn blockers",
+            "lifecycle_scope": "reinitializing an existing main scene after reconnect also invalidates its previous targeting state",
+        },
         "wait_gate": {
             "check": "0x691738", "mark_sent": "0x691260", "clear": "0x693c4c",
             "pending_byte_offset": 3312, "sent_tick_u32_offset": 3320,
@@ -170,6 +178,15 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
         "cast_permission": {
             "function": "0x68f7ac",
             "animation_delay": extract_animation_delay(sample),
+            "animation_motion_receive": {
+                "handler": "0x683874",
+                "registrations": [row for row in registry["records"] if row["handler"] == "0x683874" and row["message"] in [6, 7, 9, 37]],
+                "actor_dispatch": "0x6790e4", "enqueue": "0x6792b9",
+                "skip_generic_receive_snap_for_own_messages": [6, 7, 9, 37, 807],
+                "exception_check": "0x679176",
+                "message_6_side_effect": "0x683a37 refreshes shared impulse-command tick 0x7297f0 for the local actor",
+                "limit": "These messages are admitted to the local actor queue; exact current-protocol action semantics remain unresolved. 807 has a separate relocation branch.",
+            },
             "ordinary_action_readiness": {
                 "dispatch_call": "0x67d563", "function": "0x68f640",
                 "idle_predicate_function": "0x6db938",
