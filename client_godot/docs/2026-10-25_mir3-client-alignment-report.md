@@ -713,3 +713,15 @@ Godot在接收当前协议自身动作6（空间移动）时刷新_last_magic_re
 104 Xvfb窗口运行扩展后的network_request_gate_smoke通过，原有真实移动、动画/GUI、长按、拒绝校正、场景代际、断线重连、位置恢复断言全部继续通过。此次只有提取器、用例和文档变化，不重复编译或重启服务器；既有VSync警告保留。
 
 证据→结论→后续路径：E60-1为解包样本与schema4提取结果，可用上一批相同提取命令复跑；F60-1为职业选择器和服务端定义来源已确认；P60-1是获取逐技能原版定义、确认232及状态位后再适配共享施法门。E60-2为104窗口测试退出0及包含“real 10s delayed-read expiry/late wire reply”的PASS输出，可按res://tests/network_request_gate_smoke.tscn复跑；F60-2为现有应答等待门在真实十秒到期及迟到帧下可恢复；P60-2继续覆盖实际跨地图过程及网络中断。没有以缺少字段值为由填入推测参数，整体游戏逻辑对齐仍未完成。
+
+## 批次 61：真实跨地图往返的待答代际验证（2026-10-26）
+
+原版6865D4在686683判断本人对象存在，68668A调用693C4C清除请求等待，再进行地图初始化和位置恢复。这对应当前_switch_player_map中的待答重置。本批将此前直接调用换图函数的夹具扩大为真实联网跨地图，不增加运行时代码。
+
+新增network_request_gate_map_smoke：实际登录id_3，以服务器查询得到目标地图UID；在原地图发送Stand并暂存其处理回执，保持玩法令牌待答。实际向服务器请求跨图，确认收到本人SM_ACTION/Stand、GameState地图UID和位置已经改变、world_resource.map_id与当前地图相同、等待门清空。在新地图发出下一请求，交付旧地图回执，要求新令牌不变；继续保持新地图回执未交付，真实返回原地图，再验证旧地图和旧代际回执都不能解除新的请求。最后交付当前回执，要求待答清除且玩法检查可用。测试无金币支出、无技能学习，完成后恢复起始地图及位置。
+
+首轮夹具错误地等待换图后的SM_STARTGAMESCENE，退出1；源码BattleObject::requestMapSwitch表明成功后调用reportStand和afterChangeGLoc，SM_STARTGAMESCENE只在Player登录初始化发送。因此改为等待真实本人Stand，并保留资源、位置和待答状态三类断言，而非删去失败断言。104 Xvfb通过地图24→1→24，原位置(405,118)恢复。
+
+反向证据：在104临时仅移除_switch_player_map内_action_request_gate.reset()，运行同一用例，实际跨图后明确失败于“real destination scene did not clear the old request”，退出1。探针finally逐字节恢复main.gd；恢复后窗口用例重新通过。没有因观察超时重启服务器，仍使用3437237。既有VSync警告保留。
+
+证据→结论→后续路径：E61-1为6865D4反编译及当前battleobject.cpp换图通知源码；E61-2为network_request_gate_map_smoke的正向窗口PASS、反向退出1和SOURCE_RESTORED输出，按res://tests/network_request_gate_map_smoke.tscn并设置既有三个资源环境变量可复跑。F61-1为原版要求在换图清除待答，当前实现已通过真实往返验证，且同地图返回时仍需令牌代际；P61-1继续恢复施法状态位、服务器技能定义延迟和原版232例外。该测试覆盖服务器请求式跨图，不宣称NPC收费传送、所有地图门或断线中途跨图全部覆盖。提交按用例与文档两项拆分，整体对齐保持进行中。
