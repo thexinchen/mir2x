@@ -15,10 +15,14 @@ var _saw_death_after_revive := false
 var _saw_health_death_gate := false
 var _saw_health_revive_release := false
 var _authoritative_position := Vector2i.ZERO
+var _aura_mode := false
+var _aura_sent := false
+var _aura_received_ms := 0
 
 
 func _ready() -> void:
 	_early_revive = OS.has_environment("MIR2X_NETWORK_DEATH_EARLY_REVIVE")
+	_aura_mode = OS.get_environment("MIR3_NETWORK_DEATH_AURA") == "1"
 	NetworkClient.connection_changed.connect(_on_connection_changed)
 	NetworkClient.message_received.connect(_on_message_received)
 	NetworkClient.connect_to_server()
@@ -37,6 +41,16 @@ func _process(_delta: float) -> void:
 			var world: RefCounted = renderer.get("world_resource")
 			if int(world.get("map_id")) != GameState.player_map_id:
 				return
+			if _aura_mode:
+				if not _aura_sent:
+					if not _main.call("_action_request_ready"): return
+					var resources: RefCounted = _main.get("_resources")
+					_aura_sent = _main.call("_send_spell_action", 9, resources.magic_id("魔法盾"), Vector2i(GameState.player_x, GameState.player_y), GameState.player_uid)
+					return
+				if _aura_received_ms == 0 or Time.get_ticks_msec() - _aura_received_ms < 1200: return
+				if GameState.attached_magic_effects.is_empty():
+					_fail("real shield reply did not create death fixture", 19)
+					return
 			_authoritative_position = Vector2i(GameState.player_x, GameState.player_y)
 			if _early_revive and not _prepare_forced_correction(renderer):
 				_fail("no walkable client/server death-correction fixture was available", 13)
@@ -45,6 +59,9 @@ func _process(_delta: float) -> void:
 			_stage = Stage.WAIT_DEAD
 		Stage.WAIT_DEAD:
 			if GameState.player_hp != 0:
+				return
+			if _aura_mode and not GameState.attached_magic_effects.is_empty():
+				_fail("real HP=0 retained shield attachment", 20)
 				return
 			if _early_revive:
 				var forced_queue: Array = _main.get("_player_forced_action_queue")
@@ -102,6 +119,9 @@ func _process(_delta: float) -> void:
 			if overlay.visible:
 				_fail("revived player retained the death veil", 11)
 				return
+			if _aura_mode and not GameState.attached_magic_effects.is_empty():
+				_fail("revival resurrected pre-death shield", 21)
+				return
 			var live_click := InputEventMouseButton.new()
 			live_click.button_index = MOUSE_BUTTON_RIGHT
 			live_click.pressed = true
@@ -112,6 +132,7 @@ func _process(_delta: float) -> void:
 				_fail("revived player did not regain world mouse input", 12)
 				return
 			print("NETWORK DEATH REVIVE PASS: visible @die -> @revive hp=%d/action=%d forced=%s death=%s pos=%s world-input" % [GameState.player_hp, GameState.player_action_type, _saw_forced_correction, _saw_death_after_revive, Vector2i(GameState.player_x, GameState.player_y)])
+			if _aura_mode: print("NETWORK AURA DEATH PASS: actual shield cast, health death clears attachment, revival does not restore it")
 			_finished = true
 			NetworkClient.disconnect_from_server()
 			get_tree().quit()
@@ -165,6 +186,10 @@ func _on_message_received(head_code: int, payload: PackedByteArray) -> void:
 	if _finished:
 		return
 	match head_code:
+		NetworkClient.SM_CASTMAGIC:
+			var cast := Protocol.decode_sm_cast_magic(payload)
+			if _aura_mode and cast.get("uid", 0) == GameState.player_uid and cast.get("magic", 0) == 13:
+				_aura_received_ms = Time.get_ticks_msec()
 		NetworkClient.SM_LOGINOK:
 			if NetworkClient.enter_game() != OK:
 				_fail("failed to enter game", 3)

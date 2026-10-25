@@ -1768,7 +1768,12 @@ func _test_death_and_map_filter(main: Control, resources: RefCounted) -> bool:
 		"uid": 303, "type": 1, "monster_id": fade_monster_id,
 		"x": 5, "y": 5, "direction": 5, "action_type": 2, "action_speed": 100,
 	})
+	GameState.add_cast_magic_attachment({"uid": 303, "magic": resources.magic_id("魔法盾")}, "魔法盾")
 	main.call("_on_server_message", NetworkClient.SM_NOTIFYDEAD, _u64_payload(303))
+	for effect in GameState.attached_magic_effects:
+		if effect.get("target_uid", 0) == 303 and effect.get("kind", "") == "shield":
+			_fail("notify-dead without a health packet retained actor aura")
+			return false
 	if GameState.get_creature(303).get("action_type", 0) != 13:
 		_fail("creature death action was not applied")
 		return false
@@ -1800,7 +1805,12 @@ func _test_death_and_map_filter(main: Control, resources: RefCounted) -> bool:
 		_fail("monster without death magic queued an attachment effect")
 		return false
 	GameState.chat_log.clear()
+	GameState.attached_magic_effects.append({"target_uid": 101, "kind": "shield_hit"})
 	main.call("_on_server_message", NetworkClient.SM_NOTIFYDEAD, _u64_payload(101))
+	for effect in GameState.attached_magic_effects:
+		if effect.get("target_uid", 0) == 101 and effect.get("kind", "") == "shield_hit":
+			_fail("self notify-dead retained shield hit attachment")
+			return false
 	if GameState.player_action_type != 13:
 		_fail("player death action was not applied")
 		return false
