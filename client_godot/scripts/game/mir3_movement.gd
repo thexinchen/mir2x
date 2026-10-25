@@ -12,9 +12,10 @@ var target := Vector2i.ZERO
 var running := false
 var run_latched := false
 var force_attack := false
+var harvest := false
 
 
-func press(which: int, destination: Vector2i, ctrl: bool, shift := false) -> void:
+func press(which: int, destination: Vector2i, ctrl: bool, shift := false, alt := false) -> void:
 	if button == 0:
 		held_seconds = 0.0
 	# Left has priority when both buttons are pressed.
@@ -22,7 +23,8 @@ func press(which: int, destination: Vector2i, ctrl: bool, shift := false) -> voi
 		button = which
 	target = destination
 	running = button == MOUSE_BUTTON_RIGHT or ctrl
-	force_attack = button == MOUSE_BUTTON_LEFT and shift
+	harvest = button == MOUSE_BUTTON_LEFT and alt
+	force_attack = button == MOUSE_BUTTON_LEFT and shift and not alt
 	pending = true
 
 
@@ -32,10 +34,11 @@ func release() -> void:
 	running = false
 	run_latched = false
 	force_attack = false
+	harvest = false
 	held_seconds = 0.0
 
 
-func advance(delta: float, destination: Vector2i, ctrl: bool, over_world: bool, path_active: bool, shift := false) -> void:
+func advance(delta: float, destination: Vector2i, ctrl: bool, over_world: bool, path_active: bool, shift := false, alt := false) -> void:
 	if button == 0:
 		return
 	held_seconds += delta
@@ -45,7 +48,8 @@ func advance(delta: float, destination: Vector2i, ctrl: bool, over_world: bool, 
 	if not path_active and held_seconds > HOLD_DELAY:
 		target = destination
 		running = button == MOUSE_BUTTON_RIGHT or ctrl
-		force_attack = button == MOUSE_BUTTON_LEFT and shift
+		harvest = button == MOUSE_BUTTON_LEFT and alt
+		force_attack = button == MOUSE_BUTTON_LEFT and shift and not alt
 		pending = true
 
 
@@ -62,6 +66,8 @@ static func direction(from: Vector2i, to: Vector2i) -> int:
 
 func decide(from: Vector2i, can_walk: Callable, occupied: Dictionary) -> Dictionary:
 	pending = false
+	if harvest:
+		return {"harvest": direction(from, target) + 1}
 	# 67B169–67B266: Shift on ground enqueues an in-place attack, including
 	# when that ground is blocked. It does not enter the walking precheck.
 	if force_attack:

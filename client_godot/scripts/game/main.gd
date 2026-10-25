@@ -86,6 +86,7 @@ var _ground_path_active := false
 var _ground_path_goal := Vector2i(-1, -1)
 var _last_attack_ms := -10000
 var _last_npc_dialogue_ms := -1501
+var _last_corpse_interaction_ms := -1001
 var _pending_spell_action: Dictionary = {}
 var _chase_target_uid := 0
 var _shift_chase_active := false
@@ -414,6 +415,9 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT and focus_uid != 0:
 			_request_team_flag_target(focus_uid)
 			return
+	if event.button_index == MOUSE_BUTTON_LEFT and event.alt_pressed and game_state.grabbed_item.is_empty():
+		_begin_ground_input(event, grid)
+		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		_attack_focus_uid = 0
 		_follow_focus_uid = 0
@@ -478,10 +482,11 @@ func _request_npc_dialogue(uid: int, now_ms := -1) -> bool:
 
 func _begin_ground_input(event: InputEventMouseButton, grid: Vector2i) -> void:
 	var force_attack := event.button_index == MOUSE_BUTTON_LEFT and event.shift_pressed and not event.alt_pressed
-	if grid == Vector2i(game_state.player_x, game_state.player_y) and not force_attack:
+	var harvest := event.button_index == MOUSE_BUTTON_LEFT and event.alt_pressed
+	if grid == Vector2i(game_state.player_x, game_state.player_y) and not force_attack and not harvest:
 		# The decision layer treats the current cell as a no-op. Preserve the
 		# current operation, but remember the press for later held redirection.
-		_ground_input.press(event.button_index, grid, event.ctrl_pressed, force_attack)
+		_ground_input.press(event.button_index, grid, event.ctrl_pressed, force_attack, harvest)
 		return
 	var remaining := _move_step_timer
 	var previous_button: int = _ground_input.button
@@ -490,7 +495,7 @@ func _begin_ground_input(event: InputEventMouseButton, grid: Vector2i) -> void:
 	_move_step_timer = remaining
 	_ground_input.button = previous_button
 	_ground_input.held_seconds = previous_held
-	_ground_input.press(event.button_index, grid, event.ctrl_pressed, force_attack)
+	_ground_input.press(event.button_index, grid, event.ctrl_pressed, force_attack, harvest)
 
 
 func _ground_occupied() -> Dictionary:
@@ -512,7 +517,7 @@ func _process_ground_input(delta: float) -> void:
 		return
 	var hovered := get_viewport().gui_get_hovered_control()
 	var over_world := hovered == world_renderer or (hovered != null and world_renderer.is_ancestor_of(hovered))
-	_ground_input.advance(delta, _mouse_grid(), Input.is_key_pressed(KEY_CTRL), over_world, _ground_path_active, Input.is_key_pressed(KEY_SHIFT) and not Input.is_key_pressed(KEY_ALT))
+	_ground_input.advance(delta, _mouse_grid(), Input.is_key_pressed(KEY_CTRL), over_world, _ground_path_active, Input.is_key_pressed(KEY_SHIFT), Input.is_key_pressed(KEY_ALT))
 	if not _ground_input.pending:
 		return
 	var from := Vector2i(game_state.player_x, game_state.player_y)
@@ -527,10 +532,13 @@ func _process_ground_input(delta: float) -> void:
 	_ground_input.pending = false
 	if _move_step_timer > 0.0 or _player_action_timer >= 0.0 or _pickup_action_timer >= 0.0:
 		return
-	if _ground_input.button == MOUSE_BUTTON_LEFT and not _ground_input.force_attack and Time.get_ticks_msec() - _last_attack_ms <= 1000:
+	if _ground_input.button == MOUSE_BUTTON_LEFT and not _ground_input.force_attack and not _ground_input.harvest and Time.get_ticks_msec() - _last_attack_ms <= 1000:
 		return
 	var occupied := _ground_occupied()
 	var decision: Dictionary = _ground_input.decide(from, world_renderer.can_walk, occupied)
+	if decision.has("harvest"):
+		_try_harvest_corpse(_ground_input.target, int(decision.harvest))
+		return
 	if decision.has("attack"):
 		var front: Vector2i = from + Mir3MovementScript.DIRECTIONS[int(decision.attack) - 1]
 		_send_attack_action(0, front)
@@ -553,6 +561,36 @@ func _process_ground_input(delta: float) -> void:
 		NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, stand))
 		game_state.player_direction = int(decision.turn)
 		_set_player_action(2)
+
+
+func _find_corpse_near(grid: Vector2i) -> int:
+	# 679018 walks the actor list in order, selecting the first corpse within
+	# one cell of the clicked location, rather than the nearest to the hero.
+	for uid in game_state.creatures:
+		var creature: Dictionary = game_state.creatures[uid]
+		if int(creature.get("action_type", 2)) == 13 \
+				and absi(int(creature.get("x", -100)) - grid.x) <= 1 \
+				and absi(int(creature.get("y", -100)) - grid.y) <= 1:
+			return int(uid)
+	return 0
+
+
+func _try_harvest_corpse(grid: Vector2i, direction: int, now_ms := -1) -> bool:
+	var now: int = Time.get_ticks_msec() if now_ms < 0 else now_ms
+	if now - _last_corpse_interaction_ms <= 1000:
+		return false
+	_last_corpse_interaction_ms = now
+	var corpse_uid := _find_corpse_near(grid)
+	if corpse_uid != 0:
+		NetworkClient.send_harvest_corpse(corpse_uid)
+	# 67AFCC/67AFF7 enqueue the same bend action with or without a corpse.
+	# Use the existing bend animation, without the delayed ground-pickup timer.
+	var action := {"type": 8, "speed": 100, "direction": direction, "x": game_state.player_x, "y": game_state.player_y}
+	NetworkClient.send_action(Protocol.encode_cm_action(game_state.player_uid, game_state.player_map_uid, action))
+	game_state.player_direction = direction
+	_set_player_action(8)
+	_player_action_timer = _action_duration(8, 100, 2)
+	return true
 
 
 func _start_move_to(destination: Vector2i) -> void:
