@@ -50,11 +50,12 @@ def extract(path):
             "shield_hit": "one hit cycle then restore original run range and counter=-1",
             "ring_identity": "owner-state factory constructs TMagicSheild2 using resource122",
         },
-        "implementation_gaps": [
-            "Godot currently discards shield and ring after two cycles.",
-            "Godot currently restores two cycles after shield hit, rather than indefinite run.",
-            "Current resource exporter selects first run entry and omits later loop continuation.",
-            "Current server sends shield OFF after10s for both shield and ring; ring needs its own matching termination.",
+        "baseline_commit": "830dc79",
+        "baseline_gaps": [
+            "Baseline Godot discards shield and ring after two cycles.",
+            "Baseline Godot restores two cycles after shield hit, rather than indefinite run.",
+            "Baseline resource exporter selects first run entry and omits later loop continuation.",
+            "Baseline server sends shield OFF after10s for both shield and ring; ring needs its own matching termination.",
             "Repeated casts need stale-expiry protection and same-kind attachment replacement.",
         ],
         "limits": [
