@@ -1,6 +1,193 @@
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "actor_action_translation": {
+    "initializer": "0x66cb38",
+    "runtime_table": "0x734e10",
+    "storage": "BSS; initialized to zero then populated by startup switch",
+    "zero_entry_behavior": "0x6db437 keeps the queued request ID when its mapping entry is zero",
+    "switch_first_request": 3002,
+    "switch_case_count": 66,
+    "rows": [
+      {
+        "queued_request": 3002,
+        "actor_action": 2,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3003,
+        "actor_action": 3,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3010,
+        "actor_action": 10,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3011,
+        "actor_action": 11,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3012,
+        "actor_action": 12,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3013,
+        "actor_action": 13,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3014,
+        "actor_action": 14,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3015,
+        "actor_action": 15,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3016,
+        "actor_action": 16,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3017,
+        "actor_action": 17,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3018,
+        "actor_action": 18,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3019,
+        "actor_action": 19,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3024,
+        "actor_action": 24,
+        "assignment": "0x66cc0b"
+      },
+      {
+        "queued_request": 3025,
+        "actor_action": 8,
+        "assignment": "0x66cc26"
+      },
+      {
+        "queued_request": 3031,
+        "actor_action": 1306,
+        "assignment": "0x66cc34"
+      },
+      {
+        "queued_request": 3032,
+        "actor_action": 1307,
+        "assignment": "0x66cc2d"
+      },
+      {
+        "queued_request": 3033,
+        "actor_action": 25,
+        "assignment": "0x66cc3b"
+      },
+      {
+        "queued_request": 3037,
+        "actor_action": 106,
+        "assignment": "0x66cc42"
+      },
+      {
+        "queued_request": 3038,
+        "actor_action": 26,
+        "assignment": "0x66cc49"
+      },
+      {
+        "queued_request": 3039,
+        "actor_action": 107,
+        "assignment": "0x66cc50"
+      },
+      {
+        "queued_request": 3040,
+        "actor_action": 108,
+        "assignment": "0x66cc57"
+      },
+      {
+        "queued_request": 3042,
+        "actor_action": 111,
+        "assignment": "0x66cc5e"
+      },
+      {
+        "queued_request": 3043,
+        "actor_action": 1306,
+        "assignment": "0x66cc65"
+      },
+      {
+        "queued_request": 3044,
+        "actor_action": 1312,
+        "assignment": "0x66cc6c"
+      },
+      {
+        "queued_request": 3056,
+        "actor_action": 20056,
+        "assignment": "0x66cc1a"
+      },
+      {
+        "queued_request": 3057,
+        "actor_action": 20057,
+        "assignment": "0x66cc1a"
+      },
+      {
+        "queued_request": 3061,
+        "actor_action": 1360,
+        "assignment": "0x66cc73"
+      },
+      {
+        "queued_request": 3062,
+        "actor_action": 1361,
+        "assignment": "0x66cc7a"
+      },
+      {
+        "queued_request": 3063,
+        "actor_action": 1362,
+        "assignment": "0x66cc81"
+      },
+      {
+        "queued_request": 3064,
+        "actor_action": 1319,
+        "assignment": "0x66cc88"
+      },
+      {
+        "queued_request": 3065,
+        "actor_action": 1320,
+        "assignment": "0x66cc8f"
+      },
+      {
+        "queued_request": 3066,
+        "actor_action": 1363,
+        "assignment": "0x66cc96"
+      },
+      {
+        "queued_request": 3067,
+        "actor_action": 1364,
+        "assignment": "0x66cc9d"
+      }
+    ],
+    "confirmed_movement_requests": {
+      "walk": {
+        "queued": 3011,
+        "actor_action": 11
+      },
+      "run": {
+        "queued": 3013,
+        "actor_action": 13
+      }
+    },
+    "movement_source": "0x67c3dc queues 3011 after StepOne and 3013 after StepRun",
+    "namespace_limit": "Actor actions 6/37/9 in the animation-delay writers must not be equated with current Godot enum values or ordinary local walk/run 11/13."
+  },
   "wait_gate": {
     "check": "0x691738",
     "mark_sent": "0x691260",
@@ -55,6 +242,60 @@
   },
   "cast_permission": {
     "function": "0x68f7ac",
+    "animation_delay": {
+      "predicate_function": "0x6911a0",
+      "called_by": "0x68f640",
+      "setter": "0x693c68",
+      "tick_offset": 3328,
+      "delay_offset": 3332,
+      "predicate": "unsigned32(now - actor_tick_3328) > actor_delay_3332",
+      "writers": [
+        {
+          "function": "0x6dd9d8",
+          "call": "0x6ddc93",
+          "actor_actions": [
+            6,
+            37
+          ],
+          "delay_ms": 300,
+          "scope": "current local actor only",
+          "timing": "refresh on each matching animation update"
+        },
+        {
+          "function": "0x6dd9d8",
+          "call": "0x6dddb3",
+          "actor_actions": [
+            9
+          ],
+          "delay_ms": 1000,
+          "scope": "current local actor only",
+          "timing": "stamp after reverse-frame action reaches its starting frame"
+        },
+        {
+          "function": "0x6ddde4",
+          "call": "0x6de095",
+          "actor_actions": [
+            6,
+            37
+          ],
+          "delay_ms": 300,
+          "scope": "current local actor only",
+          "timing": "refresh on each matching animation update"
+        },
+        {
+          "function": "0x6ddde4",
+          "call": "0x6de1e8",
+          "actor_actions": [
+            9
+          ],
+          "delay_ms": 1000,
+          "scope": "current local actor only",
+          "timing": "stamp after reverse-frame action reaches its starting frame"
+        }
+      ],
+      "action_semantic_names": null,
+      "limit": "Local animation-driven restriction, distinct from server skill definition delay+1200 and request-receipt timeout; current transport/action correspondence remains unproven."
+    },
     "ordinary_action_readiness": {
       "dispatch_call": "0x67d563",
       "function": "0x68f640",
@@ -190,6 +431,7 @@
     "local_timeout_callback": "separate from server SM_ERROR; expires pending state and denies one following check",
     "remaining_alignment_work": [
       "Adapt the now-identified profession selector while preserving current multi-job semantics.",
+      "Map original animation actions 6/37/9 to current authority-driven actions before adapting their 300/1000ms post-animation restriction.",
       "Recover per-skill server definition delay values and the identity of original exception 232 before enabling the full shared cast gate.",
       "Distinguish acceptance, failure/state correction and owner action broadcasts.",
       "Exercise real packet loss beyond the deterministic timeout boundaries and held/reordered callback fixtures.",
