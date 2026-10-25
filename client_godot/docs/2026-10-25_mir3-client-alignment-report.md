@@ -172,3 +172,11 @@ Godot 原先右键命中任何角色都只设置 `_follow_focus_uid`，不进入
 /home/czx/godot --headless --path client_godot res://tests/mir3_right_actor_smoke.tscn
 xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/mir3_right_actor_smoke.tscn
 ```
+
+## 批次 14：Alt 右键仍继续地面处理（2026-10-26）
+
+进一步核对 `67B423–67B4DE` 汇编：Ctrl（标志4）优先于 Alt（标志2）。Ctrl 对象分支在初次点击、目标非死亡且距上次请求至少1500 ms 时发送命令0x52（82），然后跳出右键处理；未满足条件时落入地面处理。`67B478` 把82放入DX、目标标识放入ECX，`6CC504` 构造12字节命令头。该命令的业务含义尚未由响应链确认，不能仅凭编号称其为交易或查看装备。
+
+Alt 分支的两个字符串操作数分别为 `67B670` 的“/”和 `67B67C` 的空格，`67B48D–67B4BB` 拼接“/目标名 ”并调用 `6726A4` 设置输入控件、焦点及光标，随后在 `67B4C0` 跳到地面分支 `67B4CB`。因此 Alt 命中角色也不能吞掉转向/跑动。本批把已确认的地面路由扩展到 Alt 右键；三个对象类型的 Alt 请求和首步跑动决策测试通过，普通右键窗口测试与完整动作回归通过。
+
+尚未实现 Alt 私聊预填与提交闭环：当前 `control_panel.gd` 把普通“/名字 内容”交给附近聊天，而原版私聊命令不能直接映射到这个路径；须接到现有私聊协议再启用。Ctrl 成功与冷却失败分支也尚未迁移。本批仅完成 Alt 后续移动路由，不代表两种特殊交互已经全部恢复。原始汇编取证脚本和输出保存在工作案例的 `export_right_modifiers.py`、`read_right_strings.py` 与 `assembly/67b423.asm`、`assembly/6cc504.asm`。

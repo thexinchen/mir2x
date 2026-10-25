@@ -42,6 +42,12 @@ func _ready() -> void:
 		_expect(main.get("_move_path").is_empty() and main.get("_follow_focus_uid") == 707, "actor type%d focus does not retain obsolete route" % actor_type, main.get("_move_path"))
 		var decision: Dictionary = input.decide(start, renderer.can_walk, main.call("_ground_occupied"))
 		_expect(decision.get("move") == start + Vector2i.RIGHT * 2, "actor type%d right input permits clear first run hop" % actor_type, decision)
+		main.call("_cancel_movement")
+		click.alt_pressed = true
+		main.call("_handle_mouse_click", click)
+		_expect(input.button == MOUSE_BUTTON_RIGHT and input.target == target and input.pending, "Alt right click on actor type%d still records ground run request" % actor_type, input.target)
+		decision = input.decide(start, renderer.can_walk, main.call("_ground_occupied"))
+		_expect(decision.get("move") == start + Vector2i.RIGHT * 2, "Alt actor type%d still permits first run hop" % actor_type, decision)
 	main.call("_release_ground_input")
 	if DisplayServer.get_name() != "headless":
 		main.get_node("MapLoadingOverlay").hide()
