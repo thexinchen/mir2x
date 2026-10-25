@@ -4,9 +4,10 @@ const Shortcuts = preload("res://scripts/game/magic_shortcuts.gd")
 class ShortcutMain:
 	extends "res://scripts/game/main.gd"
 	var cast_id := 0
+	var cast_allowed := true
 	func _cast_magic(magic_id: int, _grid: Vector2i) -> bool:
 		cast_id = magic_id
-		return true
+		return cast_allowed
 
 var failures: Array[String] = []
 
@@ -30,6 +31,22 @@ func _ready() -> void:
 	_expect(main.call("_try_magic_key", _key(KEY_F1, false)) and main.get("cast_id") == healing, "F1 dispatches first bank")
 	_expect(main.call("_try_magic_key", _key(KEY_F1, true)) and main.get("cast_id") == fireball, "Shift-F1 dispatches second bank")
 	_expect(not main.call("_try_magic_key", _key(KEY_A, false)), "Shift-F1 storage does not collide with legacy A")
+	var ground: RefCounted = main.get("_ground_input")
+	ground.press(MOUSE_BUTTON_RIGHT, Vector2i(12, 13), false)
+	ground.held_seconds = 0.4
+	main.set("_move_step_timer", 0.2)
+	var path: Array[Vector2i] = [Vector2i(10, 11)]
+	main.set("_move_path", path)
+	_expect(not main.call("_try_magic_key", _key(KEY_F2, false)) and not ground.pending, "unbound F2 discards pending ground request")
+	_expect(ground.button == MOUSE_BUTTON_RIGHT and ground.held_seconds == 0.4 and main.get("_move_step_timer") == 0.2 and main.get("_move_path") == path, "function key preserves held button, active step timer and existing path")
+	ground.pending = true
+	main.set("cast_allowed", false)
+	_expect(main.call("_try_magic_key", _key(KEY_F1, true)) and not ground.pending, "rejected shifted spell also discards pending ground request")
+	main.set("cast_allowed", true)
+	ground.pending = true
+	main.call("_try_magic_key", _key(KEY_A, false))
+	_expect(ground.pending, "unbound legacy letter does not gain original function-key side effect")
+	ground.release()
 	_bind(panel, resources, healing, KEY_F12, false)
 	_bind(panel, resources, fireball, KEY_F12, true)
 	_expect(GameState.magic_keys.get(healing) == 60 and GameState.magic_keys.get(fireball) == 76, "F12 bank endpoints match original slot codes")
@@ -53,7 +70,7 @@ func _ready() -> void:
 	for index in range(12):
 		_expect(Shortcuts.event_key(_key(KEY_F1 + index, false)) == 49 + index, "unshifted function slot %d" % (index + 1))
 		_expect(Shortcuts.event_key(_key(KEY_F1 + index, true)) == 65 + index, "shifted function slot %d" % (index + 1))
-	if failures.is_empty(): print("MIR3 MAGIC SHORTCUTS PASS: two F1-F12 banks, binding/casting, no legacy A collision, unique assignment, fitting labels, legacy X")
+	if failures.is_empty(): print("MIR3 MAGIC SHORTCUTS PASS: two F1-F12 banks, binding/casting, no legacy A collision, unique assignment, fitting labels, legacy X, pending ground dispatch cancellation")
 	get_tree().quit(0 if failures.is_empty() else 1)
 
 func _bind(panel: Control, resources: RefCounted, magic_id: int, code: int, shift: bool) -> void:
