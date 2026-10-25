@@ -3,6 +3,17 @@ extends Node
 var failures: Array[String] = []
 
 func _ready() -> void:
+	var movement = preload("res://scripts/game/mir3_movement.gd")
+	var cases := [[Vector2i.ZERO, 5], [Vector2i(0, -1), 1], [Vector2i(1, 0), 3], [Vector2i(0, 1), 5], [Vector2i(-1, 0), 7]]
+	for sx in [-1, 1]:
+		for sy in [-1, 1]:
+			var diagonal := (2 if sx > 0 else 8) if sy < 0 else (4 if sx > 0 else 6)
+			cases.append([Vector2i(sx * 12, sy * 3), 3 if sx > 0 else 7])
+			cases.append([Vector2i(sx * 12, sy * 4), diagonal])
+			cases.append([Vector2i(sx * 12, sy * 30), diagonal])
+			cases.append([Vector2i(sx * 12, sy * 31), 1 if sy < 0 else 5])
+	for sample in cases:
+		_expect(movement.screen_direction(sample[0]) == sample[1], "screen direction boundary %s -> %d" % [sample[0], sample[1]])
 	NetworkClient.disconnect_from_server()
 	GameState.player_uid = 101
 	GameState.player_x = 5
@@ -34,8 +45,11 @@ func _ready() -> void:
 	GameState.player_action_started_ms = Time.get_ticks_msec()
 	main.call("_send_spell_action", 9, heal, Vector2i(9, 8), 0)
 	_expect(not main.get("_pending_spell_action").is_empty(), "moving heal queues")
+	var captured_direction: int = main.get("_pending_spell_action").get("direction_override", 0)
+	_expect(captured_direction >= 1 and captured_direction <= 8, "queued heal captures screen direction")
 	GameState.player_x = 6
 	main.call("_release_pending_spell")
+	_expect(GameState.player_direction == captured_direction, "queued heal preserves captured screen direction")
 	_expect_heal(heal, Vector2i(6, 5), 0, "queued unowned healing uses current self position")
 	var fireball: int = main.get("_resources").magic_id("火球术")
 	main.call("_execute_spell_action", 9, fireball, Vector2i(9, 8), 0)
