@@ -1376,6 +1376,7 @@ corof::awaitable<> Player::onCMActionSpell(CMAction cmA)
                 std::memset(&smFM, 0, sizeof(smFM));
 
                 smFM.UID   = UID();
+                smFM.mapUID = mapUID();
                 smFM.Magic = magicID;
                 smFM.Speed = MagicSpeed();
 
