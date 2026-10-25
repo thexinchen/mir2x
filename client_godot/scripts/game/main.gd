@@ -1647,9 +1647,14 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 			game_state.player_direction = direction
 		_set_player_action(action_type, action.get("speed", 100), action.get("magicID", 0), action_step)
 		_player_action_timer = _action_duration(action_type, action.get("speed", 100), 2, action.get("magicID", 0))
-		if action_type == 2 and not _move_path.is_empty():
-			_move_path.clear()
-			_move_step_timer = 0.25
+		if action_type == 2:
+			# reportStand() cancels the old route after a rejected move. Clear
+			# its latch too, including when the final node was already sent,
+			# so a still-held button can produce the next cursor request.
+			_ground_path_active = false
+			if not _move_path.is_empty():
+				_move_path.clear()
+				_move_step_timer = 0.25
 		elif action_type == 13:
 			_move_path.clear()
 			_chase_target_uid = 0
