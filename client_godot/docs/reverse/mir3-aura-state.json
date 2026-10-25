@@ -19,6 +19,186 @@
       "handler": "0x68281c",
       "context_va": "0x67f2e5",
       "context_hex": "028bc6e817de040053681c28680066b9060066badc058bc6e802de0400"
+    },
+    {
+      "call": "0x67f05d",
+      "register_function": "0x67ea1c",
+      "message": 41,
+      "registration_ecx": 6,
+      "handler": "0x687460",
+      "context_va": "0x67f045",
+      "context_hex": "048bc6e8b7e0040053686074680066b9060066ba29008bc6e8a2e00400"
+    },
+    {
+      "call": "0x67f312",
+      "register_function": "0x67ea1c",
+      "message": 1502,
+      "registration_ecx": 6,
+      "handler": "0x682be0",
+      "context_va": "0x67f2fa",
+      "context_hex": "058bc6e802de04005368e02b680066b9060066bade058bc6e8eddd0400"
+    },
+    {
+      "call": "0x67eab4",
+      "register_function": "0x67ea1c",
+      "message": 10,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67ea9c",
+      "context_hex": "008bc6e860e6040053687438680066b9060066ba0a008bc6e84be60400"
+    },
+    {
+      "call": "0x67eac9",
+      "register_function": "0x67ea1c",
+      "message": 6,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eab1",
+      "context_hex": "008bc6e84be6040053687438680066b9060066ba06008bc6e836e60400"
+    },
+    {
+      "call": "0x67eade",
+      "register_function": "0x67ea1c",
+      "message": 37,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eac6",
+      "context_hex": "008bc6e836e6040053687438680066b9060066ba25008bc6e821e60400"
+    },
+    {
+      "call": "0x67eaf3",
+      "register_function": "0x67ea1c",
+      "message": 7,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eadb",
+      "context_hex": "008bc6e821e6040053687438680066b9060066ba07008bc6e80ce60400"
+    },
+    {
+      "call": "0x67eb08",
+      "register_function": "0x67ea1c",
+      "message": 11,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eaf0",
+      "context_hex": "008bc6e80ce6040053687438680066b9060066ba0b008bc6e8f7e50400"
+    },
+    {
+      "call": "0x67eb1d",
+      "register_function": "0x67ea1c",
+      "message": 13,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eb05",
+      "context_hex": "008bc6e8f7e5040053687438680066b9060066ba0d008bc6e8e2e50400"
+    },
+    {
+      "call": "0x67eb32",
+      "register_function": "0x67ea1c",
+      "message": 1321,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eb1a",
+      "context_hex": "008bc6e8e2e5040053687438680066b9060066ba29058bc6e8cde50400"
+    },
+    {
+      "call": "0x67eb47",
+      "register_function": "0x67ea1c",
+      "message": 35,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eb2f",
+      "context_hex": "058bc6e8cde5040053687438680066b9060066ba23008bc6e8b8e50400"
+    },
+    {
+      "call": "0x67eb5c",
+      "register_function": "0x67ea1c",
+      "message": 36,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eb44",
+      "context_hex": "008bc6e8b8e5040053687438680066b9060066ba24008bc6e8a3e50400"
+    },
+    {
+      "call": "0x67eb71",
+      "register_function": "0x67ea1c",
+      "message": 1316,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eb59",
+      "context_hex": "008bc6e8a3e5040053687438680066b9060066ba24058bc6e88ee50400"
+    },
+    {
+      "call": "0x67eb86",
+      "register_function": "0x67ea1c",
+      "message": 56,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eb6e",
+      "context_hex": "058bc6e88ee5040053687438680066b9060066ba38008bc6e879e50400"
+    },
+    {
+      "call": "0x67eb9b",
+      "register_function": "0x67ea1c",
+      "message": 801,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eb83",
+      "context_hex": "008bc6e879e5040053687438680066b9060066ba21038bc6e864e50400"
+    },
+    {
+      "call": "0x67ebb0",
+      "register_function": "0x67ea1c",
+      "message": 807,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67eb98",
+      "context_hex": "038bc6e864e5040053687438680066b9060066ba27038bc6e84fe50400"
+    },
+    {
+      "call": "0x67ebc5",
+      "register_function": "0x67ea1c",
+      "message": 808,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67ebad",
+      "context_hex": "038bc6e84fe5040053687438680066b9060066ba28038bc6e83ae50400"
+    },
+    {
+      "call": "0x67ebda",
+      "register_function": "0x67ea1c",
+      "message": 9,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67ebc2",
+      "context_hex": "038bc6e83ae5040053687438680066b9060066ba09008bc6e825e50400"
+    },
+    {
+      "call": "0x67ebef",
+      "register_function": "0x67ea1c",
+      "message": 33,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67ebd7",
+      "context_hex": "008bc6e825e5040053687438680066b9060066ba21008bc6e810e50400"
+    },
+    {
+      "call": "0x67ec04",
+      "register_function": "0x67ea1c",
+      "message": 27,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67ebec",
+      "context_hex": "008bc6e810e5040053687438680066b9060066ba1b008bc6e8fbe40400"
+    },
+    {
+      "call": "0x67ec19",
+      "register_function": "0x67ea1c",
+      "message": 5440,
+      "registration_ecx": 6,
+      "handler": "0x683874",
+      "context_va": "0x67ec01",
+      "context_hex": "008bc6e8fbe4040053687438680066b9060066ba40158bc6e8e6e40400"
     }
   ],
   "instruction_checks": [
@@ -141,6 +321,116 @@
       "va": "0x6e27f5",
       "hex": "0fb645e43c2f770783e07f0fab45fa",
       "role": "mapped byte requests effect index no greater than47"
+    },
+    {
+      "va": "0x6838cc",
+      "hex": "8b450883e80c83f8407c1f",
+      "role": "ordinary actor handler requires payload76 for optional64-byte description"
+    },
+    {
+      "va": "0x6838e7",
+      "hex": "8d430cb940000000e8e0fad7ff",
+      "role": "description copies64 bytes from payload12"
+    },
+    {
+      "va": "0x68399f",
+      "hex": "8b07508b4704508b45fc506a008b470850",
+      "role": "forward shape, state148, description and state132 to shared dispatch"
+    },
+    {
+      "va": "0x6839b0",
+      "hex": "8b0e0fb756048b45f8e82657ffff",
+      "role": "ordinary actor header supplies UID and message to shared dispatch"
+    },
+    {
+      "va": "0x679131",
+      "hex": "8b4518508b4514508b4508500fb74d248b55fc8bc7e88df7ffff",
+      "role": "unknown actor path forwards shape/state fields to creator"
+    },
+    {
+      "va": "0x67892c",
+      "hex": "8bc683e802720f",
+      "role": "shape low byte0/1 selects human branch"
+    },
+    {
+      "va": "0x678942",
+      "hex": "b201a1e0a66d00e85a5c0600",
+      "role": "human actor construction branch"
+    },
+    {
+      "va": "0x678e37",
+      "hex": "8b450c8983940000008b4508898384000000",
+      "role": "creator writes both aura state fields"
+    },
+    {
+      "va": "0x678e49",
+      "hex": "8b45fc8b80f40000008bd3e86317e0ff",
+      "role": "actor insertion occurs after state writes"
+    },
+    {
+      "va": "0x494e60",
+      "hex": "48a84700",
+      "role": "actor-list notification VMT entry"
+    },
+    {
+      "va": "0x47a848",
+      "hex": "c3",
+      "role": "list notification is empty; insertion alone does not prove reconciliation"
+    },
+    {
+      "va": "0x687467",
+      "hex": "837d084c7c2f",
+      "role": "message41 rejects payload shorter than76"
+    },
+    {
+      "va": "0x687476",
+      "hex": "85db7422",
+      "role": "message41 ignores unknown actor UID"
+    },
+    {
+      "va": "0x68747a",
+      "hex": "8bc68b108993800000008d500c8bc3e8ce4f0500",
+      "role": "message41 updates shape and64-byte description"
+    },
+    {
+      "va": "0x68748e",
+      "hex": "8bc38b10ff52448bc38b10ff5248",
+      "role": "message41 refreshes appearance then reconciles auras"
+    },
+    {
+      "va": "0x682bf7",
+      "hex": "85db7459",
+      "role": "message1502 ignores unknown actor UID"
+    },
+    {
+      "va": "0x682bfb",
+      "hex": "0fb7460a89834c0100000fb756068bc3e8c0980500",
+      "role": "message1502 stores actor332 and resizes integer list"
+    },
+    {
+      "va": "0x682c25",
+      "hex": "8b45fc03c78d55f4b904000000e89d07d8ff83c704",
+      "role": "message1502 consumes4-byte list elements"
+    },
+    {
+      "va": "0x682c3a",
+      "hex": "8b4df48b55f88bc3e84d980500",
+      "role": "message1502 writes list element through setter"
+    },
+    {
+      "va": "0x682c4d",
+      "hex": "8bc38b10ff5248",
+      "role": "message1502 reconciles even after an empty list"
+    },
+    {
+      "va": "0x6da774",
+      "hex": "e0026e00",
+      "role": "human actor VMT+72 override"
+    },
+    {
+      "va": "0x6e02eb",
+      "hex": "e870220000",
+      "role": "human override first calls base aura reconciliation"
     }
   ],
   "message657": {
@@ -162,6 +452,65 @@
     "actor132_field_offset": 8,
     "short_fields": "zero padded when stream has the declared field length",
     "reconcile": "actor VMT+72"
+  },
+  "ordinary_actor_creation": {
+    "handler": "0x683874",
+    "messages": [
+      10,
+      6,
+      37,
+      7,
+      11,
+      13,
+      1321,
+      35,
+      36,
+      1316,
+      56,
+      801,
+      807,
+      808,
+      9,
+      33,
+      27,
+      5440
+    ],
+    "shared_dispatch": "0x6790e4",
+    "creator": "0x6788d8",
+    "shape_field_offset": 0,
+    "actor148_field_offset": 4,
+    "actor132_field_offset": 8,
+    "optional_description": {
+      "offset": 12,
+      "bytes": 64,
+      "requires_payload_bytes": 76
+    },
+    "ordering": "creator writes148/132 before actor-list insertion",
+    "limit": "list insertion notification is empty; first reconciled frame is not proven here"
+  },
+  "message41": {
+    "handler": "0x687460",
+    "requires_known_actor": true,
+    "minimum_payload_bytes": 76,
+    "shape_field_offset": 0,
+    "description_offset": 12,
+    "description_bytes": 64,
+    "order": [
+      "shape",
+      "description",
+      "VMT+68 appearance",
+      "VMT+72 aura reconciliation"
+    ]
+  },
+  "message1502": {
+    "handler": "0x682be0",
+    "requires_known_actor": true,
+    "actor332": "header word10; semantics unproven",
+    "list_count": "header word6",
+    "element_bytes": 4,
+    "actor_list_offset": 176,
+    "list_semantics": "unclassified integer list",
+    "then": "VMT+72 aura reconciliation"
   },
   "aura_bits": {
     "shield": {
@@ -199,6 +548,8 @@
     "Message657 vector copies and message1500 snapshots are different original representations, not current mir2x wire structs.",
     "State-driven creation/removal is proven; original server duration and damage absorption remain unknown.",
     "Current ActorBuff mappings do not select1/2; other configurations may map different effects.",
-    "Do not infer a fixed44-byte payload limit from a helper which clears44 bytes then copies the supplied word count."
+    "Do not infer a fixed44-byte payload limit from a helper which clears44 bytes then copies the supplied word count.",
+    "The creator stores flags before insertion, but the list notification is empty; initial reconciled-frame timing is not proven here.",
+    "Message1502's integer list and actor332 are not identified as current buff IDs."
   ]
 }

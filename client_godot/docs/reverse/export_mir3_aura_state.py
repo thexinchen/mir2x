@@ -8,6 +8,7 @@ import struct
 from export_mir3_target_history import EXPECTED_SAMPLE, read_va
 
 EXPECTED_ACTOR_BUFF = "19f12ea396eca7a0ecf9d6b9dff6237cc920c3002f32124fb8d2bc4d5111a3f2"
+ORDINARY_ACTOR_MESSAGES = (10, 6, 37, 7, 11, 13, 1321, 35, 36, 1316, 56, 801, 807, 808, 9, 33, 27, 5440)
 
 
 def extract(sample_path, registry_path, actor_buff_path):
@@ -18,7 +19,9 @@ def extract(sample_path, registry_path, actor_buff_path):
     if registry["sample_sha256"] != EXPECTED_SAMPLE:
         raise ValueError("registry sample mismatch")
     registrations = []
-    for message, handler in [(657, 0x6876DC), (1500, 0x68281C)]:
+    specs = [(657, 0x6876DC), (1500, 0x68281C), (41, 0x687460), (1502, 0x682BE0)]
+    specs += [(message, 0x683874) for message in ORDINARY_ACTOR_MESSAGES]
+    for message, handler in specs:
         rows = [row for row in registry["records"] if row["message"] == message]
         if len(rows) != 1 or rows[0]["handler"] != hex(handler):
             raise ValueError(f"unexpected registration for message{message}")
@@ -54,6 +57,28 @@ def extract(sample_path, registry_path, actor_buff_path):
         (0x6E27E9, "8b5770e8db43e1ff", "reconciliation uses actor112 as appearance mapping key"),
         (0x6DC66F, "8b7b70897370", "appearance setter replaces actor112 key"),
         (0x6E27F5, "0fb645e43c2f770783e07f0fab45fa", "mapped byte requests effect index no greater than47"),
+        (0x6838CC, "8b450883e80c83f8407c1f", "ordinary actor handler requires payload76 for optional64-byte description"),
+        (0x6838E7, "8d430cb940000000e8e0fad7ff", "description copies64 bytes from payload12"),
+        (0x68399F, "8b07508b4704508b45fc506a008b470850", "forward shape, state148, description and state132 to shared dispatch"),
+        (0x6839B0, "8b0e0fb756048b45f8e82657ffff", "ordinary actor header supplies UID and message to shared dispatch"),
+        (0x679131, "8b4518508b4514508b4508500fb74d248b55fc8bc7e88df7ffff", "unknown actor path forwards shape/state fields to creator"),
+        (0x67892C, "8bc683e802720f", "shape low byte0/1 selects human branch"),
+        (0x678942, "b201a1e0a66d00e85a5c0600", "human actor construction branch"),
+        (0x678E37, "8b450c8983940000008b4508898384000000", "creator writes both aura state fields"),
+        (0x678E49, "8b45fc8b80f40000008bd3e86317e0ff", "actor insertion occurs after state writes"),
+        (0x494E60, "48a84700", "actor-list notification VMT entry"),
+        (0x47A848, "c3", "list notification is empty; insertion alone does not prove reconciliation"),
+        (0x687467, "837d084c7c2f", "message41 rejects payload shorter than76"),
+        (0x687476, "85db7422", "message41 ignores unknown actor UID"),
+        (0x68747A, "8bc68b108993800000008d500c8bc3e8ce4f0500", "message41 updates shape and64-byte description"),
+        (0x68748E, "8bc38b10ff52448bc38b10ff5248", "message41 refreshes appearance then reconciles auras"),
+        (0x682BF7, "85db7459", "message1502 ignores unknown actor UID"),
+        (0x682BFB, "0fb7460a89834c0100000fb756068bc3e8c0980500", "message1502 stores actor332 and resizes integer list"),
+        (0x682C25, "8b45fc03c78d55f4b904000000e89d07d8ff83c704", "message1502 consumes4-byte list elements"),
+        (0x682C3A, "8b4df48b55f88bc3e84d980500", "message1502 writes list element through setter"),
+        (0x682C4D, "8bc38b10ff5248", "message1502 reconciles even after an empty list"),
+        (0x6DA774, "e0026e00", "human actor VMT+72 override"),
+        (0x6E02EB, "e870220000", "human override first calls base aura reconciliation"),
     ]
     evidence = []
     for address, expected, role in checks:
@@ -86,6 +111,19 @@ def extract(sample_path, registry_path, actor_buff_path):
                         "actor148_field_offset": 4, "actor132_field_offset": 8,
                         "short_fields": "zero padded when stream has the declared field length",
                         "reconcile": "actor VMT+72"},
+        "ordinary_actor_creation": {"handler": "0x683874", "messages": list(ORDINARY_ACTOR_MESSAGES),
+                                    "shared_dispatch": "0x6790e4", "creator": "0x6788d8",
+                                    "shape_field_offset": 0, "actor148_field_offset": 4, "actor132_field_offset": 8,
+                                    "optional_description": {"offset": 12, "bytes": 64, "requires_payload_bytes": 76},
+                                    "ordering": "creator writes148/132 before actor-list insertion",
+                                    "limit": "list insertion notification is empty; first reconciled frame is not proven here"},
+        "message41": {"handler": "0x687460", "requires_known_actor": True, "minimum_payload_bytes": 76,
+                      "shape_field_offset": 0, "description_offset": 12, "description_bytes": 64,
+                      "order": ["shape", "description", "VMT+68 appearance", "VMT+72 aura reconciliation"]},
+        "message1502": {"handler": "0x682be0", "requires_known_actor": True,
+                        "actor332": "header word10; semantics unproven", "list_count": "header word6",
+                        "element_bytes": 4, "actor_list_offset": 176, "list_semantics": "unclassified integer list",
+                        "then": "VMT+72 aura reconciliation"},
         "aura_bits": {"shield": {"actor_offset": 148, "mask": "0x100000", "effect": 1},
                       "ring": {"actor_offset": 132, "mask": "0x80000000", "effect": 2}},
         "appearance_mapping": {"loader": "0x4f7084", "lookup": "0x4f6bcc", "actor_key_setter": "0x6dc664", "actor_key_offset": 112,
@@ -97,6 +135,8 @@ def extract(sample_path, registry_path, actor_buff_path):
             "State-driven creation/removal is proven; original server duration and damage absorption remain unknown.",
             "Current ActorBuff mappings do not select1/2; other configurations may map different effects.",
             "Do not infer a fixed44-byte payload limit from a helper which clears44 bytes then copies the supplied word count.",
+            "The creator stores flags before insertion, but the list notification is empty; initial reconciled-frame timing is not proven here.",
+            "Message1502's integer list and actor332 are not identified as current buff IDs.",
         ],
     }
 
@@ -110,7 +150,7 @@ def main():
     args = parser.parse_args()
     result = extract(args.sample, args.registry, args.actor_buff)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
-    print(json.dumps({"checks": len(result["instruction_checks"]), "messages": [657, 1500],
+    print(json.dumps({"checks": len(result["instruction_checks"]), "registrations": len(result["registrations"]),
                       "appearance_mappings": len(result["appearance_mapping"]["mappings"])}))
 
 
