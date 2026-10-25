@@ -11,6 +11,7 @@ import struct
 import xml.etree.ElementTree as ET
 from compare_mir3_skill_descriptions import header
 from export_mir3_target_history import EXPECTED_SAMPLE, read_va
+from export_mir3_skill_learning import extract_learning_evidence
 
 
 def extract(sample_path, upgrades_path, sprites, history_path, magic_records_path):
@@ -19,6 +20,7 @@ def extract(sample_path, upgrades_path, sprites, history_path, magic_records_pat
         raise ValueError("requires the documented unpacked Mir3 sample")
     if read_va(sample, 0x627914, 19) != b"MagicUpgradeSetting":
         raise ValueError("unexpected original resource loader name")
+    learning = extract_learning_evidence(sample)
     raw = upgrades_path.read_bytes()
     tree = ET.fromstring(raw)  # XML declaration/BOM determines UTF-8 encoding.
     if tree.tag != "RES_MAGIC":
@@ -96,12 +98,13 @@ def extract(sample_path, upgrades_path, sprites, history_path, magic_records_pat
         rows.append({"current_id": current_id, "current_name": name,
                      "original_resource_id": original_id,
                      "original_resource_name": original_name if original else None,
+                     "original_dispatch_id_after_exact_learn_update": original_id,
                      "match": match_type if original else "unmapped",
                      "alias_evidence": alias_evidence,
                      "explicit_lock_allowed": original_id in lock_ids if original else None,
                      "history_known_positive": original_id in positive_history_ids if original else None,
                      "history_negative_is_final": False})
-    return {"schema_version": 1, "sample_sha256": EXPECTED_SAMPLE,
+    return {"schema_version": 2, "sample_sha256": EXPECTED_SAMPLE,
             "source_sha256": {"original_upgrades": hashlib.sha256(raw).hexdigest(),
                               "current_names": hashlib.sha256(names_raw).hexdigest(),
                               "current_skills": hashlib.sha256(skills_raw).hexdigest(),
@@ -111,8 +114,10 @@ def extract(sample_path, upgrades_path, sprites, history_path, magic_records_pat
                                 "filename": "MagicUpgradeSetting.dat", "id_assignment": "0x62775f",
                                 "name_assignment": "0x627795", "name_max_encoded_bytes": 30},
             "original_resource_rows": row_count, "original_resource_names": len(by_name),
+            "normal_learning_path": learning,
             "skills": rows,
-            "limits": ["Resource identity does not recover server record byte81 target mode, byte64 delay or dispatch-ID substitutions.",
+            "limits": ["Resource identity does not recover server record byte81 target mode or byte64 delay.",
+                       "Exact lookup/learn update assigns matched base ID to dispatch ID; this relation is scoped to that update path, not every possible later write.",
                        "Known-positive history permission combines static/config evidence; a negative remains unknown because server mode1 can enable it.",
                        "Explicit-lock permission uses the separate recovered base-ID predicate.",
                        "The one spelling alias is explicit and source-checked; no fuzzy name matching or King_Magic.csv inference is used."]}

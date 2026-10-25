@@ -20,10 +20,13 @@ def extract(sample_path, identity_path):
     identity = json.loads(raw_identity)
     if identity["sample_sha256"] != EXPECTED_SAMPLE:
         raise ValueError("identity evidence sample mismatch")
+    if not identity["normal_learning_path"]["dispatch"]["equals_matched_base_id_after_this_update"]:
+        raise ValueError("missing exact-ID learning evidence")
     candidates = [{"current_name": row["current_name"], "original_resource_id": row["original_resource_id"],
+                   "dispatch_id_after_exact_learn_update": row["original_dispatch_id_after_exact_learn_update"],
                    "explicit_lock_allowed": row["explicit_lock_allowed"]}
                   for row in identity["skills"] if row["original_resource_id"] in ids]
-    return {"schema_version": 1, "sample_sha256": EXPECTED_SAMPLE,
+    return {"schema_version": 2, "sample_sha256": EXPECTED_SAMPLE,
             "identity_sha256": hashlib.sha256(raw_identity).hexdigest(),
             "general_resolver": "0x67cc08",
             "setting_forced_route": {"branch": "0x67c98a", "expression": "explicit lock permission AND setting enabled",
@@ -36,7 +39,7 @@ def extract(sample_path, identity_path):
                            "uid_preserved": True,
                            "final_actor_direction": "0x67cef2 runs AFTER projection; may differ from the direction used for the projected tile"},
             "current_resource_candidates": candidates,
-            "limits": ["Resource identity is a base-ID mapping; candidate rows do not prove every learned dispatch-ID substitution.",
+            "limits": ["Exact-ID learning sets dispatch ID equal to matched base ID; candidate dispatch IDs apply after that verified update path, not arbitrary other writes.",
                        "The runtime adapter applies the recovered projection to current 抗拒火环 only in the proven setting-forced general route.",
                        "Other general-mode entries depend on missing original server record byte81; do not globally project self spells from this table.",
                        "Current/history target storage remains incomplete; negative static history permission is not a denial."]}
