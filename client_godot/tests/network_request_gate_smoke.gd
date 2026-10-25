@@ -22,8 +22,11 @@ var reconnect_started := false
 var online_session := false
 var reconnected := false
 var scene_messages := 0
+var wire_receipts: Array[Dictionary] = []
 
 func _ready() -> void:
+	NetworkClient.response_received.connect(func(id, head, _payload):
+		wire_receipts.append({"id": id, "head": head, "pending": _pending() if main != null else 0}))
 	NetworkClient.connection_changed.connect(func(connected, _message):
 		if connected: NetworkClient.login("id_3", "123456"))
 	NetworkClient.message_received.connect(_message)
@@ -197,14 +200,60 @@ func _run() -> void:
 	if _pending() != 0:
 		_fail("reconnected request did not complete normally")
 		return
-	print("NETWORK REQUEST GATE PASS: real move/receipt, committed interpolation/GUI, independent Stand isolation, blocked move/spell, held input preservation, matching/stale reply, map generation, disconnect/reconnect isolation and original position restored")
+	if not await _delayed_transport_receipt(stand):
+		return
+	print("NETWORK REQUEST GATE PASS: real move/receipt, committed interpolation/GUI, independent Stand isolation, blocked move/spell, held input preservation, matching/stale reply, map generation, disconnect/reconnect isolation, real 10s delayed-read expiry/late wire reply and original position restored")
 	finished = true
 	NetworkClient.disconnect_from_server()
 	get_tree().quit()
 
+func _delayed_transport_receipt(stand: PackedByteArray) -> bool:
+	stage = "transport-delay"
+	# Stop socket reads, not the scene clock. The server still processes this
+	# real Stand; its response remains unread until after the request expires.
+	NetworkClient.set_process(false)
+	var old_id: int = NetworkClient.get("_next_response_id")
+	main.call("_send_player_action", stand)
+	var old_token := _pending()
+	var entry: Dictionary = NetworkClient.get("_response_callbacks").get(old_id, {})
+	var expires: int = entry.get("expires", 0)
+	await get_tree().create_timer(1.1).timeout
+	NetworkClient.call("_expire_responses")
+	if old_token == 0 or _pending() != old_token or not NetworkClient.get("_response_callbacks").has(old_id):
+		_fail("action expired at the generic one-second timeout")
+		return false
+	while Time.get_ticks_msec() < expires:
+		await get_tree().create_timer(0.01).timeout
+	NetworkClient.call("_expire_responses")
+	if _pending() != 0 or NetworkClient.get("_response_callbacks").has(old_id):
+		_fail("actual ten-second transport timeout did not clear its request")
+		return false
+	if main.call("_action_request_ready") or not main.call("_action_request_ready"):
+		_fail("actual timeout did not deny the first check and allow the next")
+		return false
+	main.call("_send_player_action", stand)
+	var current_token := _pending()
+	NetworkClient.set_process(true)
+	if not await _wait_receipt():
+		_fail("new request failed after delayed socket reads resumed")
+		return false
+	var late_seen := false
+	for receipt in wire_receipts:
+		if receipt.id == old_id:
+			late_seen = receipt.head == NetworkClient.SM_OK and receipt.pending == current_token
+	if not late_seen or _pending() != current_token or _held().size() != 1:
+		_fail("expired wire response interfered with the next request")
+		return false
+	main.call("deliver", _held().pop_front())
+	if _pending() != 0:
+		_fail("new response failed to release the request after timeout recovery")
+		return false
+	return true
+
 func _fail(message: String) -> void:
 	if finished: return
 	finished = true
+	NetworkClient.set_process(true)
 	if online_session and map_uid != 0 and NetworkClient.is_connected_to_server():
 		NetworkClient.send_request_space_move(map_uid, origin.x, origin.y)
 		await get_tree().create_timer(0.5).timeout
