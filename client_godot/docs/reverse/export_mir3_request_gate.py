@@ -41,6 +41,70 @@ def extract_professions(sample):
     return rows
 
 
+def extract_action_translation(sample):
+    # The array at 734E10 is BSS, populated at startup. Decode the initializer's
+    # two-level switch rather than reading nonexistent initialized array bytes.
+    bias = read_va(sample, 0x66CB58, 6)
+    bounds = read_va(sample, 0x66CB5E, 3)
+    indices = read_va(sample, 0x66CB67, 7)
+    targets = read_va(sample, 0x66CB6E, 7)
+    if bias[:2] != b"\x81\xc3" or bounds[:2] != b"\x83\xfb" or indices[:3] != b"\x0f\xb6\x9b" or targets[:3] != b"\xff\x24\x9d":
+        raise ValueError("unexpected action translation switch")
+    first = -struct.unpack_from("<i", bias, 2)[0]
+    count = bounds[2] + 1
+    index_va = struct.unpack_from("<I", indices, 3)[0]
+    target_va = struct.unpack_from("<I", targets, 3)[0]
+    rows = []
+    for index, branch_index in enumerate(read_va(sample, index_va, count)):
+        branch = struct.unpack("<I", read_va(sample, target_va + 4 * branch_index, 4))[0]
+        if branch == 0x66CCA2:
+            continue
+        code = read_va(sample, branch, 11)
+        request = first + index
+        if code[:3] == bytes.fromhex("66c701"):
+            action = struct.unpack_from("<H", code, 3)[0]
+        elif code[:5] == bytes.fromhex("8bda6681eb"):
+            action = (request - struct.unpack_from("<H", code, 5)[0]) & 0xFFFF
+        elif code[:5] == bytes.fromhex("8bda6681c3"):
+            action = (request + struct.unpack_from("<H", code, 5)[0]) & 0xFFFF
+        else:
+            raise ValueError(f"unrecognized action translation branch {branch:#x}")
+        rows.append({"queued_request": request, "actor_action": action, "assignment": hex(branch)})
+    return {"initializer": "0x66cb38", "runtime_table": "0x734e10",
+            "storage": "BSS; initialized to zero then populated by startup switch",
+            "zero_entry_behavior": "0x6db437 keeps the queued request ID when its mapping entry is zero",
+            "switch_first_request": first, "switch_case_count": count, "rows": rows,
+            "confirmed_movement_requests": {"walk": {"queued": 3011, "actor_action": 11},
+                                            "run": {"queued": 3013, "actor_action": 13}},
+            "movement_source": "0x67c3dc queues 3011 after StepOne and 3013 after StepRun",
+            "namespace_limit": "Actor actions 6/37/9 in the animation-delay writers must not be equated with current Godot enum values or ordinary local walk/run 11/13."}
+
+
+def extract_animation_delay(sample):
+    predicate = read_va(sample, 0x6911AB, 15)
+    setter = read_va(sample, 0x693C76, 12)
+    if predicate != bytes.fromhex("2b83000d00003b83040d00000f97c0") or setter != bytes.fromhex("8983000d000089b3040d0000"):
+        raise ValueError("unexpected actor animation-delay storage or unsigned predicate")
+    writers = []
+    for argument, call, function, actions, timing in [
+        (0x6DDC8E, 0x6DDC93, "0x6dd9d8", [6, 37], "refresh on each matching animation update"),
+        (0x6DDDAE, 0x6DDDB3, "0x6dd9d8", [9], "stamp after reverse-frame action reaches its starting frame"),
+        (0x6DE090, 0x6DE095, "0x6ddde4", [6, 37], "refresh on each matching animation update"),
+        (0x6DE1E3, 0x6DE1E8, "0x6ddde4", [9], "stamp after reverse-frame action reaches its starting frame"),
+    ]:
+        code = read_va(sample, argument, 10)
+        if code[0] != 0xBA or code[5] != 0xE8 or call + 5 + struct.unpack_from("<i", code, 6)[0] != 0x693C68:
+            raise ValueError("unexpected animation-delay setter call")
+        writers.append({"function": function, "call": hex(call), "actor_actions": actions,
+                        "delay_ms": struct.unpack_from("<I", code, 1)[0],
+                        "scope": "current local actor only", "timing": timing})
+    return {"predicate_function": "0x6911a0", "called_by": "0x68f640",
+            "setter": "0x693c68", "tick_offset": 3328, "delay_offset": 3332,
+            "predicate": "unsigned32(now - actor_tick_3328) > actor_delay_3332",
+            "writers": writers, "action_semantic_names": None,
+            "limit": "Local animation-driven restriction, distinct from server skill definition delay+1200 and request-receipt timeout; current transport/action correspondence remains unproven."}
+
+
 def extract(sample_path, registry_path, network_path, playerop_path, playernet_path, main_path):
     sample = sample_path.read_bytes()
     if hashlib.sha256(sample).hexdigest() != EXPECTED_SAMPLE:
@@ -76,7 +140,8 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
     if "postNetMessage(processed ? SM_OK : SM_ERROR, respID)" not in playernet_path.read_text(encoding="utf-8"):
         raise ValueError("current server snapshot lacks correlated processing receipts")
     return {
-        "schema_version": 5, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 6, "sample_sha256": EXPECTED_SAMPLE,
+        "actor_action_translation": extract_action_translation(sample),
         "wait_gate": {
             "check": "0x691738", "mark_sent": "0x691260", "clear": "0x693c4c",
             "pending_byte_offset": 3312, "sent_tick_u32_offset": 3320,
@@ -104,6 +169,7 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
         },
         "cast_permission": {
             "function": "0x68f7ac",
+            "animation_delay": extract_animation_delay(sample),
             "ordinary_action_readiness": {
                 "dispatch_call": "0x67d563", "function": "0x68f640",
                 "idle_predicate_function": "0x6db938",
@@ -152,6 +218,7 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
             "local_timeout_callback": "separate from server SM_ERROR; expires pending state and denies one following check",
             "remaining_alignment_work": [
                 "Adapt the now-identified profession selector while preserving current multi-job semantics.",
+                "Map original animation actions 6/37/9 to current authority-driven actions before adapting their 300/1000ms post-animation restriction.",
                 "Recover per-skill server definition delay values and the identity of original exception 232 before enabling the full shared cast gate.",
                 "Distinguish acceptance, failure/state correction and owner action broadcasts.",
                 "Exercise real packet loss beyond the deterministic timeout boundaries and held/reordered callback fixtures.",
