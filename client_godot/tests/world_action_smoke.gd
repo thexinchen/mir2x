@@ -4106,6 +4106,8 @@ func _test_mining(main: Control, resources: RefCounted) -> bool:
 		return false
 	GameState.player_x = mine_grid.x - 1
 	GameState.player_y = mine_grid.y
+	main.set("_player_action_timer", -1.0)
+	main.set("_move_step_timer", 0.0)
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.position = click_position

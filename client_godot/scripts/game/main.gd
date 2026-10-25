@@ -414,6 +414,11 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT and focus_uid != 0:
 			_request_team_flag_target(focus_uid)
 			return
+	if event.button_index == MOUSE_BUTTON_LEFT and focus_uid in [0, game_state.player_uid] and game_state.grabbed_item.is_empty():
+		var mine_front := _ground_mining_front(grid, event.shift_pressed)
+		if mine_front != Vector2i(-1, -1):
+			_start_mining(mine_front)
+			return
 	if event.button_index == MOUSE_BUTTON_LEFT and event.alt_pressed and game_state.grabbed_item.is_empty():
 		_begin_ground_input(event, grid)
 		return
@@ -465,15 +470,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 			# requests come from the held-input poll after its 300 ms threshold.
 			_ground_input.pending = false
 			return
-		var ground_key := "%d,%d" % [grid.x, grid.y]
-		if game_state.ground_items.has(ground_key):
-			_begin_ground_input(event, grid)
-		else:
-			var weapon: Dictionary = game_state.wear.get(3, {})
-			if _resources.item_can_mine(int(weapon.get("itemID", 0))):
-				_start_mining(grid)
-			else:
-				_begin_ground_input(event, grid)
+		_begin_ground_input(event, grid)
 
 
 func _request_npc_dialogue(uid: int, now_ms := -1) -> bool:
@@ -540,6 +537,11 @@ func _process_ground_input(delta: float) -> void:
 	_ground_input.pending = false
 	if _move_step_timer > 0.0 or _player_action_timer >= 0.0 or _pickup_action_timer >= 0.0:
 		return
+	if _ground_input.button == MOUSE_BUTTON_LEFT and game_state.grabbed_item.is_empty():
+		var mine_front := _ground_mining_front(_ground_input.target, Input.is_key_pressed(KEY_SHIFT))
+		if mine_front != Vector2i(-1, -1):
+			_start_mining(mine_front)
+			return
 	if _ground_input.button == MOUSE_BUTTON_LEFT and not _ground_input.force_attack and not _ground_input.harvest and _ground_input.target == from:
 		if _move_path.is_empty() and _chase_target_uid == 0 and _mine_target.x < 0:
 			_request_pickup()
@@ -828,35 +830,37 @@ func _plan_chase_path() -> void:
 	_move_step_timer = 0.0 if not _move_path.is_empty() else 0.25
 
 
+func _ground_mining_front(target: Vector2i, shift: bool) -> Vector2i:
+	var weapon: Dictionary = game_state.wear.get(3, {})
+	if not _resources.item_can_mine(int(weapon.get("itemID", 0))):
+		return Vector2i(-1, -1)
+	var from := Vector2i(game_state.player_x, game_state.player_y)
+	var facing: int = Mir3MovementScript.direction(from, target)
+	var front: Vector2i = from + Mir3MovementScript.DIRECTIONS[facing]
+	# 67AE1C–67AEFC precedes Alt and is also reached by held dispatch.
+	return front if shift or not world_renderer.can_walk(front.x, front.y) else Vector2i(-1, -1)
+
+
 func _start_mining(target: Vector2i) -> void:
+	var remaining := _move_step_timer
 	_cancel_movement()
+	_move_step_timer = remaining
 	_mine_target = target
-	_plan_mine_path()
+	if _move_step_timer <= 0.0 and _player_action_timer < 0.0 and _pickup_action_timer < 0.0:
+		_send_mine_action()
 
 
 func _plan_mine_path() -> void:
-	var player_position := Vector2i(game_state.player_x, game_state.player_y)
-	var distance := _grid_distance(player_position, _mine_target)
-	if distance == 0:
+	var weapon: Dictionary = game_state.wear.get(3, {})
+	if not _resources.item_can_mine(int(weapon.get("itemID", 0))):
 		_mine_target = Vector2i(-1, -1)
-		_move_path.clear()
 		return
-	if distance == 1:
-		_move_path.clear()
+	# 66DED9–66DF8C repeats against the current facing's adjacent wall;
+	# it never finds a route to the original clicked cell.
+	var facing: int = clampi(game_state.player_direction, 1, 8) - 1
+	_mine_target = Vector2i(game_state.player_x, game_state.player_y) + Mir3MovementScript.DIRECTIONS[facing]
+	if not world_renderer.can_walk(_mine_target.x, _mine_target.y):
 		_send_mine_action()
-		return
-	var goals: Array[Vector2i] = []
-	for direction in WorldPathfinderScript.DIRECTIONS:
-		goals.append(_mine_target + direction)
-	_move_path = _find_path(goals)
-	if not _move_path.is_empty():
-		_move_step_timer = 0.0
-		return
-	var unobstructed_path: Array[Vector2i] = _pathfinder.find_path(player_position, goals, world_renderer.can_walk, {}, 50000, 2)
-	if unobstructed_path.is_empty():
-		_mine_target = Vector2i(-1, -1)
-	else:
-		_move_step_timer = 0.25
 
 
 func _find_path(goals: Array[Vector2i]) -> Array[Vector2i]:
@@ -876,10 +880,11 @@ func _process_movement(delta: float) -> void:
 		return
 	if _move_path.is_empty():
 		if _mine_target.x >= 0:
-			_move_step_timer -= delta
+			_move_step_timer = maxf(0.0, _move_step_timer - delta)
 			if _move_step_timer > 0.0:
 				return
-			_set_player_action(2)
+			if game_state.player_action_type != 2:
+				_set_player_action(2)
 			_plan_mine_path()
 			return
 		if _chase_target_uid == 0:

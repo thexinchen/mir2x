@@ -31,17 +31,14 @@ func _ready() -> void:
 	var target := start + Vector2i(6, 0)
 	GameState.ground_items["%d,%d" % [target.x, target.y]] = [1]
 	var actor_resources: RefCounted = main.get("_resources")
-	for item in actor_resources.item_attributes:
-		if actor_resources.item_can_mine(int(item)):
-			GameState.wear = {3: {"itemID": int(item)}}
-			break
+	GameState.wear = {}
 	GameState.state_changed.connect(_count_attacks)
 	_shift(true)
 	_press(MOUSE_BUTTON_LEFT, _point(target), true)
 	await get_tree().create_timer(0.08).timeout
 	_release(MOUSE_BUTTON_LEFT, _point(target))
 	_expect(attack_count == 1 and _position() == start and GameState.player_direction == 3, "single Shift click swings east without moving across blocked ground", attack_count)
-	_expect(main.get("_move_path").is_empty() and main.get("_mine_target") == Vector2i(-1, -1), "Shift overrides mining, pickup and pathfinding", main.get("_move_path"))
+	_expect(main.get("_move_path").is_empty() and main.get("_mine_target") == Vector2i(-1, -1), "ordinary Shift attack overrides pickup and pathfinding", main.get("_move_path"))
 	await get_tree().create_timer(0.9).timeout
 	_expect(attack_count == 1, "single Shift click does not repeat after mouse release", attack_count)
 	var before := attack_count
@@ -85,7 +82,7 @@ func _ready() -> void:
 	GameState.creatures.clear()
 	GameState.state_changed.disconnect(_count_attacks)
 	if failures.is_empty():
-		print("MIR3 SHIFT ATTACK VISUAL PASS: single/held Shift, blocked ground, mining/pickup priority, release cancellation, ordinary movement")
+		print("MIR3 SHIFT ATTACK VISUAL PASS: single/held Shift, blocked ground, pickup priority, release cancellation, ordinary movement")
 	get_tree().quit(0 if failures.is_empty() else 1)
 
 
