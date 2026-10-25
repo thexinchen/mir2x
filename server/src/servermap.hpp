@@ -112,6 +112,13 @@ class ServerMap final: public ServerObject
 
     private:
         std::vector<MapGrid> m_gridList;
+        struct PendingSpaceMove
+        {
+            int x;
+            int y;
+            std::shared_ptr<bool> cancelled;
+        };
+        std::unordered_map<uint64_t, PendingSpaceMove> m_pendingSpaceMoves;
         phmap::flat_hash_set<std::tuple<int, int>, LocHashHelper> m_fireWallLocList;
         phmap::flat_hash_set<std::tuple<int, int>, LocHashHelper> m_gridItemLocList;
 

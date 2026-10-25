@@ -134,7 +134,23 @@ corof::awaitable<> ServerMap::on_AM_TRYSPACEMOVE(const ActorMsgPack &mpk)
 
     const auto fromUID = mpk.from();
 
-    switch(const auto rmpk = co_await m_actorPod->send(mpk.fromAddr(), {AM_ALLOWSPACEMOVE, amASM}); rmpk.type()){
+    if(m_pendingSpaceMoves.contains(fromUID)){
+        m_actorPod->post(mpk.fromAddr(), AM_REJECTSPACEMOVE);
+        co_return;
+    }
+    const auto cancelled = std::make_shared<bool>(false);
+    m_pendingSpaceMoves.emplace(fromUID, PendingSpaceMove {amTSM.X, amTSM.Y, cancelled});
+    const auto pendingGuard = sgf::guard([this, fromUID, cancelled]()
+    {
+        if(const auto p = m_pendingSpaceMoves.find(fromUID); p != m_pendingSpaceMoves.end() && p->second.cancelled == cancelled){
+            m_pendingSpaceMoves.erase(p);
+        }
+    });
+    const auto rmpk = co_await m_actorPod->send(mpk.fromAddr(), {AM_ALLOWSPACEMOVE, amASM});
+    if(*cancelled){
+        co_return;
+    }
+    switch(rmpk.type()){
         case AM_SPACEMOVEOK:
             {
                 // the object comfirm to move
@@ -933,6 +949,16 @@ corof::awaitable<> ServerMap::on_AM_OFFLINE(const ActorMsgPack &rstMPK)
 {
     AMOffline amO;
     std::memcpy(&amO, rstMPK.data(), sizeof(amO));
+
+    if(const auto p = m_pendingSpaceMoves.find(amO.UID); p != m_pendingSpaceMoves.end()){
+        // The player may already report destination coordinates while the map
+        // is still awaiting its move acknowledgement. Retire the source too,
+        // and prevent the suspended transaction from re-adding an offline UID.
+        *p->second.cancelled = true;
+        removeGridUID(amO.UID, p->second.x, p->second.y);
+        m_pendingSpaceMoves.erase(p);
+        g_server->addLog(LOGTYPE_INFO, "Cancelled pending space move for offline UID=%llu", to_llu(amO.UID));
+    }
 
     // this may fail
     // because player may get offline at try move
