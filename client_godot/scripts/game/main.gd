@@ -640,14 +640,9 @@ func _cancel_movement(cancel_ground_input := true) -> void:
 
 
 func _try_magic_key(event: InputEventKey) -> bool:
-	# GLDeviceHelper::getKeyChar(event, false) uses the physical 0-9/A-Z key
-	# and intentionally ignores Shift when resolving configured magic keys.
-	var keycode := int(event.keycode)
-	var key := keycode if (keycode >= KEY_0 and keycode <= KEY_9) or (keycode >= KEY_A and keycode <= KEY_Z) else int(event.unicode)
+	var key: int = preload("res://scripts/game/magic_shortcuts.gd").event_key(event)
 	if key == 0:
-		key = keycode
-	if key >= 65 and key <= 90:
-		key += 32
+		return false
 	var magic_id := 0
 	for configured_magic in game_state.magic_keys:
 		if int(game_state.magic_keys[configured_magic]) == key:

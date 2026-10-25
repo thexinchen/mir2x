@@ -1,6 +1,7 @@
 extends "res://scripts/game/closable_panel.gd"
 
 const ActorResourceScript = preload("res://scripts/game/actor_resource.gd")
+const Shortcuts = preload("res://scripts/game/magic_shortcuts.gd")
 const OVERLAY_FONT := preload("res://assets/font/03_MONOWIDE.ttf")
 const PAGE_NAMES := ["火", "冰", "雷", "风", "神圣", "暗黑", "幻影", "无"]
 const PAGE_TEXTURES: Array[Texture2D] = [
@@ -102,11 +103,14 @@ func _refresh_learned_skills() -> void:
 
 			var key: int = _state.magic_keys.get(magic_id, 0)
 			if key != 0:
-				var key_text := char(key).to_upper()
-				var key_shadow := _make_overlay_label(key_text, 20, Color(0.0, 0.0, 0.0, 224.0 / 255.0))
+				var key_text: String = Shortcuts.label(key)
+				var key_font_size := 20
+				while key_font_size > 10 and OVERLAY_FONT.get_string_size(key_text, HORIZONTAL_ALIGNMENT_LEFT, -1, key_font_size).x > button.size.x - 4:
+					key_font_size -= 1
+				var key_shadow := _make_overlay_label(key_text, key_font_size, Color(0.0, 0.0, 0.0, 224.0 / 255.0))
 				key_shadow.position = Vector2(4, 4)
 				button.add_child(key_shadow)
-				var key_label := _make_overlay_label(key_text, 20, Color(1.0, 128.0 / 255.0, 0.0, 224.0 / 255.0))
+				var key_label := _make_overlay_label(key_text, key_font_size, Color(1.0, 128.0 / 255.0, 0.0, 224.0 / 255.0))
 				key_label.position = Vector2(2, 2)
 				button.add_child(key_label)
 		max_button_reach = maxf(max_button_reach, layout[3] * 65.0 + 13.0 + texture.get_height() + 8.0)
@@ -196,7 +200,7 @@ func _apply_scroll() -> void:
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if not visible or not event.pressed or event.echo:
+	if not event is InputEventKey or not visible or not event.pressed or event.echo:
 		return
 	if event.keycode == KEY_ESCAPE:
 		super._unhandled_key_input(event)
@@ -212,13 +216,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			quick_bar = main.get_node_or_null("%QuickBar") as Control
 		if quick_bar != null and quick_bar.visible:
 			return
-	# ImSkillBoard uses GLDeviceHelper::getKeyChar(event, false): physical
-	# 0-9/A-Z keys keep their unshifted character when assigning shortcuts.
-	var keycode := int(event.keycode)
-	var key: int = keycode if (keycode >= KEY_0 and keycode <= KEY_9) or (keycode >= KEY_A and keycode <= KEY_Z) else int(event.unicode)
-	if key >= 65 and key <= 90:
-		key += 32
-	if not ((key >= 48 and key <= 57) or (key >= 97 and key <= 122)):
+	var key: int = Shortcuts.event_key(event)
+	if key == 0:
 		return
 	if not _has_learned_magic(_hovered_magic_id):
 		get_viewport().set_input_as_handled()
