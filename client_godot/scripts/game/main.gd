@@ -97,6 +97,8 @@ var _mine_target := Vector2i(-1, -1)
 var _pickup_action_timer := -1.0
 var _player_action_timer := -1.0
 var _player_forced_action_queue: Array[Dictionary] = []
+var _player_server_action_queue: Array[Dictionary] = []
+var _player_server_move_active := false
 var _player_post_forced_action: Dictionary = {}
 var _team_flag_active := false
 var _summon_spawn_blockers: Dictionary = {}
@@ -378,7 +380,7 @@ func _player_dead() -> bool:
 
 
 func _player_input_blocked() -> bool:
-	return not game_state.player_health_initialized or game_state.player_hp <= 0
+	return not game_state.player_health_initialized or game_state.player_hp <= 0 or _player_server_move_active or not _player_server_action_queue.is_empty()
 
 
 func _update_death_overlay() -> void:
@@ -516,6 +518,13 @@ func _ground_occupied() -> Dictionary:
 
 
 func _process_ground_input(delta: float) -> void:
+	if _player_server_move_active or not _player_server_action_queue.is_empty():
+		# Authority-driven motion pauses held dispatch; mouse release still
+		# arrives through _input(), and holding may resume when it completes.
+		if _ground_input.button != 0:
+			_ground_input.held_seconds += delta
+		_ground_input.pending = false
+		return
 	if _ground_input.button == 0:
 		return
 	if _player_input_blocked() or not _player_forced_action_queue.is_empty() or map_loading_overlay.visible:
@@ -1110,10 +1119,17 @@ func _process_pickup_action(delta: float) -> void:
 
 func _process_player_action(delta: float) -> void:
 	if _player_action_timer < 0.0:
+		if not _player_server_action_queue.is_empty() and _player_forced_action_queue.is_empty():
+			_player_server_move_active = false
+			_handle_action_data(_player_server_action_queue.pop_front(), true)
 		return
 	_player_action_timer -= delta
 	if _player_action_timer <= 0.0:
 		_player_action_timer = -1.0
+		_player_server_move_active = false
+		if not _player_server_action_queue.is_empty() and _player_forced_action_queue.is_empty():
+			_handle_action_data(_player_server_action_queue.pop_front(), true)
+			return
 		if _player_forced_action_queue.is_empty():
 			if _player_post_forced_action.is_empty():
 				_set_player_action(2)
@@ -1485,6 +1501,8 @@ func _handle_start_game_scene(payload: PackedByteArray) -> void:
 	_pickup_action_timer = -1.0
 	_player_action_timer = -1.0
 	_player_forced_action_queue.clear()
+	_player_server_action_queue.clear()
+	_player_server_move_active = false
 	_player_post_forced_action = {}
 	game_state.start_game_scene(data)
 	NetworkClient.send_query_gold()
@@ -1548,6 +1566,16 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 	# arbitrary self movement as an acknowledgement of local prediction.
 	if not correction_applied and _matches_active_move(uid, action, creature):
 		return
+	if uid == game_state.player_uid:
+		if action_type == 6:
+			_player_server_action_queue.clear()
+			_player_server_move_active = false
+		elif not correction_applied and (_player_server_move_active or not _player_server_action_queue.is_empty()):
+			# 6DB054 appends received actor actions instead of replacing the
+			# motion already on screen. Keep later stand/hit packets in order.
+			if _player_server_action_queue.is_empty() or _player_server_action_queue.back() != data:
+				_player_server_action_queue.append(data.duplicate(true))
+			return
 	var previous_creature := creature.duplicate(true)
 	var is_new_creature := creature.is_empty()
 	if not creature.is_empty() and creature.has("motion_action_queue"):
@@ -1661,6 +1689,10 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 		game_state.trigger_shield_hit(uid)
 	
 	if uid == game_state.player_uid:
+		if action_type in [3, 5]:
+			_cancel_movement(false)
+			_pickup_action_timer = -1.0
+			_player_server_move_active = true
 		# Update player position and direction
 		if action_type in [11, 14]:
 			game_state.player_action_from_x = game_state.player_x
@@ -1776,6 +1808,8 @@ func _switch_player_map(map_uid: int, action: Dictionary) -> void:
 	_pickup_action_timer = -1.0
 	_player_action_timer = -1.0
 	_player_forced_action_queue.clear()
+	_player_server_action_queue.clear()
+	_player_server_move_active = false
 	_player_post_forced_action = {}
 	_magic_focus_uid = 0
 	_follow_focus_uid = 0
