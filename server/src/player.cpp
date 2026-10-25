@@ -687,6 +687,11 @@ void Player::reportNextStrike()
 
 void Player::onDie()
 {
+    // Invalidate both pending starts and expiry callbacks, including a quick
+    // revive before the delayed start would otherwise run.
+    for(auto &generation: m_auraCastGeneration){
+        ++generation;
+    }
     m_luaRunner->spawn(m_threadKey++, "_RSVD_NAME_trigger(SYS_ON_DIE)");
     const ActionDie die
     {
@@ -1385,7 +1390,7 @@ corof::awaitable<> Player::onCMActionSpell(CMAction cmA)
 
                 addDelay(800, [this, smFM, auraIndex, generation, buffType](bool)
                 {
-                    if(m_auraCastGeneration[auraIndex] != generation){
+                    if(m_auraCastGeneration[auraIndex] != generation || m_sdHealth.dead() || mapUID() != smFM.mapUID){
                         return;
                     }
                     dispatchNetPackage(true, SM_CASTMAGIC, smFM);
