@@ -65,6 +65,7 @@ enum CMType: uint8_t
     CM_REQUESTLEAVETEAM,
     CM_REQUESTLATESTCHATMESSAGE,
     CM_CONSUMEBELTITEM,
+    CM_HARVESTCORPSE,
     CM_END,
 };
 
@@ -333,6 +334,11 @@ struct CMRequestLatestChatMessage
     uint32_t includeRecv :  1;
 };
 
+struct CMHarvestCorpse
+{
+    uint64_t corpseUID;
+};
+
 #pragma pack(pop)
 
 // I was using class name ClientMessage
@@ -400,6 +406,7 @@ namespace
         _RSVD_register_clientmsg(CM_REQUESTLEAVETEAM,           1, sizeof(CMRequestLeaveTeam)          );
         _RSVD_register_clientmsg(CM_REQUESTLATESTCHATMESSAGE,   1, sizeof(CMRequestLatestChatMessage)  );
         _RSVD_register_clientmsg(CM_CONSUMEBELTITEM,            1, sizeof(CMConsumeBeltItem)           );
+        _RSVD_register_clientmsg(CM_HARVESTCORPSE,              1, sizeof(CMHarvestCorpse)             );
 
 #undef _RSVD_register_clientmsg
         return result;

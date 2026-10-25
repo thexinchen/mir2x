@@ -62,6 +62,7 @@ class Monster: public BattleObject
 
     protected:
         AStarCache m_astarCache;
+        std::vector<SDItem> m_corpseItems;
 
     protected:
         std::optional<std::pair<uint64_t, uint64_t>> m_idleWaitToken {};
@@ -140,6 +141,7 @@ class Monster: public BattleObject
         corof::awaitable<> on_AM_CHECKMASTER     (const ActorMsgPack &);
         corof::awaitable<> on_AM_QUERYMASTER     (const ActorMsgPack &);
         corof::awaitable<> on_AM_QUERYHEALTH     (const ActorMsgPack &);
+        corof::awaitable<> on_AM_CLAIMCORPSE     (const ActorMsgPack &);
         corof::awaitable<> on_AM_DEADFADEOUT     (const ActorMsgPack &);
         corof::awaitable<> on_AM_NOTIFYNEWCO     (const ActorMsgPack &);
         corof::awaitable<> on_AM_QUERYUIDBUFF    (const ActorMsgPack &);

@@ -139,6 +139,7 @@ enum ActorMsgPackType: int
     AM_REQUESTLEAVETEAM,
     AM_PLAYERSAY,
     AM_PLAYERBROADCAST,
+    AM_CLAIMCORPSE,
     AM_END,
 };
 
@@ -273,10 +274,18 @@ inline const char *mpkName(int type)
         _add_mpk_type_case(AM_REQUESTLEAVETEAM)
         _add_mpk_type_case(AM_PLAYERSAY)
         _add_mpk_type_case(AM_PLAYERBROADCAST)
+        _add_mpk_type_case(AM_CLAIMCORPSE)
         default: return "AM_UNKNOWN";
     }
 #undef _add_mpk_type_case
 }
+
+struct AMClaimCorpse
+{
+    uint64_t mapUID;
+    int x;
+    int y;
+};
 
 struct AMPlayerSay
 {

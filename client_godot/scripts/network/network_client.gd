@@ -50,6 +50,7 @@ const CM_REQUESTJOINTEAM := 46
 const CM_REQUESTLEAVETEAM := 47
 const CM_REQUESTLATESTCHATMESSAGE := 48
 const CM_CONSUMEBELTITEM := 49
+const CM_HARVESTCORPSE := 50
 const CM_REQUESTRETRIEVESECUREDITEM := 16
 const CM_REQUESTSPACEMOVE := 17
 const CM_CREATEACCOUNT := 28
@@ -303,6 +304,13 @@ func send_pickup(x: int, y: int, map_uid: int) -> Error:
 	payload.encode_u16(2, y)
 	_encode_u64(payload, 4, map_uid)
 	return _send_fixed_message(CM_PICKUP, payload)
+
+
+func send_harvest_corpse(corpse_uid: int) -> Error:
+	var payload := PackedByteArray()
+	payload.resize(8)
+	_encode_u64(payload, 0, corpse_uid)
+	return _send_fixed_message(CM_HARVESTCORPSE, payload)
 
 
 func send_request_space_move(map_uid: int, x: int, y: int) -> Error:

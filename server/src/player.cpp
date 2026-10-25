@@ -591,6 +591,7 @@ corof::awaitable<> Player::operateNet(uint8_t nType, const uint8_t *pData, size_
         _support_cm(CM_MAKEITEM                  );
         _support_cm(CM_NPCEVENT                  );
         _support_cm(CM_PICKUP                    );
+        _support_cm(CM_HARVESTCORPSE             );
         _support_cm(CM_PING                      );
         _support_cm(CM_QUERYCORECORD             );
         _support_cm(CM_QUERYMAPBASEUID           );

@@ -8,6 +8,35 @@
 #include "serverargparser.hpp"
 
 extern ServerArgParser *g_serverArgParser;
+extern Server *g_server;
+
+corof::awaitable<> Player::net_CM_HARVESTCORPSE(uint8_t, const uint8_t *buf, size_t, uint64_t)
+{
+    const auto request = ClientMsg::conv<CMHarvestCorpse>(buf);
+    if(!canAttack(true) || m_pickUpLock || uidf::getUIDType(request.corpseUID) != UID_MON){
+        co_return;
+    }
+    const auto now = g_server->getCurrTick();
+    if(m_lastCorpseHarvestTick.has_value() && now - m_lastCorpseHarvestTick.value() <= 1000){
+        co_return;
+    }
+    m_lastCorpseHarvestTick = now;
+    m_pickUpLock = true;
+    const auto lockGuard = sgf::guard([this]() noexcept { m_pickUpLock = false; });
+    const AMClaimCorpse claim{.mapUID = mapUID(), .x = X(), .y = Y()};
+    const auto result = co_await m_actorPod->send(request.corpseUID, {AM_CLAIMCORPSE, claim});
+    if(result.type() != AM_SDBUFFER){
+        postNetMessage(SM_TEXT, std::u8string(u8"无法采集该尸体"));
+        co_return;
+    }
+    auto items = cerealf::deserialize<std::vector<SDItem>>(result.data(), result.size());
+    for(auto &item: items){
+        addInventoryItem(std::move(item), false);
+    }
+    postNetMessage(SM_TEXT, std::u8string(u8"采集成功"));
+}
+
+
 corof::awaitable<> Player::net_CM_ACTION(uint8_t, const uint8_t *pBuf, size_t, uint64_t)
 {
     CMAction cmA;

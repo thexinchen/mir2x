@@ -65,6 +65,7 @@ class Player final: public BattleObject
 
     protected:
         std::set<uint64_t> m_slaveList;
+        std::optional<uint32_t> m_lastCorpseHarvestTick;
 
     protected:
         uint64_t m_teamLeader = 0;
@@ -215,6 +216,7 @@ class Player final: public BattleObject
         corof::awaitable<> net_CM_REQUESTGRABWEAR           (uint8_t, const uint8_t *, size_t, uint64_t);
         corof::awaitable<> net_CM_REQUESTJOINTEAM           (uint8_t, const uint8_t *, size_t, uint64_t);
         corof::awaitable<> net_CM_REQUESTDIE                (uint8_t, const uint8_t *, size_t, uint64_t);
+        corof::awaitable<> net_CM_HARVESTCORPSE             (uint8_t, const uint8_t *, size_t, uint64_t);
         corof::awaitable<> net_CM_REQUESTKILLPETS           (uint8_t, const uint8_t *, size_t, uint64_t);
         corof::awaitable<> net_CM_REQUESTLATESTCHATMESSAGE  (uint8_t, const uint8_t *, size_t, uint64_t);
         corof::awaitable<> net_CM_REQUESTLEAVETEAM          (uint8_t, const uint8_t *, size_t, uint64_t);
