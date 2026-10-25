@@ -685,11 +685,16 @@ func _mouse_grid() -> Vector2i:
 	return world_renderer.grid_from_screen(int(mouse.x), int(mouse.y))
 
 
-func _update_magic_focus(_mouse_grid: Vector2i) -> int:
-	var focus_uid: int = world_renderer.focus_uid_at_screen(get_viewport().get_mouse_position())
+func _update_magic_focus(_mouse_grid: Vector2i, magic_id := 0) -> int:
+	# 67CA30 / 67CD24 allow the currently hovered corpse for legacy spell 77.
+	# The history fallback below still requires a live actor (67CA7D/67CD08).
+	var include_dead: bool = _resources.magic_names.get(magic_id, "") == "回生术"
+	var focus_uid: int = world_renderer.focus_uid_at_screen(get_viewport().get_mouse_position(), false, include_dead)
 	if focus_uid != 0:
-		_magic_focus_uid = focus_uid
-		return _magic_focus_uid
+		var candidate: Dictionary = game_state.get_creature(focus_uid)
+		if not candidate.is_empty() and (include_dead or candidate.get("action_type", 0) != 13):
+			_magic_focus_uid = focus_uid
+			return _magic_focus_uid
 	if _magic_focus_uid != 0:
 		var focus: Dictionary = game_state.get_creature(_magic_focus_uid)
 		if focus.is_empty() or focus.get("action_type", 0) == 13:
@@ -700,7 +705,7 @@ func _update_magic_focus(_mouse_grid: Vector2i) -> int:
 func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 	# C++ refreshes FOCUS_MAGIC before the cooldown check so the next cast keeps
 	# the target selected by a cooldown-blocked key press.
-	var focus_uid := _update_magic_focus(mouse_grid)
+	var focus_uid := _update_magic_focus(mouse_grid, magic_id)
 	if not _magic_ready(magic_id):
 		game_state.add_chat_log("%s尚未冷却" % _resources.magic_names.get(magic_id, "技能"), 3)
 		return false

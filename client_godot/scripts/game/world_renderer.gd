@@ -83,6 +83,7 @@ var world_resource: RefCounted = WorldResourceScript.new()
 var actor_resource: RefCounted = ActorResourceScript.new()
 var _active_attached_magic: Dictionary = {}
 var _actor_target_rects: Dictionary = {}
+var _corpse_target_rects: Dictionary = {}
 var _mouse_focus_uid := 0
 var _magic_focus_uid := 0
 var _follow_focus_uid := 0
@@ -209,6 +210,7 @@ func _draw() -> void:
 	var active_magic := _resolve_magic_effects(now)
 	_active_attached_magic = _resolve_attached_magic(now)
 	_actor_target_rects.clear()
+	_corpse_target_rects.clear()
 	_draw_special_ground_underlays(active_magic, view_x, view_y)
 	_draw_dead_actors(view_x, view_y, now)
 
@@ -2086,7 +2088,7 @@ func _monster_render_sequence(creature: Dictionary) -> Dictionary:
 
 
 func _record_actor_target(uid: int, creature_type: int, map_y: int, action_type: int, body: Dictionary, start_x: int, start_y: int) -> void:
-	if uid == 0 or action_type == 13 or body.is_empty():
+	if uid == 0 or body.is_empty():
 		return
 	var texture: Texture2D = body.texture
 	var offset: Vector2i = body.offset
@@ -2094,7 +2096,8 @@ func _record_actor_target(uid: int, creature_type: int, map_y: int, action_type:
 	var target_size := Vector2(minf(texture_size.x, 58.0), minf(texture_size.y, 40.0))
 	var target_position := Vector2(start_x + offset.x, start_y + offset.y)
 	target_position += (texture_size - target_size) * 0.5
-	_actor_target_rects[uid] = {
+	var targets: Dictionary = _corpse_target_rects if action_type == 13 else _actor_target_rects
+	targets[uid] = {
 		"rect": Rect2(target_position, target_size),
 		"world_center": target_position + target_size * 0.5 + Vector2(int(game_state.view_x), int(game_state.view_y)),
 		"type": creature_type,
@@ -2102,7 +2105,7 @@ func _record_actor_target(uid: int, creature_type: int, map_y: int, action_type:
 	}
 
 
-func focus_uid_at_screen(screen_position: Vector2, allow_player := false) -> int:
+func focus_uid_at_screen(screen_position: Vector2, allow_player := false, include_dead := false) -> int:
 	if _mouse_focus_uid != 0 and _actor_target_rects.has(_mouse_focus_uid) \
 			and (allow_player or _mouse_focus_uid != game_state.player_uid):
 		var retained: Dictionary = _actor_target_rects[_mouse_focus_uid]
@@ -2110,14 +2113,18 @@ func focus_uid_at_screen(screen_position: Vector2, allow_player := false) -> int
 			return _mouse_focus_uid
 	var best_uid := 0
 	var best_y := -2147483648
-	for uid_value in _actor_target_rects:
-		var uid: int = uid_value
-		if not allow_player and uid == game_state.player_uid:
-			continue
-		var target: Dictionary = _actor_target_rects[uid]
-		if target.rect.has_point(screen_position) and int(target.map_y) >= best_y:
-			best_uid = uid
-			best_y = int(target.map_y)
+	var target_sets: Array = [_actor_target_rects]
+	if include_dead:
+		target_sets.append(_corpse_target_rects)
+	for targets in target_sets:
+		for uid_value in targets:
+			var uid: int = uid_value
+			if not allow_player and uid == game_state.player_uid:
+				continue
+			var target: Dictionary = targets[uid]
+			if target.rect.has_point(screen_position) and int(target.map_y) >= best_y:
+				best_uid = uid
+				best_y = int(target.map_y)
 	return best_uid
 
 

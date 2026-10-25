@@ -4,7 +4,7 @@ class GroundMain:
 	extends "res://scripts/game/main.gd"
 	var request: Dictionary = {}
 	var test_focus := 0
-	func _update_magic_focus(_grid: Vector2i) -> int:
+	func _update_magic_focus(_grid: Vector2i, _magic_id := 0) -> int:
 		return test_focus
 	func _send_spell_action(action_type: int, magic_id: int, grid: Vector2i, uid: int) -> bool:
 		request = {"type": action_type, "magic": magic_id, "grid": grid, "uid": uid}
