@@ -764,7 +764,7 @@ func _ready() -> void:
 		_fail("magic shield attachment rejected")
 		return
 	var shield: Dictionary = GameState.attached_magic_effects.back()
-	if shield.get("target_uid", 0) != GameState.player_uid or shield.get("cycles", 0) != 2 or shield.get("kind", "") != "shield":
+	if shield.get("target_uid", 0) != GameState.player_uid or shield.get("cycles", 0) != -1 or shield.get("kind", "") != "shield":
 		_fail("magic shield attachment metadata mismatch: %s" % shield)
 		return
 	shield.start_time = now
@@ -804,7 +804,7 @@ func _ready() -> void:
 	shield_hit_start = shield.get("start_time", 0)
 	var shield_hit_duration := maxi(100, roundi(shield_hit_meta[2] * 1000.0 / (10.0 * shield_hit_meta[4] / 100.0)))
 	var shield_resumed: Dictionary = $WorldRenderer.call("_resolve_attached_magic", shield_hit_start + shield_hit_duration)
-	if shield.get("stage", 0) != 2 or shield.get("kind", "") != "shield" or shield_resumed.get(GameState.player_uid, []).is_empty() or shield_resumed[GameState.player_uid][0].meta != shield_meta:
+	if shield.get("stage", 0) != 2 or shield.get("kind", "") != "shield" or shield_resumed.get(GameState.player_uid, []).is_empty() or shield_resumed[GameState.player_uid][0].meta != resources.magic_loop_layout(shield_id, 2):
 		_fail("magic shield did not resume its run cycle after hit: %s active=%s" % [shield, shield_resumed])
 		return
 	var shield_duration: int = maxi(100, roundi(shield_meta[2] * 1000.0 / (10.0 * shield_meta[4] / 100.0)))
@@ -813,10 +813,13 @@ func _ready() -> void:
 	if attached.get(GameState.player_uid, []).size() != 1:
 		_fail("magic shield second cycle missing")
 		return
-	shield.start_time = now - shield_duration * 2
+	shield.start_time = now - shield_duration * 100
 	attached = $WorldRenderer.call("_resolve_attached_magic", now)
-	if attached.has(GameState.player_uid) or not GameState.attached_magic_effects.is_empty():
-		_fail("magic shield did not expire after two cycles")
+	if not attached.has(GameState.player_uid) or attached[GameState.player_uid][0].meta != resources.magic_loop_layout(shield_id, 2):
+		_fail("magic shield expired or lost loop range after sustained playback")
+		return
+	if not GameState.add_cast_magic_attachment(cast_data, "魔法盾") or GameState.attached_magic_effects.size() != 1:
+		_fail("shield recast stacked attachments")
 		return
 
 	cast_data["magic"] = ring_id
@@ -827,10 +830,15 @@ func _ready() -> void:
 	var ring_elapsed := mini(100, ring_duration - 1)
 	ring.start_time = now - ring_duration - ring_elapsed
 	attached = $WorldRenderer.call("_resolve_attached_magic", now)
-	var ring_alpha: float = attached.get(GameState.player_uid, [])[0].get("alpha_mod", 0.0)
+	var ring_alpha: float = attached.get(GameState.player_uid, [])[-1].get("alpha_mod", 0.0)
 	var expected_ring_alpha := maxf(absf(cos(float(ring_elapsed) / 800.0)), 32.0 / 255.0)
 	if not is_equal_approx(ring_alpha, expected_ring_alpha):
 		_fail("yin-yang ring second-cycle alpha mismatch: %f" % ring_alpha)
+		return
+	ring.start_time = now - ring_duration - 12345
+	attached = $WorldRenderer.call("_resolve_attached_magic", now)
+	if attached.get(GameState.player_uid, []).size() != 2 or attached[GameState.player_uid][-1].meta != resources.magic_loop_layout(ring_id, 2):
+		_fail("ring did not persist on its final loop frame alongside shield")
 		return
 
 	GameState.attached_magic_effects.clear()
