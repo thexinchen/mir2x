@@ -347,6 +347,13 @@ func _grab_item(key: String) -> void:
 	_state.state_changed.emit()
 
 
+func cancel_grabbed_item() -> bool:
+	if _state.grabbed_item.is_empty(): return false
+	var size := _item_grid_size(int(_state.grabbed_item.get("itemID", 0)))
+	_place_grabbed(_grabbed_origin + Vector2i(floori(size.x * 0.5), floori(size.y * 0.5)))
+	return true
+
+
 func _place_grabbed(grid: Vector2i) -> void:
 	var item: Dictionary = _state.grabbed_item
 	_play_item_sound(int(item.get("itemID", 0)))

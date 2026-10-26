@@ -300,9 +300,9 @@ func _refresh_grabbed_item_icon() -> void:
 
 func _input(event: InputEvent) -> void:
 	# Original mouse press dispatch cancels a held reference before GUI routing.
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and not game_state.grabbed_shortcut.is_empty():
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and (not game_state.grabbed_shortcut.is_empty() or not game_state.grabbed_item.is_empty()):
 		game_state.cancel_shortcut_drag()
-		game_state.state_changed.emit()
+		if not inventory_panel.cancel_grabbed_item(): game_state.state_changed.emit()
 		_release_ground_input()
 		get_viewport().set_input_as_handled()
 		return

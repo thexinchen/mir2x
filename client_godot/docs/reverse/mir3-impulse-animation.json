@@ -309,7 +309,7 @@
     "source_sha256_lf": {
       "common/src/actionnode.hpp": "8e0b045285a253f48bc6923449372f7919cccbe4a69aea9419129a7172801cea",
       "client/src/hero.cpp": "5fcf29c0b3298cb79e9e670b4320863e8232d81e84fcb490e33db3edeae8380d",
-      "client_godot/scripts/game/main.gd": "e19fb9e1b09cfa1573d7b3ce37637fed694005545638b29b031d48744177ddfe",
+      "client_godot/scripts/game/main.gd": "efb663133e10ac995641348fb028dd1ae98b93116b77eae686cc914901f2622a",
       "client_godot/scripts/game/world_renderer.gd": "fad96b82ea0bc58a488a4570d42fd4512a1bef3ff3ec4368ef085e94ca478241"
     },
     "current_enum": {
