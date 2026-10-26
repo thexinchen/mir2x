@@ -520,7 +520,7 @@
       },
       "godot_inventory_panel": {
         "file": "inventory_panel.gd",
-        "sha256_lf": "0041dad370ca9a99cc8401dea39e869649b3cb0686999130d1db8d472569ab3b"
+        "sha256_lf": "2282c157ed7f75a77b36c6188dd25517af0da951cd18789ce6dca56c6cf736b5"
       },
       "godot_protection": {
         "file": "mir3_protection.gd",

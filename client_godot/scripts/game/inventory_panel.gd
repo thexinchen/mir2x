@@ -342,7 +342,10 @@ func _grab_item(key: String) -> void:
 		_play_item_sound(int(old_grabbed.get("itemID", 0)))
 		_state.inventory.append(old_grabbed)
 		var old_size := _item_grid_size(int(old_grabbed.get("itemID", 0)))
-		_bins[_item_key(old_grabbed)] = {"x": _grabbed_origin.x, "y": _grabbed_origin.y, "w": old_size.x, "h": old_size.y, "item": old_grabbed}
+		var position := _grabbed_origin
+		if position.x + old_size.x > GRID_COLUMNS or _occupied(position.x, position.y, old_size.x, old_size.y):
+			position = _find_free_position(old_size.x, old_size.y)
+		_bins[_item_key(old_grabbed)] = {"x": position.x, "y": position.y, "w": old_size.x, "h": old_size.y, "item": old_grabbed}
 	_state.grabbed_item = selected
 	_state.state_changed.emit()
 
