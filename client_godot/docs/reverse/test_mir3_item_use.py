@@ -26,7 +26,7 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 32)
+        self.assertEqual(len(result["instruction_checks"]), 38)
 
     def test_unrelated_sample_is_rejected(self):
         sample = Path(self.temp.name) / "other.exe"

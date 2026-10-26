@@ -44,6 +44,12 @@ CHECKS = [
     (0x6C4D63, "e860030000", "second automatic controller branch calls same helper"),
     (0x6C52F4, "e88bf7ffff", "selection helper calls800ms wrapper"),
     (0x6C5359, "e826f7ffff", "second selection branch calls800ms wrapper"),
+    (0x67E32D, "83c0d083e80a7213", "character dispatch accepts ASCII0 through9"),
+    (0x67E348, "0fb613a1749b72008b00e85544fdff", "numeric character enters6527AC shortcut selector"),
+    (0x6527AF, "0fb6d283ea304a85d27c0583fa097e05ba09000000", "characters1 through9 map slots0 through8;0 maps slot9"),
+    (0x6527C4, "6a0033c98b949028010000e88ccdffff", "keyboard invokes same slot action64F560"),
+    (0x64D75A, "c786a800000060f56400", "slot control also binds64F560 event handler"),
+    (0x64F697, "a1c09372008b0033c98bd3e8ed0d0400", "resolved inventory slot invokes manual690494 path"),
 ]
 
 
@@ -70,7 +76,7 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 1, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 2, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "reply_registrations": registrations,
         "shared_cells": {"pending_interface": "0x72995c",
                          "source_index": "0x7296a0", "sent_tick": "0x729d68"},
@@ -79,20 +85,24 @@ def extract(sample_path, registry_path):
                         "payload_prefix": "two opaque DWORDs then string"},
             "automatic_selection_pending_window_ms": 800,
             "inventory_pending_window_ms": 3000,
+            "manual_shortcuts": {"characters": "1234567890", "slots": 10,
+                                 "route": ["0x67e2d8", "0x6527ac", "0x64f560", "0x690494"],
+                                 "pending_window_ms": 3000},
             "pending_window": "unsigned elapsed; equality permits dispatch; null pending bypasses elapsed check",
             "retry": "restore previous pending item before selecting another; timeout is not success",
             "failure": "restore pending item to source index and clear pending interface",
             "success": "flagged stack count>1 restores count-1; then clear shared pending state",
         },
         "baseline_commit": "a1b4d1b",
-        "adapter_gaps": [
+        "baseline_gaps": [
             "Current CM_CONSUMEITEM and CM_CONSUMEBELTITEM differ from original1006.",
             "Current belt snapshot and inventory removal are not correlated635/636 replies.",
             "Quick-bar and inventory consume paths have no equivalent shared pending object.",
         ],
         "limits": [
             "800ms is a pending-item retry window, not a universal potion cooldown.",
-            "Verified800ms callers include automatic medicine selection; manual1-6 key routing is not established.",
+            "800ms belongs to automatic selection; manual digit slots invoke the separate3000ms inventory path.",
+            "Original has ten digit slots; current six-slot mir2x belt is a protocol/UI adaptation, not full original layout parity.",
             "Item flags, full descriptor layout, special success branches and server reward formulas are incomplete.",
             "Original identity DWORDs must not be assumed to equal current itemID/seqID.",
             "No original live server capture or gameplay implementation is supplied by this exporter.",
