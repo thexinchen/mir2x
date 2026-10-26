@@ -73,6 +73,8 @@ var _preview_font_index := 0
 var _preview_font_size := 12
 var _preview_lines: Array[LineEdit] = []
 var _preview_fonts: Array[Font] = []
+var _protection: RefCounted
+var _protection_controls: Array[Dictionary] = []
 
 
 # C++ closes this board on Escape but returns false, so later boards and the
@@ -105,6 +107,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _ready() -> void:
 	super._ready()
 	_state = get_node("/root/GameState")
+	_protection = get_parent().get_mir3_protection() if get_parent().has_method("get_mir3_protection") else preload("res://scripts/game/mir3_protection.gd").new()
 	_state.state_changed.connect(_refresh_controls)
 	var menu_buttons: Array[Button] = [
 		$Menu/System,
@@ -132,6 +135,7 @@ func _rebuild_page() -> void:
 		$SystemPage.remove_child(child)
 		child.queue_free()
 	_controls.clear()
+	_protection_controls.clear()
 	_sliders.clear()
 	_friend_radios.clear()
 	_preview_lines.clear()
@@ -264,15 +268,40 @@ func _build_game_page() -> void:
 		for index in PROTECTION_CONFIGS.size():
 			var entry: Array = PROTECTION_CONFIGS[index]
 			_add_check("Config%d" % int(entry[0]), int(entry[0]), str(entry[1]), Vector2(0, 40 + index * 25))
-		_add_label("WaitLabel", "等待", Vector2(0, 150), Vector2(40, 20))
-		var wait_seconds := SpinBox.new()
-		wait_seconds.name = "UnusedWaitSeconds"
-		wait_seconds.position = Vector2(40, 145)
-		wait_seconds.size = Vector2(50, 26)
-		wait_seconds.min_value = 0
-		wait_seconds.max_value = 999
-		$SystemPage.add_child(wait_seconds)
-		_add_label("SecondsLabel", "秒", Vector2(95, 150), Vector2(30, 20))
+		_build_protection_controls()
+
+
+func _build_protection_controls() -> void:
+	_add_label("TimedProtection", "定时保护（低于数值时用药，间隔单位：毫秒）", Vector2(0, 150), Vector2(400, 20))
+	_add_label("ProtectionThreshold", "低于", Vector2(95, 175), Vector2(110, 20))
+	_add_label("ProtectionInterval", "间隔（毫秒）", Vector2(245, 175), Vector2(120, 20))
+	for index in 3:
+		var y := 200 + index * 40
+		var enabled := _make_check_button("Protection%d" % index, ["体力", "魔法", "特殊药"][index], Vector2(0, y + 4))
+		enabled.size.x = 90
+		enabled.toggled.connect(_on_protection_changed.bind(index, "enabled"))
+		$SystemPage.add_child(enabled)
+		var controls := {"enabled": enabled}
+		for field in ["threshold", "interval"]:
+			var spin := SpinBox.new()
+			spin.name = "Protection%d%s" % [index, field]
+			spin.position = Vector2(95 if field == "threshold" else 245, y)
+			spin.size = Vector2(115, 28)
+			spin.min_value = 0
+			spin.max_value = 2147483647
+			spin.step = 1
+			spin.tooltip_text = "低于此体力/魔法数值时尝试用药" if field == "threshold" else "用药检查间隔（毫秒），0为停用"
+			spin.value_changed.connect(_on_protection_changed.bind(index, field))
+			$SystemPage.add_child(spin)
+			controls[field] = spin
+		_protection_controls.append(controls)
+
+
+func _on_protection_changed(value: Variant, channel: int, field: String) -> void:
+	if _updating: return
+	_protection.channels[channel][field] = bool(value) if field == "enabled" else int(value)
+	var error: int = _protection.save()
+	if error != OK: push_warning("无法保存定时保护配置：%s" % error_string(error))
 
 
 func _add_tabs(labels: Array[String], selected: int, callback: Callable) -> void:
@@ -508,6 +537,12 @@ func _refresh_controls() -> void:
 	if _state == null:
 		return
 	_updating = true
+	for index in _protection_controls.size():
+		var controls: Dictionary = _protection_controls[index]
+		controls.enabled.set_pressed_no_signal(_protection.channels[index].enabled)
+		controls.enabled.get_node("Mark").visible = _protection.channels[index].enabled
+		controls.threshold.set_value_no_signal(_protection.channels[index].threshold)
+		controls.interval.set_value_no_signal(_protection.channels[index].interval)
 	for key_value in _controls:
 		var key: int = key_value
 		var control: Control = _controls[key]
