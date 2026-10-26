@@ -1759,3 +1759,33 @@ python3 client_godot/docs/reverse/test_mir3_auto_use.py --sample /tmp/mir3-histo
 ```
 
 最终日志：/tmp/mir3-protection102-repeat-final.log、relogin-final.log、visual-final.log、manual-final.log（后三者同前缀）。证据→结论→后续路径：E102-1恢复Book真实含义和独立节拍，E102-2修正客户端计时起点，E102-3/E102-4解释实际持续用药/重登失败并修复，E102-5以真实回包及连续会话确认当前路径恢复可用。F102-1为这一批保护运行链得到进一步对齐和稳定；传送物品的服务器结算、GUI恢复逐药延迟及其他未决技能/玩法仍需继续，整体目标未完成。
+
+## 批次 103：野蛮冲撞直接命令取证与魔法焦点隔离（2026-10-26）
+
+本批检查未完成的野蛮冲撞。当前ID39与原资源/学习后的分派ID27来自mir3-skill-identity.json的既有精确对应，不把两种编号或当前动作枚举混用。仍使用既有SHA-256 eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021的解包样本。原IDA会话再次返回worker不可达，确认旧句柄失效后通过skill脚本打开，未将活任务观察超时视为停止。
+
+E103-1：67CF44先在67CFD3读取服务端技能记录WORD68，与角色MP365作有符号比较，费用大于当前MP时拒绝；再按技能记录byte76区分普通施法和命令。这里恢复的是byte76=0、dispatch WORD84=27的命令分支，不声称所有服务端版本都会下发相同分类或MP成本。该分支在67D223用6775B4重新读取全局鼠标屏幕位置并转为地图格，在67D24B以6FEC28从人物格算八方向，经67D25F调用6915F0直接发送3017，而非排入普通施法3017动作。它不调用普通目标解析67C954，也不采用当前焦点、历史目标或显式锁定UID，不预演人物冲撞位移。静态技能允许锁定位不代表实际命令分支一定经过锁定解析。
+
+E103-2：6915F0→6CB85C生成12字节默认头，字段为u32@0=0、u16@4=3017、u16@6=原0..7方向、u16@8=0、u16@10=技能27。6CC584/6CC65C另复制4字节人物+3292数据；此前命令公共入口已将此处清零，故该分支附加数据为0。发送后清除+3292，并经691260将人物+3312置待确认、+3320记发送时间。提取工具的编码器只重放这12+4字节，不含原外层帧、序号、尾部终止字节，也没有运行网络发送能力；这些字节不能发到当前mir2x协议端口。
+
+E103-3：27与36读取同一7297F0→734D20时钟，u32 elapsed>=3000允许；命令公共729380门要求elapsed>=500，获准进入时先更新时间。36空拳请求在67D081重置三秒时钟，27发送分支没有该赋值；683874收到本地角色原消息6，才在683A37刷新7297F0。不能在日后接入冲撞时照抄空拳的请求时刻盖章，也不能因编号相同给当前ActionType6/SpaceMove加这个副作用。该原消息到当前协议动作的精确对应仍未完成。
+
+新增export_mir3_rush_command.py/mir3-rush-command.json固化17处指令、八方向头部样例、身份JSON来源哈希、条件、计时和当前后端缺口。test_mir3_rush_command.py五项测试含全部17处指令逐处改变的子例、八方向布局、非法方向/类型、其他样本及身份误用39的拒绝。两端通过，104用独立原样本重新生成后cmp一致。工具没有从当前MagicRecord.mp=20推断原版WORD68，也没有臆造服务器冲撞距离、推人资格、伤害、耗蓝或冷却成功语义。
+
+E103-4：现有Godot_cast_magic虽然尚未分派野蛮冲撞，却在检查冷却前调用_update_magic_focus，从而能用鼠标下演员替换普通施法焦点。mir3_impulse_gate_smoke先增加断言，在旧代码104复现两项失败：被空拳共享门拦截的冲撞、以及计时就绪但未实现的冲撞都会刷新焦点；日志/tmp/mir3-rush103-before.log。修正后将野蛮冲撞与空拳、剑术命令一样排除在普通目标刷新之外；不改变普通法术在冷却前刷新焦点的已有原版行为。
+
+新增断言还要求冲撞不走普通_send_spell_action替身、不改当前/历史/锁定三通道，不给尚未执行的技能重置接受时钟。测试通过不代表已经实现原版冲撞发送或服务端结算。当前Player::onCMActionSpell无此技能分支，技能对应JSON仍明确显示unsupported，本批没有用普通施法动画冒充冲撞，也没有新增只返回成功的协议占位实现。
+
+E103-5：104的mir3_impulse_gate_smoke、mir3_magic_command_gate_smoke、mir3_target_lock_smoke和mir3_target_history_smoke通过。强化mir3_magic_command_gate_visual，在实际Xvfb主场景送入F1/F2/F3按下/释放，通过确定性鼠标命中框夹具确保若误进普通目标解析可选中UID606，再验证冲撞在门内与门外都保留707/808/909三个目标通道，人物动作与位置不变；未替换焦点或发送方法。该夹具命中框是测试设定，不声称对实际怪物贴图做了物理鼠标操作。窗口运行通过，既有VSync警告保留；目标锁定用例音频根缺失提示不计为目标行为失败。
+
+主场景哈希所在的请求门/技能对应JSON重算，104独立重生并cmp一致。日志/tmp/mir3-rush103-场景名.log和/tmp/mir3-rush103-visual.log。本批没有C++修改或服务器重启，原生server PID3690496持续监听7000；GDScript由Godot实际加载运行验证。提取工具/JSON/负例、客户端焦点修复及快照、Godot回归、报告分笔线性提交，新增源码纳入，旧.uid、样本/IDA库、日志和既有build_signature修改排除。
+
+```sh
+python3 client_godot/docs/reverse/export_mir3_rush_command.py --sample /tmp/mir3-history-unpacked.exe --output /tmp/mir3-rush103.json
+cmp /tmp/mir3-rush103.json client_godot/docs/reverse/mir3-rush-command.json
+python3 client_godot/docs/reverse/test_mir3_rush_command.py --sample /tmp/mir3-history-unpacked.exe
+MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" /home/czx/godot --headless --path client_godot res://tests/mir3_impulse_gate_smoke.tscn
+MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/mir3_magic_command_gate_visual.tscn
+```
+
+证据→结论→后续路径：E103-1/E103-2明确冲撞属于有条件的独立方向命令，E103-3约束后续计时移植，E103-4/E103-5修正并验证一个会影响后续普通法术目标的真实副作用。F103-1是命令/施法目标隔离进一步符合原版；完整冲撞请求到当前服务端结算的对应仍未完成，传送物品、GUI物品延迟及其余玩法对齐继续。
