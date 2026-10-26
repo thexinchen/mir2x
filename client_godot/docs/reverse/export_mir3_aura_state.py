@@ -8,10 +8,11 @@ import struct
 from export_mir3_target_history import EXPECTED_SAMPLE, read_va
 
 EXPECTED_ACTOR_BUFF = "19f12ea396eca7a0ecf9d6b9dff6237cc920c3002f32124fb8d2bc4d5111a3f2"
+EXPECTED_EFFECTS_LIST = "9b4317ea9cf07d6953f431f9df51807ff09c6e4d24b2c86cbda9489c3424457e"
 ORDINARY_ACTOR_MESSAGES = (10, 6, 37, 7, 11, 13, 1321, 35, 36, 1316, 56, 801, 807, 808, 9, 33, 27, 5440)
 
 
-def extract(sample_path, registry_path, actor_buff_path):
+def extract(sample_path, registry_path, actor_buff_path, effects_list_path):
     sample = sample_path.read_bytes()
     if hashlib.sha256(sample).hexdigest() != EXPECTED_SAMPLE:
         raise ValueError("requires documented unpacked sample")
@@ -79,6 +80,31 @@ def extract(sample_path, registry_path, actor_buff_path):
         (0x682C4D, "8bc38b10ff5248", "message1502 reconciles even after an empty list"),
         (0x6DA774, "e0026e00", "human actor VMT+72 override"),
         (0x6E02EB, "e870220000", "human override first calls base aura reconciliation"),
+        (0x6DB33F, "8b45d883f81b740e3d2405000074073d290500007512c6437c00c6839c000000008bc38b10ff5248", "actions27/1316/1321 clear death flags and explicitly reconcile before subsequent action fields"),
+        (0x6DF803, "bef6ffffff8b83b0000000e89171d2ff85c07e088b83b00000008b30", "extra appearance selector reads first actor176 integer or returns minus10 for empty list"),
+        (0x6E03A9, "8b864c01000083c0fe83e8020f83d3000000", "extra appearance branch is restricted to actor332 values2/3"),
+        (0x6E03BB, "8bc6e83af4ffff8bd83b9e5c0300000f84be000000899e5c030000", "cache first integer; unchanged value skips rebuilding extra appearance"),
+        (0x6E03D6, "83be6003000000740b8d8660030000e80636d3ff", "changed value disposes previous extra appearance before selecting replacement"),
+        (0x6E03EA, "bffeffffff83fb0a7c07bf02000000eb1383fb057c07bf01000000eb0783fb037c0233ff85ff7c7c", "signed first integer selects tiers3..4,5..9,10+; lower values create no replacement"),
+        (0x6E0419, "8d1c7f8b14dd68847200a1c49d72008b00e8a574fcff", "tier selects six-dword row and resolves its image-library string"),
+        (0x6E0438, "8b04dd6c847200508b04dd70847200508b04dd74847200508b4dfcb201a1d4446e00e8e1670000", "extra appearance row supplies start image, frame count and interval to TImagesEffect constructor"),
+        (0x6E045F, "8986600300008b8660030000897824", "extra appearance is stored separately at actor864; tier stored at effect36"),
+        (0x6E046E, "8b04dd788472008b966003000089421c8b04dd7c8472008b9660030000894220", "row offsets copied to extra image effect28/32"),
+        (0x6E6C53, "8948048958088b4d0c03cb4989480c8b4d08894814895810", "TImagesEffect stores image library, first/last frame, interval and current frame"),
+        (0x6DA9B6, "84ad6d00", "factory switch effect40 selects714 constructor branch"),
+        (0x6DA9D2, "9fad6d00", "factory switch effect47 selects785 constructor branch"),
+        (0x6DAD84, "68ca0200006a006a006a008bc8b201a1e02b6e00e8cf980000", "effect40 uses generic constructor6E466C with resource714 and three zero stack arguments"),
+        (0x6DAD9F, "68110300006a006a006a008bc8b201a1e02b6e00e8b4980000", "effect47 uses same generic constructor with resource785"),
+        (0x6E02C8, "ffffffff010000003100", "extra appearance image library is Delphi string1"),
+        (0x728468, "d0026e002e09000001000000e80300000d000000a6ffffffd0026e002f09000001000000e80300000d000000a6ffffffd0026e003009000001000000e80300000d000000a6ffffff", "three extra appearance rows: library1, frames2350/2351/2352, count1, interval1000, offsets13/-90"),
+        (0x6E4684, "0fb64510508b450c508b4d1433d28bc7e857030000", "generic effect constructor delegates to6E49F0, distinct from shield constructor6E4964"),
+        (0x6E4A11, "897724c64748018b45088947188bc78b10ff5208", "generic parent sets resource36 and direct-effect flag72 before virtual resource initialization"),
+        (0x6E4AB4, "807b4800741b", "direct-effect flag selects effects lookup rather than magic indirection"),
+        (0x6E4ABD, "a1c49d72008b008b80f40100000fb75324e8b9570100", "direct lookup6FA28C receives manager500 and resource36"),
+        (0x6FA949, "b9d4aa6f00e821acd0ff", "resource loader constructs effects.lst path"),
+        (0x6FAAD4, "656666656374732e6c737400", "effects.lst filename literal"),
+        (0x6FAA20, "baf4aa6f00e85aacd0ff", "loader compares EFFECTS section marker"),
+        (0x6FAAF4, "234546464543545300", "EFFECTS section literal"),
     ]
     evidence = []
     for address, expected, role in checks:
@@ -98,6 +124,27 @@ def extract(sample_path, registry_path, actor_buff_path):
         mappings.append({"appr": int(fields[0]), "effect": int(fields[1])})
     if mappings != [{"appr": 186, "effect": 40}, {"appr": 216, "effect": 47}]:
         raise ValueError("unexpected ActorBuff mappings")
+    effects_raw = effects_list_path.read_bytes()
+    if hashlib.sha256(effects_raw).hexdigest() != EXPECTED_EFFECTS_LIST:
+        raise ValueError("requires documented effects.lst configuration")
+    effect_rows = []
+    section = ""
+    for line_number, line in enumerate(effects_raw.decode("gb18030").splitlines(), 1):
+        body, _, comment = line.partition("//")
+        body = body.split(";", 1)[0].strip()
+        if body.startswith("#"):
+            section = body
+        elif section == "#EFFECTS" and body:
+            fields = body.split()
+            if fields[0] in ["714", "785"]:
+                values = list(map(int, fields))
+                if values not in [[714, 300, 19, 0, 0], [785, 300, 25, 0, 0]]:
+                    raise ValueError("unexpected appearance effect row")
+                effect_rows.append(dict(resource_id=values[0], image_library=str(values[1]),
+                                        group_index=values[2], color=values[3], light=values[4],
+                                        comment=comment.strip(), line=line_number))
+    if [row["resource_id"] for row in effect_rows] != [714, 785]:
+        raise ValueError("missing or duplicate appearance effect rows")
     return {
         "schema_version": 1, "sample_sha256": EXPECTED_SAMPLE,
         "registrations": registrations, "instruction_checks": evidence,
@@ -122,13 +169,35 @@ def extract(sample_path, registry_path, actor_buff_path):
                       "order": ["shape", "description", "VMT+68 appearance", "VMT+72 aura reconciliation"]},
         "message1502": {"handler": "0x682be0", "requires_known_actor": True,
                         "actor332": "header word10; semantics unproven", "list_count": "header word6",
-                        "element_bytes": 4, "actor_list_offset": 176, "list_semantics": "unclassified integer list",
+                        "element_bytes": 4, "actor_list_offset": 176,
+                        "list_semantics": "first integer feeds a separate tiered human appearance selector; business meaning remains unclassified",
                         "then": "VMT+72 aura reconciliation"},
+        "extra_human_appearance": {
+            "selector": "0x6df7fc", "reconcile": "0x6e02e0", "actor332_values": [2, 3],
+            "input": "first actor176 integer, or minus10 when empty", "cached_value_actor_offset": 860,
+            "effect_actor_offset": 864, "unchanged_input": "retain existing extra effect",
+            "changed_input": "dispose old effect, then resolve selected tier if any",
+            "tiers": [dict(tier=i, minimum=minimum, maximum=maximum,
+                           library=read_va(sample, library, 1).decode("ascii"), first_image=first,
+                           frame_count=count, interval=interval, x_offset=x, y_offset=y)
+                      for i, (minimum, maximum) in enumerate([(3, 4), (5, 9), (10, None)])
+                      for library, first, count, interval, x, y in
+                      [struct.unpack("<IIIIii", read_va(sample, 0x728468 + 24 * i, 24))]],
+            "limit": "gate values outside2/3 bypass this branch; do not infer clearing or server gameplay meaning",
+        },
         "aura_bits": {"shield": {"actor_offset": 148, "mask": "0x100000", "effect": 1},
                       "ring": {"actor_offset": 132, "mask": "0x80000000", "effect": 2}},
         "appearance_mapping": {"loader": "0x4f7084", "lookup": "0x4f6bcc", "actor_key_setter": "0x6dc664", "actor_key_offset": 112,
                                "filename": "ActorBuff.dat", "sha256": EXPECTED_ACTOR_BUFF, "mappings": mappings,
                                "selects_shield_or_ring": any(row["effect"] in [1, 2] for row in mappings)},
+        "appearance_effect_constructors": [
+            {"effect": 40, "resource_id": 714, "branch": "0x6dad84", "constructor": "0x6e466c"},
+            {"effect": 47, "resource_id": 785, "branch": "0x6dad9f", "constructor": "0x6e466c"},
+        ],
+        "appearance_effect_config": {"filename": "effects.lst", "sha256": EXPECTED_EFFECTS_LIST,
+                                     "section": "#EFFECTS", "loader": "0x6fa91c", "lookup": "0x6fa28c",
+                                     "rows": effect_rows,
+                                     "limit": "group index is not a first-frame number; MIX/MIZ frame metadata and current asset correspondence remain unverified"},
         "limits": [
             "Static sample and current local configuration evidence; no original server roundtrip was captured.",
             "Message657 vector copies and message1500 snapshots are different original representations, not current mir2x wire structs.",
@@ -136,7 +205,8 @@ def extract(sample_path, registry_path, actor_buff_path):
             "Current ActorBuff mappings do not select1/2; other configurations may map different effects.",
             "Do not infer a fixed44-byte payload limit from a helper which clears44 bytes then copies the supplied word count.",
             "The creator stores flags before insertion, but the list notification is empty; initial reconciled-frame timing is not proven here.",
-            "Message1502's integer list and actor332 are not identified as current buff IDs.",
+            "Message1502's first integer selects a separate human appearance tier; its business meaning and actor332 meaning are not identified as current buff IDs.",
+            "Original constructor resource714/785 and library1 image2350..2352 are not current mir2x magic IDs or proven matching assets.",
         ],
     }
 
@@ -146,9 +216,10 @@ def main():
     parser.add_argument("--sample", required=True, type=Path)
     parser.add_argument("--registry", required=True, type=Path)
     parser.add_argument("--actor-buff", required=True, type=Path)
+    parser.add_argument("--effects-list", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
-    result = extract(args.sample, args.registry, args.actor_buff)
+    result = extract(args.sample, args.registry, args.actor_buff, args.effects_list)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps({"checks": len(result["instruction_checks"]), "registrations": len(result["registrations"]),
                       "appearance_mappings": len(result["appearance_mapping"]["mappings"])}))
