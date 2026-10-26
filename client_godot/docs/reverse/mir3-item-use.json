@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -256,6 +256,31 @@
       "va": "0x6d93d2",
       "hex": "e8e90a00008bd08b068b08ff514c",
       "role": "refresh sets cloned count from inventory name total"
+    },
+    {
+      "va": "0x64a0e4",
+      "hex": "8d84b3500100008bd7e876d1dbff",
+      "role": "shortcut setter copies interface into indexed reference"
+    },
+    {
+      "va": "0x64a426",
+      "hex": "8b4310e8dac5040084c0740c0fb6430c2c0174092c067405",
+      "role": "drop accepts item interface from source kinds1 or7"
+    },
+    {
+      "va": "0x64a455",
+      "hex": "8d84b350010000e8efcddbff",
+      "role": "clear shortcut reference without inventory removal"
+    },
+    {
+      "va": "0x64d946",
+      "hex": "8b94bb50010000e81699dbff",
+      "role": "shortcut getter copies indexed interface"
+    },
+    {
+      "va": "0x64db24",
+      "hex": "b007c3",
+      "role": "shortcut drag interface kind is7"
     }
   ],
   "reply_registrations": [
@@ -376,6 +401,53 @@
       "hex": "6a206a1db908000000baaa0100008b834c010000e8f8d90900"
     }
   ],
+  "shortcut_drag_interface": {
+    "table_va": "0x64a003",
+    "vtable": "0x649fd7",
+    "object_offset": 928,
+    "methods": [
+      {
+        "method": "kind",
+        "vtable_offset": 12,
+        "wrapper": "0x649f39",
+        "hex": "0560fcffffe9e13b0000",
+        "target": "0x64db24"
+      },
+      {
+        "method": "accept",
+        "vtable_offset": 16,
+        "wrapper": "0x649f43",
+        "hex": "0560fcffffe9d3040000",
+        "target": "0x64a420"
+      },
+      {
+        "method": "get",
+        "vtable_offset": 20,
+        "wrapper": "0x649f4d",
+        "hex": "0560fcffffe9d9390000",
+        "target": "0x64d930"
+      },
+      {
+        "method": "set",
+        "vtable_offset": 24,
+        "wrapper": "0x649f57",
+        "hex": "0560fcffffe977010000",
+        "target": "0x64a0d8"
+      },
+      {
+        "method": "clear",
+        "vtable_offset": 28,
+        "wrapper": "0x649f61",
+        "hex": "0560fcffffe9e1040000",
+        "target": "0x64a44c"
+      }
+    ],
+    "source_kind": 7,
+    "accepted_source_kinds": [
+      1,
+      7
+    ]
+  },
   "special_shortcut_actions": {
     "pointer_cell": "0x7292ac",
     "table_va": "0x71ecd0",
@@ -545,7 +617,8 @@
     "800ms belongs to automatic selection; manual digit slots invoke the separate3000ms inventory path.",
     "Original has ten digit slots; current six-slot mir2x belt is a protocol/UI adaptation, not full original layout parity.",
     "Inventory-backed shortcut references differ from current separately stored belt items; do not expand the belt protocol solely from ten controls.",
-    "Full shortcut drag/drop, persistence and special action behavior remain incomplete; numeric pairs are not recovered business names.",
+    "Drop-interface kind/accept/get/set/clear are recovered; persistence, remaining drag callbacks and special action behavior are incomplete.",
+    "Current packable/itemID grouping adapts original flag-bit2/name grouping; numeric pairs are not recovered business names.",
     "Item flags, full descriptor layout, special success branches and server reward formulas are incomplete.",
     "Original identity DWORDs must not be assumed to equal current itemID/seqID.",
     "No original live server capture or gameplay implementation is supplied by this exporter."

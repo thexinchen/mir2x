@@ -26,9 +26,20 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 51)
+        self.assertEqual(len(result["instruction_checks"]), 56)
         self.assertEqual(len(result["shortcut_rectangles"]), 10)
         self.assertEqual(len(result["special_shortcut_actions"]["records"]), 30)
+        self.assertEqual(len(result["shortcut_drag_interface"]["methods"]), 5)
+
+    def test_interface_setter_cannot_alias_getter(self):
+        original = exporter.read_va
+        def altered(image, address, length):
+            if address == 0x649FD7 + 6 * 4:
+                return (0x649F4D).to_bytes(4, "little")
+            return original(image, address, length)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "interface target for set"):
+                exporter.shortcut_interface(SAMPLE.read_bytes())
 
     def test_shortcut_control_alias_is_rejected(self):
         original = exporter.read_va

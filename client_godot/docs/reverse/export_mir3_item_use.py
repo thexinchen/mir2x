@@ -64,6 +64,11 @@ CHECKS = [
     (0x652750, "8bc6e8414204004383fb0a0f855dffffff", "clear unmatched shortcut and iterate ten entries"),
     (0x6D93B3, "ff522ca8027428", "refresh branches on item flag bit2"),
     (0x6D93D2, "e8e90a00008bd08b068b08ff514c", "refresh sets cloned count from inventory name total"),
+    (0x64A0E4, "8d84b3500100008bd7e876d1dbff", "shortcut setter copies interface into indexed reference"),
+    (0x64A426, "8b4310e8dac5040084c0740c0fb6430c2c0174092c067405", "drop accepts item interface from source kinds1 or7"),
+    (0x64A455, "8d84b350010000e8efcddbff", "clear shortcut reference without inventory removal"),
+    (0x64D946, "8b94bb50010000e81699dbff", "shortcut getter copies indexed interface"),
+    (0x64DB24, "b007c3", "shortcut drag interface kind is7"),
 ]
 
 
@@ -85,6 +90,36 @@ def shortcut_rectangles(sample):
                            "width": code[3], "height": code[1],
                            "va": hex(address), "hex": code.hex()})
     return rectangles
+
+
+def shortcut_interface(sample):
+    table = 0x64A003
+    count = struct.unpack("<I", read_va(sample, table, 4))[0]
+    if count != 3:
+        raise ValueError("unexpected shortcut interface table count")
+    matches = []
+    for index in range(count):
+        record = read_va(sample, table + 4 + 28 * index, 28)
+        vtable, offset, getter = struct.unpack_from("<III", record, 16)
+        if offset == 0x3A0: matches.append(vtable)
+    if len(matches) != 1:
+        raise ValueError("missing unique shortcut drag interface")
+    methods = []
+    for slot, name, expected in [(3, "kind", 0x64DB24), (4, "accept", 0x64A420),
+                                  (5, "get", 0x64D930), (6, "set", 0x64A0D8),
+                                  (7, "clear", 0x64A44C)]:
+        wrapper = struct.unpack("<I", read_va(sample, matches[0] + slot * 4, 4))[0]
+        code = read_va(sample, wrapper, 10)
+        if code[:6] != bytes.fromhex("0560fcffffe9"):
+            raise ValueError(f"unexpected shortcut interface wrapper for {name}")
+        target = wrapper + 10 + struct.unpack_from("<i", code, 6)[0]
+        if target != expected:
+            raise ValueError(f"unexpected shortcut interface target for {name}")
+        methods.append({"method": name, "vtable_offset": slot * 4,
+                        "wrapper": hex(wrapper), "hex": code.hex(), "target": hex(target)})
+    return {"table_va": hex(table), "vtable": hex(matches[0]),
+            "object_offset": 928, "methods": methods, "source_kind": 7,
+            "accepted_source_kinds": [1, 7]}
 
 
 def extract(sample_path, registry_path):
@@ -110,9 +145,10 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 3, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 4, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "reply_registrations": registrations,
         "shortcut_rectangles": shortcut_rectangles(sample),
+        "shortcut_drag_interface": shortcut_interface(sample),
         "special_shortcut_actions": {
             "pointer_cell": "0x7292ac", "table_va": hex(struct.unpack("<I", read_va(sample, 0x7292AC, 4))[0]),
             "records": [{"original_item_code": item, "original_action_code": action}
@@ -147,7 +183,8 @@ def extract(sample_path, registry_path):
             "800ms belongs to automatic selection; manual digit slots invoke the separate3000ms inventory path.",
             "Original has ten digit slots; current six-slot mir2x belt is a protocol/UI adaptation, not full original layout parity.",
             "Inventory-backed shortcut references differ from current separately stored belt items; do not expand the belt protocol solely from ten controls.",
-            "Full shortcut drag/drop, persistence and special action behavior remain incomplete; numeric pairs are not recovered business names.",
+            "Drop-interface kind/accept/get/set/clear are recovered; persistence, remaining drag callbacks and special action behavior are incomplete.",
+            "Current packable/itemID grouping adapts original flag-bit2/name grouping; numeric pairs are not recovered business names.",
             "Item flags, full descriptor layout, special success branches and server reward formulas are incomplete.",
             "Original identity DWORDs must not be assumed to equal current itemID/seqID.",
             "No original live server capture or gameplay implementation is supplied by this exporter.",
