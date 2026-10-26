@@ -1461,3 +1461,37 @@ python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-histo
 GameState源码变化后的请求门指纹已刷新，104独立提取cmp一致；main及其技能对照指纹未改变，不重复生成。服务器PID3609924继续运行，本批无C++变更、重编译或重启；退出ObjectDB及Xvfb VSync警告保留。证据、会话修复/对应单元及指纹、实际重新登录验证、报告分笔线性提交，同步104；旧.uid、日志、样本、原配置和既有build_signature修改排除。
 
 证据→结论→后续路径：E94-1修正F93-1中未获原版支持的同UID继承策略，E94-2给出旧实现实际负例与新会话/显示/请求回归，E94-3保留普通场景及其他物品行为的边界。F94-1只确认会话清理，不以尚未证明的持久化代替原版目标；特殊动作、自动用药、其他保存/恢复路径及其余游戏逻辑继续分析，整体目标未完成。
+
+## 批次 95：快捷引用拾起、交换与背包取消（2026-10-26）
+
+本批继续E93拖放接口，发现当前实现提前清空源格，且把引用放到占用格后覆盖旧引用并结束游标，与原版普通快捷格转移不符。现在拿起时保留源格，放到另一占用格时交换两格并继续拿着被替换引用；放回当前源格只结束拖动，放到空格才清空源格并结束。背包中的真实物品不随这些引用转移。
+
+范围、授权、原样本哈希沿用scope.md及E94，报告flavor=null。E95-1：6FDCB4通过6FE2E4区分没有持有引用、持有且目标占用、持有且目标为空三种状态；原反编译中的GIFImg/Qforms库函数名是误识别，实际6FDD2C检查上下文+16、6FDD24检查+32。6FE12C把目标物品、kind、格号和owner记录到持久游标，未清来源格；6FE194负责空目标，比较kind及格号，若回到源格则跳过格子修改，随后统一清游标。
+
+同kind的普通占用目标进入6FDB7C：6FDC28清源、6FDC18清目标，6FDF98将原目标引用写回原源格并把它放到游标，6FD89C再把原持有引用写入目标。因此交换后游标继续携带被替换项，源格号仍为原源格，而非直接丢掉被替换引用。6FDE7C比较kind12/28，6FDE88比较格号20/36；字段来自已检查的汇编，不依赖反编译中不完整的参数声明。
+
+E95-2：OperateBoard的属性接口位于对象+920，getter64DA8C返回flags3，64DA88返回转换模式2。6FDA3C按属性bit0判断能否清理活动源引用，6FD96C/6FD990执行相应清理，游标清理不修改真实库存。另一个已声明接口的64DB3C仅在源kind7、目标kind1时返回真；通用分派据此清理源快捷引用并结束游标，而不会把背包目标拿到游标。此规则与目标格是否已有背包物品无关。本批没有把其他owner的转换规则、特殊合并回调或全部物品标志解释为已完整恢复。
+
+export_mir3_item_use.py/schema6新增普通拖放规则、上下文字段、flags/mode接口包装器验证和17处指令，累计80处字节检查、2条回报注册。11项完整性测试在本机/104通过，新增“交换后游标读回原持有物而非被替换目标”必须拒绝的负例，两端独立提取cmp一致。源证据仍使用原始编号和接口字段，不将当前itemID/seqID当作原版内存身份数值。
+
+F95-1：Mir3ItemShortcuts增加begin_drag/place_drag/cancel_drag，游标明确携带source_slot。开始拖动不移走源引用；占用目标交换引用并返回被替换项的新游标，空目标提交移动并结束，同源格结束但不删除引用。GameState集中取消引用游标，main的空白区域取消和真实物品游标优先、InventoryPanel的取消均使用同一方法，避免提前清空后又删除错误格。
+
+InventoryPanel的空白格和已有物品左键接到kind7取消逻辑。已有物品原先会在清游标之后继续调用延迟_grab_item，把一次“丢弃引用”变成“拿起真实背包物品”；现在该点击只清理活动引用并返回，延迟入口也保持该边界。绑定真实背包物品到快捷格仍沿用此前的引用复制及本地物品归还，不移动服务端库存。
+
+E95-3：新断言配104旧0b7eaab实现，明确失败于“picking up a shortcut keeps its source until transfer succeeds”，日志/tmp/mir3-shortcuts95-old.log。扩展mir3_item_shortcuts_smoke覆盖保留源、不同物品占用交换及继续游标、同源格结束、空目标移动、只取消当前源，以及拿着引用时源数字键仍可走物品入口。后者是离线输入夹具，不冒充服务端用药；实际数字键仍由联网专项覆盖。最终该专项、quick_bar_smoke、inventory_interaction_smoke、item_use_pending_smoke及完整world_action_smoke通过，先前图标刷新、绑定数量和会话清理检查保留。
+
+E95-4：新增network_shortcut_drag_smoke，登录标准id_4，选取两种实际拥有的物品绑定0/1格。快捷格操作通过Input.parse_input_event发出真实GUI鼠标按下/释放：拿起0保留源；放到1后两格交换，GrabbedItemIcon显示原目标物品的真实纹理；点击源0结束且保留引用；再拿起移到空9，源0清空；拿起9后分别通过背包空白及已有物品的输入处理取消。已有物品取消后真实grabbed_item必须为空，不允许顺带拿起目标。
+
+测试检查全部库存实例的数量映射、腰带及请求ID没有变化，再实际断开/重新登录，读取新的库存与腰带回报，确认权威数量、地图和原位置均未变化。它不生成或消费测试物品，也不只信客户端本地列表。最终Xvfb日志/tmp/mir3-shortcut-drag95-final.log通过，截图/tmp/mir3-shortcut-drag95-final.png已复制到工作目录；已查看交换阶段截图，源/目标图标和被替换物品游标均可见。背包取消通过对应GUI输入处理器验证，不声称已对所有背包像素坐标逐一命中验收。
+
+network_item_shortcuts_smoke同时开启MIR3_SHORTCUTS_RECONNECT=1、MIR3_SHORTCUTS_DEAD_KEY=1复跑通过，日志/tmp/mir3-shortcuts95-use-reconnect.log：十个数字键实际消费、重复请求拦截、死亡0键、同UID新会话清引用、旧0键不发请求及重新绑定仍成立，测试药品总量归位。03短重试处理实际角色分离后成功重新进入；没有重启服务端回避会话交错。
+
+```sh
+MIR3_SHORTCUT_DRAG_SCREENSHOT=/tmp/mir3-shortcut-drag95-final.png MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_shortcut_drag_smoke.tscn
+python3 client_godot/docs/reverse/export_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json --output /tmp/mir3-item-use95.json
+python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+```
+
+相关模型、主界面、库存入口及GameState指纹与技能对照已刷新，104独立提取cmp一致。服务器PID3609924继续运行，无C++或网络结构变更，本批未重编译或重启；退出ObjectDB与软件渲染VSync警告保留。证据、运行期修复/单元及指纹、实际GUI联网专项、报告分笔线性提交，新增场景纳入提交；旧.uid、截图、日志、样本及104原有build_signature修改排除。
+
+证据→结论→后续路径：E95-1/E95-2约束普通引用拖放及kind7→1取消语义，E95-3提供旧实现负例，E95-4证明实际输入、游标显示与重登录后的权威库存均一致。F95-1修复提前清源、被替换引用丢失及背包取消误拿物品；特殊转换/合并、原始物品字段和其余玩法仍待继续恢复，整体目标未完成。
