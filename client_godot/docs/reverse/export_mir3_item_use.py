@@ -93,6 +93,19 @@ CHECKS = [
     (0x6FD7DB, "33c0894310c6431800c64319008d4314e8609ad0ff", "cursor cleanup resets metadata and clears owner interface"),
     (0x6FD985, "e8d6ffffff", "cancel checks source release property bit0"),
     (0x6FD990, "e893020000", "permitted cancel clears active source reference"),
+    (0x65F526, "807dff017515e8ef77030084c0740c8bc6e8ec3e0000e948020000", "right press with held cursor cancels before GUI dispatch"),
+    (0x65F388, "c745f8181b6600", "input callback record ends with661B18"),
+    (0x708C8E, "8b46388983180100008b463c89831c010000", "D3D backend installs final callback as control event280"),
+    (0x708DC6, "8b46388983180100008b463c89831c010000", "DDraw backend installs final callback as control event280"),
+    (0x452C88, "f6435008740b8bc366bee9ffe8ab17fbff", "left double-click handler invokes dynamic methodFFE9"),
+    (0x452B2B, "8b831c010000ff9318010000", "dynamic double-click method invokes event280"),
+    (0x661B29, "c645f004", "double-click callback emits GUI event4"),
+    (0x661B37, "c645f101", "double-click callback identifies left button1"),
+    (0x6EAED8, "2c030f8488000000", "GUI event4 selects slot secondary action"),
+    (0x6EAF81, "ff97a8000000", "GUI event4 invokes field168 bound to shortcut use"),
+    (0x6EAF09, "807e0101757cc6474000", "GUI release requires left button and resets pressed flag"),
+    (0x6EAF59, "8b4e088b56048bc7e88af9ffff", "release inside control invokes ordinary click"),
+    (0x6EA922, "ff93a0000000", "ordinary click invokes field160 bound to shortcut transfer"),
 ]
 
 
@@ -177,6 +190,33 @@ def shortcut_drag_rules(sample):
     }
 
 
+def shortcut_mouse_rules(sample):
+    # Delphi dynamic table: count, count WORD keys, then count DWORD handlers.
+    count = struct.unpack("<H", read_va(sample, 0x44C3FE, 2))[0]
+    if count != 77:
+        raise ValueError("unexpected control dynamic method count")
+    entries = []
+    for key, expected in [(0x203, 0x452C60), (0x206, 0x452D84), (0xFFE9, 0x452B1C)]:
+        keys = struct.unpack("<77H", read_va(sample, 0x44C400, count * 2))
+        if keys.count(key) != 1:
+            raise ValueError(f"unexpected control dynamic key {key:#x}")
+        address = 0x44C400 + count * 2 + keys.index(key) * 4
+        target = struct.unpack("<I", read_va(sample, address, 4))[0]
+        if target != expected:
+            raise ValueError(f"unexpected control dynamic target for {key:#x}")
+        entries.append({"key": hex(key), "entry": hex(address), "target": hex(target)})
+    return {
+        "control_dynamic_entries": entries,
+        "left_click": "transfer reference on release inside the pressed control, not on press",
+        "left_double_click": {"native_message": "0x203", "dynamic_method": "0xffe9",
+                              "event_field": 280, "callback": "0x661b18", "gui_event": 4,
+                              "slot_callback_field": 168, "use": "0x64f560"},
+        "right_press": "held cursor cancellation precedes GUI routing; ordinary shortcut right click does not use an item",
+        "digit_keys": "invoke64F560 directly, independently of mouse event dispatch",
+        "limits": "Established current rendering backends and ordinary shortcut controls; special merging and other GUI owners remain separate.",
+    }
+
+
 def extract(sample_path, registry_path):
     sample = sample_path.read_bytes()
     if hashlib.sha256(sample).hexdigest() != EXPECTED_SAMPLE:
@@ -200,11 +240,12 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 6, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 7, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "reply_registrations": registrations,
         "shortcut_rectangles": shortcut_rectangles(sample),
         "shortcut_drag_interface": shortcut_interface(sample),
         "shortcut_drag_rules": shortcut_drag_rules(sample),
+        "shortcut_mouse_rules": shortcut_mouse_rules(sample),
         "shortcut_session_cleanup": {
             "explicit_exit": "0x66d4f0", "request_command": 1009,
             "role_endpoint_transition": ["0x6cc7ac", "0x6cc8c8"],

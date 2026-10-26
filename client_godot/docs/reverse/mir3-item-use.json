@@ -1,5 +1,5 @@
 {
-  "schema_version": 6,
+  "schema_version": 7,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -401,6 +401,71 @@
       "va": "0x6fd990",
       "hex": "e893020000",
       "role": "permitted cancel clears active source reference"
+    },
+    {
+      "va": "0x65f526",
+      "hex": "807dff017515e8ef77030084c0740c8bc6e8ec3e0000e948020000",
+      "role": "right press with held cursor cancels before GUI dispatch"
+    },
+    {
+      "va": "0x65f388",
+      "hex": "c745f8181b6600",
+      "role": "input callback record ends with661B18"
+    },
+    {
+      "va": "0x708c8e",
+      "hex": "8b46388983180100008b463c89831c010000",
+      "role": "D3D backend installs final callback as control event280"
+    },
+    {
+      "va": "0x708dc6",
+      "hex": "8b46388983180100008b463c89831c010000",
+      "role": "DDraw backend installs final callback as control event280"
+    },
+    {
+      "va": "0x452c88",
+      "hex": "f6435008740b8bc366bee9ffe8ab17fbff",
+      "role": "left double-click handler invokes dynamic methodFFE9"
+    },
+    {
+      "va": "0x452b2b",
+      "hex": "8b831c010000ff9318010000",
+      "role": "dynamic double-click method invokes event280"
+    },
+    {
+      "va": "0x661b29",
+      "hex": "c645f004",
+      "role": "double-click callback emits GUI event4"
+    },
+    {
+      "va": "0x661b37",
+      "hex": "c645f101",
+      "role": "double-click callback identifies left button1"
+    },
+    {
+      "va": "0x6eaed8",
+      "hex": "2c030f8488000000",
+      "role": "GUI event4 selects slot secondary action"
+    },
+    {
+      "va": "0x6eaf81",
+      "hex": "ff97a8000000",
+      "role": "GUI event4 invokes field168 bound to shortcut use"
+    },
+    {
+      "va": "0x6eaf09",
+      "hex": "807e0101757cc6474000",
+      "role": "GUI release requires left button and resets pressed flag"
+    },
+    {
+      "va": "0x6eaf59",
+      "hex": "8b4e088b56048bc7e88af9ffff",
+      "role": "release inside control invokes ordinary click"
+    },
+    {
+      "va": "0x6ea922",
+      "hex": "ff93a0000000",
+      "role": "ordinary click invokes field160 bound to shortcut transfer"
     }
   ],
   "reply_registrations": [
@@ -606,6 +671,38 @@
     "explicit_cancel": "flags bit0 permits clearing only the active source reference",
     "inventory_target": "custom kind7-to-kind1 handler completes by clearing shortcut source; no real item drop inferred",
     "limits": "Ordinary shortcut transfers; custom merging and other owners' conversion/callback rules are not fully recovered."
+  },
+  "shortcut_mouse_rules": {
+    "control_dynamic_entries": [
+      {
+        "key": "0x203",
+        "entry": "0x44c4aa",
+        "target": "0x452c60"
+      },
+      {
+        "key": "0x206",
+        "entry": "0x44c4ae",
+        "target": "0x452d84"
+      },
+      {
+        "key": "0xffe9",
+        "entry": "0x44c536",
+        "target": "0x452b1c"
+      }
+    ],
+    "left_click": "transfer reference on release inside the pressed control, not on press",
+    "left_double_click": {
+      "native_message": "0x203",
+      "dynamic_method": "0xffe9",
+      "event_field": 280,
+      "callback": "0x661b18",
+      "gui_event": 4,
+      "slot_callback_field": 168,
+      "use": "0x64f560"
+    },
+    "right_press": "held cursor cancellation precedes GUI routing; ordinary shortcut right click does not use an item",
+    "digit_keys": "invoke64F560 directly, independently of mouse event dispatch",
+    "limits": "Established current rendering backends and ordinary shortcut controls; special merging and other GUI owners remain separate."
   },
   "shortcut_session_cleanup": {
     "explicit_exit": "0x66d4f0",

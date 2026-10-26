@@ -26,12 +26,23 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 80)
+        self.assertEqual(len(result["instruction_checks"]), 93)
         self.assertEqual(len(result["shortcut_rectangles"]), 10)
         self.assertEqual(len(result["special_shortcut_actions"]["records"]), 30)
         self.assertEqual(len(result["shortcut_drag_interface"]["methods"]), 5)
         self.assertEqual(result["shortcut_session_cleanup"]["count"], 10)
         self.assertEqual(result["shortcut_drag_rules"]["properties"]["flags"], 3)
+        self.assertEqual(result["shortcut_mouse_rules"]["left_double_click"]["gui_event"], 4)
+
+    def test_double_click_cannot_silently_bind_right_button_handler(self):
+        original = exporter.read_va
+        def altered(image, address, length):
+            if address == 0x44C4AA:
+                return (0x452D84).to_bytes(4, "little")
+            return original(image, address, length)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "dynamic target for 0x203"):
+                self.extract()
 
     def test_swap_cursor_cannot_silently_keep_the_original_item(self):
         original = exporter.read_va
