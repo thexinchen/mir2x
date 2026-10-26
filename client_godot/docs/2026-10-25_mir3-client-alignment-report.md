@@ -1332,3 +1332,33 @@ E90-4：104真实双角色共享目录/tmp/mir3-corpse-race80.VX1Erb中，实际
 104服务器PID3558161持续运行，本批没有C++变更、编译或重启。缺失音效02000140及退出ObjectDB警告仍存在，未当作采集奖励失败，也未声称已修复。相关测试奖励保留于标准测试角色库存。提取工具/JSON、负例测试、报告分三笔线性提交，同步104；旧.uid、日志、样本、截图和既有build_signature修改均排除。
 
 证据→结论→后续路径：E90-1/E90-2支持F90-1的待确认模型及入口差异，E90-3提供可复跑完整性验证；E90-4重新确认用户选择的采集奖励策略已实现且争抢只发一份已抽取结果。后续继续恢复物品人工入口与成功/失败关联；原版完整游戏逻辑与Godot对齐目标仍未完成。
+
+## 批次 91：人工物品使用共享待确认状态与相关结果（2026-10-26）
+
+继续E90未完成的人工入口追踪，本批确认数字键也进入3000ms待确认路径，并将其接入当前Godot快捷栏和背包。服务端补充可关联到请求的成功/失败结果，验证物品归属后才执行使用；客户端等待结果时阻止跨入口重复提交，成功或失败立即释放，3000ms未收到结果允许重试。此时间是待确认窗口，不是每次成功后必须再等3秒的药品冷却。
+
+E91-1：原版67E2D8的67E32D检查ASCII字符0—9，67E352调用6527AC。后者将1—9映射到0—8格、0映射到第9格，通过6527CF调用64F560；该函数也在64D75A被绑定到格子控件，找到库存实例后于64F6A2进入690494，继承E90已校验的共享3000ms检查。原版自动选择的800ms入口保持独立。export_mir3_item_use.py/schema2增加六处调用及映射指令，累计38处指令和2条注册；本机/104独立提取cmp一致，六项完整性负例检查继续通过。
+
+F91-1：NetworkClient的send_consume_item/send_consume_belt_item统一通过共享令牌发送相关请求，等待时返回ERR_BUSY且不产生第二份报文；有效成功/失败回报即清理对应令牌，超时采用3000ms。超时、断线或失败发送都不扣除本地库存，数量继续以服务端库存/快捷栏更新为准，未将超时当成成功。旧请求的延迟回调与断线前回调不能释放较新的令牌。quick_bar和inventory_panel在ERR_BUSY时停止使用反馈，因此不会重复播放物品音效；此前离线预览的音效和快捷栏路由保留。手工设置和网络请求自动用药的800ms分支没有被混入本适配。
+
+当前客户端没有复刻Delphi接口对象从来源格临时取走再放回的全部表现，而是保留服务端权威数量；原版十个数字格与当前mir2x六格协议/UI仍有差异。这些是后续对齐缺口，不能据本批共享确认机制声称完整快捷栏已还原。回报使用现有SM_OK/SM_ERROR及请求ID，属于当前协议适配，不是把原版635/636直接改号重放。
+
+F91-2：Player的两个消费处理器在请求携带respID时返回明确结果，无respID则保留旧客户端发送方式。背包入口原先先执行药效/学书，再尝试移除物品；现在先检查物品定义、正的实例序号、count恰为1以及实际库存归属，失败直接回ERROR，成功执行一次效果并移除一件。当前原生客户端和Godot已有人工调用均传count=1，未实现的批量使用不再造成“一次药效扣多件”。快捷栏在槽号越界、空槽或无法使用时回ERROR，成功更新库存后回OK。学书失败沿用consumeBook返回值并保留物品。本批实际联网夹具覆盖药水，没有把未测试的所有书籍条件和药效数值视为已验证。
+
+E91-2：新增network_item_use_receipt_smoke先向无效快捷槽发送相关请求。仍运行旧3558161服务器时，明确失败于“no actual wire reply ... callback timeout is not a server failure result”；该负例没有操作有效物品。更新服务器后，七项实际失败回报（非法槽、空槽、未知物品、缺少实例、未持有实例、count0/count2）均收到匹配请求ID的SM_ERROR，失败组不改变库存数量。背包使用收到OK且只少一件。随后由真实QuickBar.activate_slot右键入口提交用药，在同一调用阶段再次右键必须返回ACTION_NONE且不播放音效；实际收到对应OK，快捷栏只少一件。每个直接请求等待期间再次调用背包和快捷栏API均返回ERR_BUSY。
+
+夹具再通过实际抓取/放回流程恢复快捷栏物品，最后使用无respID的旧格式报文消费一件，验证库存正常减少且不产生相关回报。每轮先生成3份现有6号药水，再正常消耗3份，快捷栏归还为空，不移动测试角色。MIR3_ITEM_USE_DEAD_KEY=1改由实际主界面数字键入口在HP0时使用，收到匹配OK并减少一件，之后@revive恢复测试角色。最终Xvfb普通模式日志/tmp/mir3-item-receipt91-gui.log及死亡数字键模式/tmp/mir3-item-receipt91-dead.log均通过；这不是原版服务器流量捕获，也不是逐像素GUI验收。
+
+E91-3：新增item_use_pending_smoke使用替换底层发送函数的传输夹具，验证共享门控、成功立即再次使用、明确失败后重试、3000ms超时、旧成功不能释放新请求、失败发送及断线后旧回调隔离。它不冒充真实服务端，实际报文由E91-2验证。quick_bar_smoke新增待确认时不重复音效断言。104的上述场景、inventory_interaction_smoke、mir3_movement_smoke及mir3_request_gate_smoke通过。network_request_gate_smoke实际移动、回执隔离、10秒延迟读取及重连复跑通过，并恢复原位置。
+
+E91-4：额外network_death_revive_smoke回归先在headless和Xvfb均失败于死亡时Escape归位。增加诊断后复现为expected=(19136,3798)、actual=(19259,3875)、overlay=true、loading=true，证明夹具在地图资源尚未完成时就触发了死亡，生产输入被加载门正确拦截。夹具WAIT_READY现在等遮罩和renderer.loading_map均结束；若上轮失败留下死亡测试角色，先发一次@revive恢复初始活体条件。没有修改生产Escape处理或放宽归位断言。普通headless及强制纠偏期间提前复活的Xvfb模式分别通过，最终HP1、动作2、位置(407,126)，保留死亡动作及复活后世界输入断言。日志/tmp/mir3-death91-diagnostic.log、/tmp/mir3-death91-final.log、/tmp/mir3-death91-early.log分别记录诊断与最终结果。
+
+```sh
+cmake --build --preset conan-release --target server --parallel 6
+MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" /home/czx/godot --headless --path client_godot res://tests/item_use_pending_smoke.tscn
+MIR3_ITEM_USE_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_item_use_receipt_smoke.tscn
+```
+
+104精确最终服务器源码已编译成功，有意停止旧进程后运行新二进制，最终PID3609924；运行日志/tmp/mir3-batch91-runtime.log。不是因观测超时重启。请求门源码指纹已刷新并在104独立提取cmp一致，main未改变，因此技能对照不重复生成。现有退出ObjectDB及软件渲染VSync警告仍保留。原版证据、服务端、Godot实现/测试、死亡夹具修复、报告分批线性提交；旧.uid、日志、二进制、样本及104已有build_signature修改排除。
+
+证据→结论→后续路径：E91-1把人工键路由绑定到原3000ms语义；E91-2的旧服负例与新服实际回报支持F91-1/F91-2；E91-3覆盖迟到/超时边界，E91-4解释并修复夹具加载竞态。仍需继续原十格快捷栏与物品表现、自动用药配置、特殊成功分支以及原版服务端数值的对齐，整体目标保持未完成。
