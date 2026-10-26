@@ -132,7 +132,10 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
     if read_va(sample, 0x6AB316, 5) != bytes.fromhex("bf53000000") or read_va(sample, 0x6AB365, 5) != bytes.fromhex("b866000000"):
         raise ValueError("unexpected skill definition copy/allocation limits")
     sources = {}
-    for label, path in [("godot_network", network_path), ("native_playerop", playerop_path), ("native_playernet", playernet_path), ("godot_main", main_path), ("godot_game_state", main_path.parent / "game_state.gd"), ("godot_request_gate", main_path.parent / "mir3_request_gate.gd")]:
+    for label, path in [("godot_network", network_path), ("native_playerop", playerop_path), ("native_playernet", playernet_path), ("godot_main", main_path), ("godot_game_state", main_path.parent / "game_state.gd"), ("godot_request_gate", main_path.parent / "mir3_request_gate.gd"),
+                        ("godot_item_shortcuts", main_path.parent / "mir3_item_shortcuts.gd"),
+                        ("godot_item_shortcut_bar", main_path.parent / "item_shortcut_bar.gd"),
+                        ("godot_inventory_panel", main_path.parent / "inventory_panel.gd")]:
         raw = path.read_text(encoding="utf-8").encode("utf-8")
         sources[label] = {"file": path.name, "sha256_lf": hashlib.sha256(raw).hexdigest()}
     if "_send_request(CM_ACTION, action_data, false, callback, 10001, timeout_callback)" not in network_path.read_text(encoding="utf-8"):
@@ -140,7 +143,7 @@ def extract(sample_path, registry_path, network_path, playerop_path, playernet_p
     if "postNetMessage(processed ? SM_OK : SM_ERROR, respID)" not in playernet_path.read_text(encoding="utf-8"):
         raise ValueError("current server snapshot lacks correlated processing receipts")
     return {
-        "schema_version": 8, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 9, "sample_sha256": EXPECTED_SAMPLE,
         "actor_action_translation": extract_action_translation(sample),
         "scene_target_reset": {
             "scene_setup": "0x6865d4", "call": "0x68669a", "function": "0x676fa4",

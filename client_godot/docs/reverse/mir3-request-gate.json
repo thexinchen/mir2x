@@ -1,5 +1,5 @@
 {
-  "schema_version": 8,
+  "schema_version": 9,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "actor_action_translation": {
     "initializer": "0x66cb38",
@@ -488,7 +488,7 @@
     "source_snapshots": {
       "godot_network": {
         "file": "network_client.gd",
-        "sha256_lf": "336ac8338eee443c7fd25c6cfdbda8836cfa2e76e844448465f9b0501a4eee7f"
+        "sha256_lf": "2a55197609c7964ee74aa51a7316626eb955bc64dd37d804da789d54ac77b729"
       },
       "native_playerop": {
         "file": "playerop.cpp",
@@ -500,15 +500,27 @@
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "611d4c371da29c55e018091f86fc706df0aa4801993af03ee8e8d5e46bfca90d"
+        "sha256_lf": "a5e1d91377b5c6eb5ff786aadae1cc69f5c85284f3f74e82059375a184706ecb"
       },
       "godot_game_state": {
         "file": "game_state.gd",
-        "sha256_lf": "62deaead28f7d577db91073b245ce87607c654c9180663efd2e707de55653727"
+        "sha256_lf": "265e1aefc48fe9bf53b36b3acbf0287d3ed7c8a38b3a225a80227850925a5c87"
       },
       "godot_request_gate": {
         "file": "mir3_request_gate.gd",
         "sha256_lf": "2294357107f15488446c6287de8097a1f670ded72585b1c29d9a9446e6feba50"
+      },
+      "godot_item_shortcuts": {
+        "file": "mir3_item_shortcuts.gd",
+        "sha256_lf": "0192ed08d746b067d41de699181ddb8c5efc6e0d665386924debfa896f5030e2"
+      },
+      "godot_item_shortcut_bar": {
+        "file": "item_shortcut_bar.gd",
+        "sha256_lf": "9cdba2fac04ddaeea13efaf69c3e91dfad7c8bbe4142e9e84e26f88b27d43105"
+      },
+      "godot_inventory_panel": {
+        "file": "inventory_panel.gd",
+        "sha256_lf": "1397d1c111a9b6ab3768665804d3b70636abb8136c413d1a6a2e5d6f234153e1"
       }
     },
     "godot_send_action": "CM_ACTION uses fixed send without a response ID",

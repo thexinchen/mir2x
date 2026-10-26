@@ -8,6 +8,7 @@ var _stage := "login"
 var _wire_receipts: Dictionary = {}
 var _inventory_received := false
 var _belt_received := false
+var _online_retries := 0
 
 
 func _ready() -> void:
@@ -35,8 +36,15 @@ func _message(head: int, payload: PackedByteArray) -> void:
 			_inventory_received = true
 		NetworkClient.SM_BELT:
 			_belt_received = true
-		NetworkClient.SM_LOGINERROR, NetworkClient.SM_ONLINEERROR:
-			_fail("login rejected")
+		NetworkClient.SM_ONLINEERROR:
+			if payload.size() == 1 and payload[0] == 3 and _online_retries < 8:
+				_online_retries += 1
+				print("ITEM USE TRANSIENT ONLINE RETRY: previous fixture actor is detaching")
+				get_tree().create_timer(0.2).timeout.connect(func():
+					if not _finished: NetworkClient.enter_game())
+			else: _fail("online rejected payload=" + payload.hex_encode())
+		NetworkClient.SM_LOGINERROR:
+			_fail("login rejected payload=" + payload.hex_encode())
 
 
 func _run() -> void:
@@ -70,27 +78,39 @@ func _run() -> void:
 	if _count() != before:
 		_fail("rejected inventory use changed quantity")
 		return
-	if not await _expect_reply(func(cb): return NetworkClient.send_consume_item(ITEM_ID, seq, 1, cb), NetworkClient.SM_OK, "inventory success"): return
+	var dead_key := OS.has_environment("MIR3_ITEM_USE_DEAD_KEY")
+	var hidden_bar := OS.has_environment("MIR3_ITEM_USE_HIDDEN_BAR")
+	if dead_key or hidden_bar:
+		_main.get_node("QuickBar").visible = not hidden_bar
+		var inventory_panel: Control = _main.get_node("InventoryPanel")
+		inventory_panel.call("_grab_item", "%d:%d" % [ITEM_ID, seq])
+		_main.get("item_shortcut_bar").call("activate_slot", 0, MOUSE_BUTTON_LEFT)
+		if dead_key:
+			_submit_command("@die")
+			if not await _wait(func(): return GameState.player_hp == 0, "death before inventory number key"): return
+		var inventory_response := int(NetworkClient.get("_next_response_id"))
+		var key := InputEventKey.new()
+		key.keycode = KEY_1
+		key.pressed = true
+		_main.call("_unhandled_input", key)
+		if not await _wait(func(): return _wire_receipts.has(inventory_response), "inventory key result"): return
+		if int(_wire_receipts[inventory_response]) != NetworkClient.SM_OK:
+			_fail("inventory key use failed")
+			return
+		if dead_key:
+			_submit_command("@revive")
+			if not await _wait(func(): return GameState.player_hp > 0, "restore inventory key actor"): return
+	elif not await _expect_reply(func(cb): return NetworkClient.send_consume_item(ITEM_ID, seq, 1, cb), NetworkClient.SM_OK, "inventory success"): return
 	if not await _wait(func(): return _count() == before - 1, "one inventory item consumed"): return
 	item = _item()
 	var belt_before := int(item.count)
 	NetworkClient.send_request_equip_belt(ITEM_ID, int(item.seqID), empty_slot)
 	if not await _wait(func(): return int(_belt_item(empty_slot).get("count", 0)) == belt_before, "equip potion"): return
 	var quick_bar: Control = _main.get_node("QuickBar")
-	var dead_key := OS.has_environment("MIR3_ITEM_USE_DEAD_KEY")
-	var hidden_bar := OS.has_environment("MIR3_ITEM_USE_HIDDEN_BAR")
 	quick_bar.visible = not hidden_bar
-	if dead_key:
-		_submit_command("@die")
-		if not await _wait(func(): return GameState.player_hp == 0, "actual death before number key"): return
 	var belt_response := int(NetworkClient.get("_next_response_id"))
 	# Exercise the production GUI entry without supplying a test-only callback.
-	if dead_key or hidden_bar:
-		var key := InputEventKey.new()
-		key.keycode = KEY_1 + empty_slot
-		key.pressed = true
-		_main.call("_unhandled_input", key)
-	elif int(quick_bar.call("activate_slot", empty_slot, MOUSE_BUTTON_RIGHT)) != 3:
+	if int(quick_bar.call("activate_slot", empty_slot, MOUSE_BUTTON_RIGHT)) != 3:
 		_fail("real quick-bar use rejected the potion")
 		return
 	AudioService.last_seff_id = AudioService.INVALID_SEFF_ID
@@ -102,9 +122,6 @@ func _run() -> void:
 		_fail("real quick-bar use failed")
 		return
 	if not await _wait(func(): return int(_belt_item(empty_slot).get("count", 0)) == belt_before - 1, "one belt item consumed"): return
-	if dead_key:
-		_submit_command("@revive")
-		if not await _wait(func(): return GameState.player_hp > 0, "restore test actor after dead number key"): return
 	NetworkClient.send_request_grab_belt(empty_slot)
 	if not await _wait(func(): return int(GameState.grabbed_item.get("itemID", 0)) == ITEM_ID and _belt_item(empty_slot).is_empty(), "return belt potion"): return
 	var inventory: Control = _main.get_node("InventoryPanel")

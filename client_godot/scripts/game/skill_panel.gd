@@ -208,12 +208,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if _hovered_magic_id == 0:
 		return
 	# Original67E2D8 claims digit item keys without checking slot visibility.
-	# Current six belt keys keep that priority while the floating bar is closed.
-	if event.keycode >= KEY_1 and event.keycode <= KEY_6:
+	# Ten inventory shortcuts own all digits, including an empty slot.
+	if event.keycode >= KEY_0 and event.keycode <= KEY_9:
 		var main := get_parent()
 		var quick_bar: Control = null
 		if main != null:
-			quick_bar = main.get_node_or_null("%QuickBar") as Control
+			quick_bar = main.get_node_or_null("ControlPanel/ItemShortcuts") as Control
 		if quick_bar != null:
 			return
 	var key: int = Shortcuts.event_key(event)

@@ -149,12 +149,18 @@ const SUMMON_MAGIC_BY_MONSTER := {
 }
 const DELAYED_SUMMON_MONSTERS := ["变异骷髅", "超强骷髅"]
 const MAGIC_STAGE_RUN := 2
+const ItemShortcutModel = preload("res://scripts/game/mir3_item_shortcuts.gd")
+var item_shortcut_bar: Control
 
 
 func _ready() -> void:
 	game_state = get_node("/root/GameState")
 	protocol = Protocol.new()
 	_resources.configure_default()
+	item_shortcut_bar = preload("res://scripts/game/item_shortcut_bar.gd").new()
+	item_shortcut_bar.name = "ItemShortcuts"
+	item_shortcut_bar.inventory_panel = inventory_panel
+	control_panel.add_child(item_shortcut_bar)
 	world_renderer.actor_resource = _resources
 	world_renderer.game_state = game_state
 	
@@ -246,6 +252,8 @@ func _exit_tree() -> void:
 
 func _refresh_grabbed_item_icon() -> void:
 	var item: Dictionary = game_state.grabbed_item
+	if not item.is_empty(): game_state.grabbed_shortcut = {}
+	if item.is_empty(): item = game_state.grabbed_shortcut.get("item", {})
 	if item.is_empty():
 		grabbed_item_icon.hide()
 		grabbed_item_icon.texture = null
@@ -301,9 +309,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
 		return
 	if event is InputEventKey:
-		var quick_slot: int = event.keycode - KEY_1
-		if quick_slot >= 0 and quick_slot < 6:
-			quick_bar.call("activate_slot", quick_slot, MOUSE_BUTTON_RIGHT)
+		var quick_slot := ItemShortcutModel.key_slot(event.keycode)
+		if quick_slot >= 0:
+			item_shortcut_bar.call("activate_slot", quick_slot, MOUSE_BUTTON_RIGHT)
 			get_viewport().set_input_as_handled()
 			return
 	if event is InputEventKey and event.keycode == KEY_QUOTELEFT and _magic_target_lock_enabled():
@@ -434,6 +442,10 @@ func _layout_fps_overlay(text: String) -> Vector2i:
 
 
 func _handle_mouse_click(event: InputEventMouseButton) -> void:
+	if not game_state.grabbed_shortcut.is_empty():
+		game_state.grabbed_shortcut = {}
+		game_state.state_changed.emit()
+		return
 	var grid: Vector2i = world_renderer.grid_from_screen(int(event.position.x), int(event.position.y))
 	var focus_uid: int = world_renderer.focus_uid_at_screen(event.position, event.button_index == MOUSE_BUTTON_LEFT)
 	if _team_flag_active:

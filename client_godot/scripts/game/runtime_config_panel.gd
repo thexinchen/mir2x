@@ -92,11 +92,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	# two HUD key routes it consumes before this board sees the event.
 	if event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
 		return
-	if event.keycode >= KEY_1 and event.keycode <= KEY_6:
+	if event.keycode >= KEY_0 and event.keycode <= KEY_9:
 		var main := get_parent()
 		var quick_bar: Control = null
 		if main != null:
-			quick_bar = main.get_node_or_null("%QuickBar") as Control
+			quick_bar = main.get_node_or_null("ControlPanel/ItemShortcuts") as Control
 		if quick_bar != null:
 			return
 	get_viewport().set_input_as_handled()

@@ -17,6 +17,10 @@ func _ready() -> void:
 		return
 
 	GameState.inventory.clear()
+	GameState.inventory.append({"itemID": potion_id, "seqID": 505, "count": 3})
+	GameState.inventory_initialized = true
+	GameState.item_shortcuts.clear_all()
+	GameState.item_shortcuts.bind_item(0, GameState.inventory[0], resources.item_is_packable(potion_id))
 	GameState.grabbed_item = {}
 	GameState.belt.resize(6)
 	GameState.belt.fill(null)
@@ -85,7 +89,7 @@ func _ready() -> void:
 		_fail("right-click consume route mismatch")
 		return
 	var key_actions: Array = []
-	quick_bar.slot_action_requested.connect(func(action: int, slot: int): key_actions.append([action, slot]))
+	main.get("item_shortcut_bar").slot_action_requested.connect(func(action: int, slot: int): key_actions.append([action, slot]))
 	var key_event := InputEventKey.new()
 	key_event.keycode = KEY_1
 	key_event.unicode = 49
@@ -157,8 +161,8 @@ func _ready() -> void:
 	seven_event.pressed = true
 	Input.parse_input_event(seven_event)
 	await get_tree().process_frame
-	if not key_actions.is_empty() or GameState.magic_keys.get(active_magic_id, 0) != 55:
-		_fail("skill panel did not retain the HUD-unclaimed numeric binding: actions=%s keys=%s" % [key_actions, GameState.magic_keys])
+	if not key_actions.is_empty() or GameState.magic_keys.has(active_magic_id):
+		_fail("empty seventh item shortcut fell through to skill binding: actions=%s keys=%s" % [key_actions, GameState.magic_keys])
 		return
 	GameState.magic_keys = {}
 	var shifted_seven_event := InputEventKey.new()
@@ -168,8 +172,8 @@ func _ready() -> void:
 	shifted_seven_event.pressed = true
 	Input.parse_input_event(shifted_seven_event)
 	await get_tree().process_frame
-	if not key_actions.is_empty() or GameState.magic_keys.get(active_magic_id, 0) != 55:
-		_fail("Shift changed the original getKeyChar(false) skill binding: actions=%s keys=%s" % [key_actions, GameState.magic_keys])
+	if not key_actions.is_empty() or GameState.magic_keys.has(active_magic_id):
+		_fail("Shift changed the seventh item shortcut priority: actions=%s keys=%s" % [key_actions, GameState.magic_keys])
 		return
 	GameState.magic_keys = {}
 	quick_bar.hide()
@@ -187,14 +191,14 @@ func _ready() -> void:
 		_fail("pending hidden item key replayed use feedback or rebound a skill")
 		return
 	NetworkClient.set("_item_use_pending_token", 0)
-	var saved_belt = GameState.belt[0]
-	GameState.belt[0] = null
+	var saved_binding: Dictionary = GameState.item_shortcuts.bindings[0].duplicate(true)
+	GameState.item_shortcuts.clear(0)
 	Input.parse_input_event(key_event)
 	await get_tree().process_frame
 	if not key_actions.is_empty() or GameState.magic_keys.has(active_magic_id):
 		_fail("empty hidden item slot fell through to skill binding")
 		return
-	GameState.belt[0] = saved_belt
+	GameState.item_shortcuts.bindings[0] = saved_binding
 	quick_bar.show()
 	skill_panel.call("_hide_magic", active_magic_id)
 	skill_panel.hide()

@@ -265,6 +265,10 @@ func _on_item_input(event: InputEvent, key: String) -> void:
 
 func _on_grid_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT and not _state.grabbed_shortcut.is_empty():
+			_state.grabbed_shortcut = {}
+			_state.state_changed.emit()
+			return
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			var max_row := _max_scroll_row()
 			if max_row <= 0:
@@ -307,6 +311,7 @@ func _update_scroll_from_value() -> void:
 func _grab_item(key: String) -> void:
 	if not _bins.has(key):
 		return
+	_state.grabbed_shortcut = {}
 	var bin: Dictionary = _bins[key]
 	var old_grabbed: Dictionary = _state.grabbed_item
 	var selected: Dictionary = bin.item
@@ -342,7 +347,10 @@ func _place_grabbed(grid: Vector2i) -> void:
 func _consume_or_equip(key: String) -> Error:
 	if not _bins.has(key):
 		return ERR_INVALID_PARAMETER
-	var item: Dictionary = _bins[key].item
+	return _use_inventory_item(_bins[key].item)
+
+
+func _use_inventory_item(item: Dictionary) -> Error:
 	var item_type: String = _resources.item_type(int(item.get("itemID", 0)))
 	if item_type in ["恢复药水", "强化药水", "技能书"]:
 		var error := NetworkClient.send_consume_item(item.get("itemID", 0), item.get("seqID", 0), 1)

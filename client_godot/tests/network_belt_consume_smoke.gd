@@ -3,7 +3,7 @@ extends Node
 const Protocol = preload("res://scripts/network/protocol.gd")
 
 const ITEM_ID := 6
-const ITEM_COUNT := 10
+var _initial_count := 0
 const BELT_SLOT := 0
 
 enum Stage { WAIT_READY, WAIT_GRABBED, WAIT_EQUIPPED, WAIT_DEAD, WAIT_CONSUMED, WAIT_RETURNED, WAIT_PLACED, WAIT_INVENTORY_CONSUMED }
@@ -14,7 +14,7 @@ var _inventory_received := false
 var _belt_received := false
 var _finished := false
 var _initial_seq_id := 0
-var _expected_count := ITEM_COUNT - 1
+var _expected_count := 0
 var _deferred_failure := ""
 var _consume_started_msec := 0
 var _death_key_mode := false
@@ -36,22 +36,24 @@ func _process(_delta: float) -> void:
 	match _stage:
 		Stage.WAIT_READY:
 			var item := _inventory_item()
-			if not _inventory_received or not _belt_received or int(item.get("count", 0)) != ITEM_COUNT or not _belt_item().is_empty() or not GameState.grabbed_item.is_empty():
+			if not _inventory_received or not _belt_received or int(item.get("count", 0)) < 2 or not _belt_item().is_empty() or not GameState.grabbed_item.is_empty():
 				return
 			_initial_seq_id = int(item.get("seqID", 0))
+			_initial_count = int(item.get("count", 0))
+			_expected_count = _initial_count - 1
 			inventory_panel.show()
 			if not _emit_inventory_click(inventory_panel, _initial_seq_id):
 				return
 			_stage = Stage.WAIT_GRABBED
 		Stage.WAIT_GRABBED:
-			if int(GameState.grabbed_item.get("itemID", 0)) != ITEM_ID or int(GameState.grabbed_item.get("count", 0)) != ITEM_COUNT:
+			if int(GameState.grabbed_item.get("itemID", 0)) != ITEM_ID or int(GameState.grabbed_item.get("count", 0)) != _initial_count:
 				return
 			if int(quick_bar.call("activate_slot", BELT_SLOT, MOUSE_BUTTON_LEFT)) == 0:
 				_fail("visible quick slot rejected the recovery potion", 7)
 				return
 			_stage = Stage.WAIT_EQUIPPED
 		Stage.WAIT_EQUIPPED:
-			if int(_belt_item().get("itemID", 0)) != ITEM_ID or int(_belt_item().get("count", 0)) != ITEM_COUNT or not GameState.grabbed_item.is_empty():
+			if int(_belt_item().get("itemID", 0)) != ITEM_ID or int(_belt_item().get("count", 0)) != _initial_count or not GameState.grabbed_item.is_empty():
 				return
 			inventory_panel.hide()
 			quick_bar.show()
@@ -73,30 +75,34 @@ func _process(_delta: float) -> void:
 		Stage.WAIT_DEAD:
 			if GameState.player_hp != 0:
 				return
+			var before_key := int(NetworkClient.get("_next_response_id"))
 			var key_event := InputEventKey.new()
 			key_event.keycode = KEY_1
 			key_event.pressed = true
 			_main.call("_unhandled_input", key_event)
+			if int(NetworkClient.get("_next_response_id")) != before_key:
+				_fail("empty inventory shortcut consumed separately stored belt item", 11)
+				return
+			if int(quick_bar.call("activate_slot", BELT_SLOT, MOUSE_BUTTON_RIGHT)) == 0:
+				_fail("dead right click rejected legacy belt item", 11)
+				return
 			_consume_started_msec = Time.get_ticks_msec()
 			_stage = Stage.WAIT_CONSUMED
 		Stage.WAIT_CONSUMED:
 			var belt_count := int(_belt_item().get("count", 0))
-			if belt_count == ITEM_COUNT - 1:
+			if belt_count == _initial_count - 1:
 				if _death_key_mode:
-					print("NETWORK DEAD BELT KEY PASS: item=%d:%d hp=%d belt=%d->%d" % [ITEM_ID, _initial_seq_id, GameState.player_hp, ITEM_COUNT, belt_count])
-					_finished = true
-					NetworkClient.disconnect_from_server()
-					get_tree().quit()
-					return
+					print("NETWORK DEAD BELT ISOLATION PASS: unbound digit ignores belt; right click consumes one item while dead")
+					_submit_command("@revive")
 				quick_bar.call("activate_slot", BELT_SLOT, MOUSE_BUTTON_LEFT)
 				_stage = Stage.WAIT_RETURNED
 				return
 			if Time.get_ticks_msec() - _consume_started_msec < 1000:
 				return
 			if _death_key_mode:
-				_fail("dead number key did not decrement belt slot 0: %s" % [_belt_item()], 11)
+				_fail("dead right click did not decrement belt slot 0: %s" % [_belt_item()], 11)
 				return
-			_expected_count = ITEM_COUNT
+			_expected_count = _initial_count
 			_deferred_failure = "belt potion consumption applied without decrementing slot 0: %s" % [_belt_item()]
 			quick_bar.call("activate_slot", BELT_SLOT, MOUSE_BUTTON_LEFT)
 			_stage = Stage.WAIT_RETURNED
@@ -117,10 +123,11 @@ func _process(_delta: float) -> void:
 				return
 			_stage = Stage.WAIT_INVENTORY_CONSUMED
 		Stage.WAIT_INVENTORY_CONSUMED:
+			if _death_key_mode and GameState.player_hp <= 0: return
 			var remaining := _inventory_item()
 			if int(remaining.get("count", 0)) != _expected_count - 1:
 				return
-			print("NETWORK BELT CONSUME PASS: item=%d:%d belt=%d->%d inventory=%d->%d" % [ITEM_ID, _initial_seq_id, ITEM_COUNT, _expected_count, _expected_count, _expected_count - 1])
+			print("NETWORK BELT CONSUME PASS: item=%d:%d belt=%d->%d inventory=%d->%d" % [ITEM_ID, _initial_seq_id, _initial_count, _expected_count, _expected_count, _expected_count - 1])
 			_finished = true
 			NetworkClient.disconnect_from_server()
 			get_tree().quit()
