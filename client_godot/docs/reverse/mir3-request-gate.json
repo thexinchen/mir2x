@@ -500,7 +500,7 @@
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "7a937d2207a843ff0d090e486f63c956d901db47588b3f3a0b92ef7602f7d2cc"
+        "sha256_lf": "44acda9bf304a7c2c9dbd1e7839f5869f5d898c4fa740d2c7d709c687081abd3"
       },
       "godot_game_state": {
         "file": "game_state.gd",

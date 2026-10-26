@@ -162,6 +162,7 @@ func _ready() -> void:
 	item_shortcut_bar.name = "ItemShortcuts"
 	item_shortcut_bar.inventory_panel = inventory_panel
 	control_panel.add_child(item_shortcut_bar)
+	item_shortcut_bar.hide()
 	world_renderer.actor_resource = _resources
 	world_renderer.game_state = game_state
 	
