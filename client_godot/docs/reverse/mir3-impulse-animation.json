@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "checks": [
+    {
+      "va": "0x6de650",
+      "hex": "0fb640392c037506b8007a7200c3b89c787200c3",
+      "role": "class table selector"
+    },
+    {
+      "va": "0x6de723",
+      "hex": "83c2fa83fa1f0f87420e0000ff249536e76d00",
+      "role": "action switch"
+    },
+    {
+      "va": "0x6de994",
+      "hex": "05e4000000e8d6fcffff",
+      "role": "action9 nonzero760 record"
+    },
+    {
+      "va": "0x6de9a9",
+      "hex": "83c00ce8c3fcffff",
+      "role": "action9 zero760 walking record"
+    },
+    {
+      "va": "0x6de9b4",
+      "hex": "b8010000008982e4000000",
+      "role": "action9 displacement one"
+    },
+    {
+      "va": "0x6dea0c",
+      "hex": "e80b030200",
+      "role": "action9 opposite direction"
+    },
+    {
+      "va": "0x6dea40",
+      "hex": "b86c7c7200e82afcffff",
+      "role": "action6/7 special frame record"
+    },
+    {
+      "va": "0x6dea55",
+      "hex": "83c024e817fcffff",
+      "role": "action6/7 ordinary frame record"
+    },
+    {
+      "va": "0x6dea60",
+      "hex": "b8010000008982e4000000",
+      "role": "action6/7 displacement one"
+    },
+    {
+      "va": "0x6deb51",
+      "hex": "83c024e81bfbffff",
+      "role": "action37 same ordinary frame record"
+    },
+    {
+      "va": "0x6deb5c",
+      "hex": "c780e400000001000000",
+      "role": "action37 displacement one"
+    },
+    {
+      "va": "0x6deb66",
+      "hex": "68eb0000006a00",
+      "role": "action37 effect argument235"
+    },
+    {
+      "va": "0x6deb81",
+      "hex": "e8825a0000",
+      "role": "action37 effect creation"
+    },
+    {
+      "va": "0x6deb8a",
+      "hex": "e881390000",
+      "role": "action37 attach effect"
+    },
+    {
+      "va": "0x6de6a9",
+      "hex": "8982b8000000",
+      "role": "frame start assignment"
+    },
+    {
+      "va": "0x6de6b8",
+      "hex": "8982bc000000",
+      "role": "frame end assignment"
+    },
+    {
+      "va": "0x6de6c4",
+      "hex": "8982d8000000",
+      "role": "frame interval assignment"
+    },
+    {
+      "va": "0x6de682",
+      "hex": "a5a5a5",
+      "role": "frame resolver copies12-byte record"
+    },
+    {
+      "va": "0x6de68b",
+      "hex": "0fb645f80fb655f903c28b130fb6521df7ea8b138b526c0355f403c2",
+      "role": "base plus directional count/gap stride"
+    },
+    {
+      "va": "0x6dd9ed",
+      "hex": "8b869802000083f809740a83f806740583f8257502b301",
+      "role": "fast frame actions9/6/37"
+    },
+    {
+      "va": "0x6dddb3",
+      "hex": "e8b05efbff",
+      "role": "action9 completion delay setter"
+    },
+    {
+      "va": "0x6dba78",
+      "hex": "8bc7c1e0048d04408945fc8bc7c1e0058945f8",
+      "role": "tile screen dimensions48/32"
+    },
+    {
+      "va": "0x6de981",
+      "hex": "8b0680b8f8020000007415",
+      "role": "action9 byte760 branch"
+    },
+    {
+      "va": "0x6dea27",
+      "hex": "a1109d72008b008078400074198b0680b8f802000000740e",
+      "role": "action6/7 two special predicates"
+    }
+  ],
+  "frame_setup": {
+    "function": "0x6de6e0",
+    "switch": "0x6de736",
+    "branches": {
+      "6": "0x6dea27",
+      "7": "0x6dea27",
+      "9": "0x6de981",
+      "11": "0x6de8b3",
+      "37": "0x6deb49"
+    },
+    "class_selector": "actor byte57 ==3 selects727A00, otherwise72789C",
+    "action9": "byte760 !=0 selects table+0xE4, otherwise table+0x0C (also ordinary walk11)",
+    "actions6_7": "global729D10->byte64 AND actor byte760: special727C6C; otherwise table+0x24",
+    "action37": "table+0x24; additionally creates and attaches effect argument235",
+    "records": [
+      {
+        "va": "0x7278a8",
+        "table": "0x72789c",
+        "offset": 12,
+        "base_frame": 80,
+        "frame_count": 6,
+        "direction_gap": 4,
+        "frame_interval_ms": 200,
+        "opaque_u32_8": 0
+      },
+      {
+        "va": "0x7278c0",
+        "table": "0x72789c",
+        "offset": 36,
+        "base_frame": 240,
+        "frame_count": 6,
+        "direction_gap": 4,
+        "frame_interval_ms": 100,
+        "opaque_u32_8": 0
+      },
+      {
+        "va": "0x727980",
+        "table": "0x72789c",
+        "offset": 228,
+        "base_frame": 1520,
+        "frame_count": 6,
+        "direction_gap": 4,
+        "frame_interval_ms": 100,
+        "opaque_u32_8": 0
+      },
+      {
+        "va": "0x727a0c",
+        "table": "0x727a00",
+        "offset": 12,
+        "base_frame": 1600,
+        "frame_count": 6,
+        "direction_gap": 4,
+        "frame_interval_ms": 200,
+        "opaque_u32_8": 0
+      },
+      {
+        "va": "0x727a24",
+        "table": "0x727a00",
+        "offset": 36,
+        "base_frame": 1680,
+        "frame_count": 6,
+        "direction_gap": 4,
+        "frame_interval_ms": 100,
+        "opaque_u32_8": 0
+      },
+      {
+        "va": "0x727ae4",
+        "table": "0x727a00",
+        "offset": 228,
+        "base_frame": 2080,
+        "frame_count": 6,
+        "direction_gap": 4,
+        "frame_interval_ms": 100,
+        "opaque_u32_8": 0
+      },
+      {
+        "va": "0x727c6c",
+        "base_frame": 1760,
+        "frame_count": 6,
+        "direction_gap": 4,
+        "frame_interval_ms": 100,
+        "opaque_u32_8": 0
+      }
+    ],
+    "frame_formula": "start=actor108+base+direction0to7*(count+gap); end=start+count-1",
+    "unknown_field": "record DWORD8 not consumed by6DE674; no semantic label inferred"
+  },
+  "motion": {
+    "step_function": "0x6dba68",
+    "screen_tile_pixels": [
+      48,
+      32
+    ],
+    "displacement_units": {
+      "6": 1,
+      "7": 1,
+      "9": 1,
+      "37": 1
+    },
+    "forward_frames": [
+      6,
+      7,
+      37
+    ],
+    "reverse_frames": [
+      9
+    ],
+    "action9_direction": {
+      "function": "0x6fed1c",
+      "opposite_lookup": [
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "fast_frame_actions": [
+      6,
+      9,
+      37
+    ],
+    "fast_frame_rule": "advance a second frame only while the first advance has not reached the endpoint; no skipped endpoint",
+    "action7_limit": "shares setup6 but not its300ms delay; late-frame reset restores saved actor coordinates"
+  },
+  "post_animation_delay": {
+    "predicate_function": "0x6911a0",
+    "called_by": "0x68f640",
+    "setter": "0x693c68",
+    "tick_offset": 3328,
+    "delay_offset": 3332,
+    "predicate": "unsigned32(now - actor_tick_3328) > actor_delay_3332",
+    "writers": [
+      {
+        "function": "0x6dd9d8",
+        "call": "0x6ddc93",
+        "actor_actions": [
+          6,
+          37
+        ],
+        "delay_ms": 300,
+        "scope": "current local actor only",
+        "timing": "refresh on each matching animation update"
+      },
+      {
+        "function": "0x6dd9d8",
+        "call": "0x6dddb3",
+        "actor_actions": [
+          9
+        ],
+        "delay_ms": 1000,
+        "scope": "current local actor only",
+        "timing": "stamp after reverse-frame action reaches its starting frame"
+      },
+      {
+        "function": "0x6ddde4",
+        "call": "0x6de095",
+        "actor_actions": [
+          6,
+          37
+        ],
+        "delay_ms": 300,
+        "scope": "current local actor only",
+        "timing": "refresh on each matching animation update"
+      },
+      {
+        "function": "0x6ddde4",
+        "call": "0x6de1e8",
+        "actor_actions": [
+          9
+        ],
+        "delay_ms": 1000,
+        "scope": "current local actor only",
+        "timing": "stamp after reverse-frame action reaches its starting frame"
+      }
+    ],
+    "action_semantic_names": null,
+    "limit": "Local animation-driven restriction, distinct from server skill definition delay+1200 and request-receipt timeout; current transport/action correspondence remains unproven."
+  },
+  "current_comparison": {
+    "source_sha256_lf": {
+      "common/src/actionnode.hpp": "8e0b045285a253f48bc6923449372f7919cccbe4a69aea9419129a7172801cea",
+      "client/src/hero.cpp": "5fcf29c0b3298cb79e9e670b4320863e8232d81e84fcb490e33db3edeae8380d",
+      "client_godot/scripts/game/main.gd": "e19fb9e1b09cfa1573d7b3ce37637fed694005545638b29b031d48744177ddfe",
+      "client_godot/scripts/game/world_renderer.gd": "fad96b82ea0bc58a488a4570d42fd4512a1bef3ff3ec4368ef085e94ca478241"
+    },
+    "current_enum": {
+      "5": "ACTION_PUSHMOVE",
+      "6": "ACTION_SPACEMOVE",
+      "9": "ACTION_SPELL"
+    },
+    "godot": "action3/5 share walk/run frame selection by action_step; action6 is an authoritative warp; action9 is spell animation",
+    "native": "MOTION_PUSHBACK and MOTION_PUSHBACKFLY are rejected by Hero::motionValid; numeric names alone cannot prove original9 correspondence",
+    "decision": "Do not attach original300/1000ms post-animation restrictions to current5/6/9 without a verified semantic translation"
+  },
+  "limits": [
+    "Frame behavior and table selection are recovered; protocol semantic names and server impulse settlement are not.",
+    "No original record frame interval is substituted for current network speed or potion delay.",
+    "Effect argument235 is in the original effect domain, not current magicID235.",
+    "No changes to production gameplay or client-selected teleport destinations are made by this extractor."
+  ]
+}
