@@ -2191,3 +2191,13 @@ cmp /tmp/mir3-skill117.json client_godot/docs/reverse/mir3-skill-definitions.jso
 ```
 
 证据→结论→后续路径：E117-1恢复定义装载范围，E117-2把延迟/MP/目标入口关联到原字段，F117-1形成可复跑解码接口，E117-3/E117-4验证步长与真实读取边界。仍缺原服务器下发的各技能定义数据，故没有向Godot移植臆造的耗蓝、延迟或目标模式；这些数据、冲撞结算及其他剩余逻辑继续推进，整体目标未完成。
+
+## 批次 118：按用户要求取消尸体采集，恢复死亡掉落（2026-10-26）
+
+用户反馈击杀后右键路线经过尸体无法移动，并明确改为“不需要保留采集功能”。此要求取代此前肉类延后到采集时发放的选择。
+
+原因：Monster::onDie将肉类移入m_corpseItems，含肉尸体等待60000ms才goGhost；ServerMap与BattleObject占格仍保留怪物，直到DEADFADEOUT清理。Godot寻路已排除死亡动作13，因此可生成服务器拒绝的路径。本批移除肉类分流和60秒保留，所有掉落沿用同一次原掉落表计算并立即发送AM_DROPITEM；恢复原deadFadeOut的1000ms延时或立即goGhost。旧AM_CLAIMCORPSE入口仅返回ERROR，保留协议编号兼容；移除奖励缓存。Godot按下/长按更新均不再进入Alt采集分支。没有增加尸体占格例外，也不声称原短暂死亡清理阶段立即可穿越。
+
+104完成server目标编译与服务重启。新增network_death_drop_movement_smoke：召唤鸡、正常攻击击杀、检查肉类立即出现在地面、等待实际SM_DEADFADEOUT，再通过生产移动路径进入原尸体格；只读SQLite核实服务器角色位置，最后归位。初版测试在清理通知前移动被拒绝，不能算通过；最终夹具等待实际通知后通过。验证日志/tmp/mir3-noharvest-verified.log，编译日志/tmp/mir3-noharvest-build-clean.log。旧network_corpse_harvest_smoke是旧需求的历史夹具，不再作为当前版本验收标准。仍有既有SEFF资源缺失警告。
+
+用户另询问主界面0–9格：它来自item_shortcut_bar.gd，是绑定背包物品的十格快捷引用栏，固定position=(0,-40)绘制空框，并非额外库存。本批解释来源，尚未修改其布局或删除功能，不能称其外观已与原版对齐。快捷键重复分析暂缓，原二进制核对没有产生本批玩法变更。
