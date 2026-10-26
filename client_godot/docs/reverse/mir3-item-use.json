@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "instruction_checks": [
+    {
+      "va": "0x68f8b6",
+      "hex": "66b8ee03e89dbf0300",
+      "role": "construct original command1006"
+    },
+    {
+      "va": "0x68f8f9",
+      "hex": "8b550c89108b5510895004",
+      "role": "write two opaque identity DWORDs"
+    },
+    {
+      "va": "0x68f908",
+      "hex": "83c0088bd08b45f88bcbe8bd3ad7ff",
+      "role": "copy string after eight identity bytes"
+    },
+    {
+      "va": "0x6c4a8a",
+      "hex": "a15c9972008338007414",
+      "role": "no pending item bypasses elapsed check"
+    },
+    {
+      "va": "0x6c4a94",
+      "hex": "e867c10400",
+      "role": "read monotonic clock"
+    },
+    {
+      "va": "0x6c4a99",
+      "hex": "8b15689d72002b023d20030000720e",
+      "role": "unsigned elapsed below800 skips dispatch"
+    },
+    {
+      "va": "0x6c4aa8",
+      "hex": "a1c09372008b008bd3e8c2f3fcff",
+      "role": "dispatch item-use693E78"
+    },
+    {
+      "va": "0x6904dd",
+      "hex": "a15c9972008338007418",
+      "role": "separate inventory path also checks pending item"
+    },
+    {
+      "va": "0x6904ec",
+      "hex": "8b15689d72002b023db80b00000f8270060000",
+      "role": "inventory path uses unsigned3000ms pending window"
+    },
+    {
+      "va": "0x693e9b",
+      "hex": "8b155c99720083c9ff8b837c030000e88d590400",
+      "role": "restore previous pending item before next selection"
+    },
+    {
+      "va": "0x693ec6",
+      "hex": "8b068b10ff522ca80274208b068b10ff523885c07e15",
+      "role": "flag bit2 and positive VMT56 choose copy-only branch"
+    },
+    {
+      "va": "0x693edc",
+      "hex": "8b0d5c9972008bd78b837c030000e8195c0400",
+      "role": "copy-only helper6D9B08"
+    },
+    {
+      "va": "0x693ef1",
+      "hex": "8b0d5c9972008bd78b837c030000e8285b0400",
+      "role": "take-from-slot helper6D9A2C"
+    },
+    {
+      "va": "0x693f2f",
+      "hex": "a1a09672008938e8c5cc07008b15689d72008902",
+      "role": "store source slot and pending clock"
+    },
+    {
+      "va": "0x6d9a4d",
+      "hex": "e816d8d2ff8bd68bc3e875f8ffff",
+      "role": "take helper copies interface then clears source slot"
+    },
+    {
+      "va": "0x6d9b29",
+      "hex": "e83ad7d2ff",
+      "role": "copy-only helper copies interface"
+    },
+    {
+      "va": "0x6d984a",
+      "hex": "8b168bc3e8150000008bc6e83ed1fbff",
+      "role": "restore helper inserts item then clears pending interface"
+    },
+    {
+      "va": "0x690e00",
+      "hex": "68fc27690066b9060066ba7b028bc6e8f0c20300",
+      "role": "register635 to success handler6927FC mode6"
+    },
+    {
+      "va": "0x690e15",
+      "hex": "68b827690066b9060066ba7c028bc6e8dbc20300",
+      "role": "register636 to failure handler6927B8 mode6"
+    },
+    {
+      "va": "0x6927be",
+      "hex": "8b0da09672008b098b155c9972008b807c030000e865700400",
+      "role": "failure restores pending item to source slot"
+    },
+    {
+      "va": "0x6927d7",
+      "hex": "a1a0967200c700ffffffff",
+      "role": "failure resets source index to minus1"
+    },
+    {
+      "va": "0x69283a",
+      "hex": "8b078b10ff522ca8027430",
+      "role": "success tests item flag bit2"
+    },
+    {
+      "va": "0x692845",
+      "hex": "8b078b10ff5248487e26",
+      "role": "success requires count greater than1 for remainder"
+    },
+    {
+      "va": "0x69284f",
+      "hex": "8b078b10ff52488bd04a8b078b08ff514c",
+      "role": "success decrements remaining count"
+    },
+    {
+      "va": "0x692860",
+      "hex": "8b0da09672008b098b178b837c030000e8f36f0400",
+      "role": "success restores remainder to source slot"
+    },
+    {
+      "va": "0x6928e7",
+      "hex": "e8dc400000",
+      "role": "success clears shared pending item"
+    },
+    {
+      "va": "0x6928ec",
+      "hex": "a1a0967200c700ffffffff",
+      "role": "success resets source index to minus1"
+    },
+    {
+      "va": "0x6969cb",
+      "hex": "a15c997200e8c3ffffff",
+      "role": "clear wrapper addresses shared pending cell"
+    },
+    {
+      "va": "0x6c4cff",
+      "hex": "e8c4030000",
+      "role": "automatic controller calls selection helper6C50C8"
+    },
+    {
+      "va": "0x6c4d63",
+      "hex": "e860030000",
+      "role": "second automatic controller branch calls same helper"
+    },
+    {
+      "va": "0x6c52f4",
+      "hex": "e88bf7ffff",
+      "role": "selection helper calls800ms wrapper"
+    },
+    {
+      "va": "0x6c5359",
+      "hex": "e826f7ffff",
+      "role": "second selection branch calls800ms wrapper"
+    }
+  ],
+  "reply_registrations": [
+    {
+      "call": "0x690e0f",
+      "register_function": "0x690d74",
+      "message": 635,
+      "registration_ecx": 6,
+      "handler": "0x6927fc"
+    },
+    {
+      "call": "0x690e24",
+      "register_function": "0x690d74",
+      "message": 636,
+      "registration_ecx": 6,
+      "handler": "0x6927b8"
+    }
+  ],
+  "shared_cells": {
+    "pending_interface": "0x72995c",
+    "source_index": "0x7296a0",
+    "sent_tick": "0x729d68"
+  },
+  "findings": {
+    "request": {
+      "function": "0x68f888",
+      "command": 1006,
+      "payload_prefix": "two opaque DWORDs then string"
+    },
+    "automatic_selection_pending_window_ms": 800,
+    "inventory_pending_window_ms": 3000,
+    "pending_window": "unsigned elapsed; equality permits dispatch; null pending bypasses elapsed check",
+    "retry": "restore previous pending item before selecting another; timeout is not success",
+    "failure": "restore pending item to source index and clear pending interface",
+    "success": "flagged stack count>1 restores count-1; then clear shared pending state"
+  },
+  "baseline_commit": "a1b4d1b",
+  "adapter_gaps": [
+    "Current CM_CONSUMEITEM and CM_CONSUMEBELTITEM differ from original1006.",
+    "Current belt snapshot and inventory removal are not correlated635/636 replies.",
+    "Quick-bar and inventory consume paths have no equivalent shared pending object."
+  ],
+  "limits": [
+    "800ms is a pending-item retry window, not a universal potion cooldown.",
+    "Verified800ms callers include automatic medicine selection; manual1-6 key routing is not established.",
+    "Item flags, full descriptor layout, special success branches and server reward formulas are incomplete.",
+    "Original identity DWORDs must not be assumed to equal current itemID/seqID.",
+    "No original live server capture or gameplay implementation is supplied by this exporter."
+  ]
+}
