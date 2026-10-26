@@ -525,6 +525,11 @@ func is_item_use_pending() -> bool:
 	return _item_use_pending_token != 0
 
 
+func item_use_ready(retry_ms := 3000) -> bool:
+	_expire_responses()
+	return _item_use_pending_token == 0 or (retry_ms >= 0 and ((Time.get_ticks_msec() - _item_use_sent_ms) & 0xFFFFFFFF) >= retry_ms)
+
+
 func send_protection_book(item_id: int, seq_id: int, callback := Callable()) -> Error:
 	var payload := PackedByteArray()
 	payload.resize(10)
@@ -538,8 +543,7 @@ func send_protection_book(item_id: int, seq_id: int, callback := Callable()) -> 
 
 
 func _send_item_use_request(head: int, payload: PackedByteArray, callback: Callable, retry_ms := 3000) -> Error:
-	_expire_responses()
-	if _item_use_pending_token != 0 and (retry_ms < 0 or ((Time.get_ticks_msec() - _item_use_sent_ms) & 0xFFFFFFFF) < retry_ms):
+	if not item_use_ready(retry_ms):
 		return ERR_BUSY
 	var previous := {"token": _item_use_pending_token, "sent": _item_use_sent_ms, "response": _item_use_response_id, "item": pending_item_use.duplicate(true)}
 	_item_use_serial += 1

@@ -488,7 +488,7 @@
     "source_snapshots": {
       "godot_network": {
         "file": "network_client.gd",
-        "sha256_lf": "953b73473b77d04d9c06867518ba6c80e50589892d653f21e78a91ee04b853cc"
+        "sha256_lf": "2e444e401beb6d00a20bb994aa65a6acb854c4ecbd862597293e807238b5ab4d"
       },
       "native_playerop": {
         "file": "playerop.cpp",
@@ -516,7 +516,7 @@
       },
       "godot_item_shortcut_bar": {
         "file": "item_shortcut_bar.gd",
-        "sha256_lf": "1f882af86ecaefbe2169dea79811527c37768622a329459d018fa8eca2785a23"
+        "sha256_lf": "6f2fac8875a06aee82ffc147bdd4331fc6ae8c25b7482e9ea10df7fc760b9e88"
       },
       "godot_inventory_panel": {
         "file": "inventory_panel.gd",
