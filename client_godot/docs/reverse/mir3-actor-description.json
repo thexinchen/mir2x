@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "instruction_checks": [
+    {
+      "va": "0x6dc461",
+      "hex": "8bf28d7828b910000000f3a5",
+      "role": "copy64 bytes to actor40"
+    },
+    {
+      "va": "0x6dc46d",
+      "hex": "8b15c09372003b027417",
+      "role": "local actor skips remote side effects"
+    },
+    {
+      "va": "0x6dc477",
+      "hex": "807828030f94c28890f8020000",
+      "role": "remote actor760 is description byte0 equals3"
+    },
+    {
+      "va": "0x6df7f4",
+      "hex": "f64035080f95c0c3",
+      "role": "manual-use flag is actor byte53 mask8"
+    },
+    {
+      "va": "0x687467",
+      "hex": "837d084c7c2f",
+      "role": "message41 requires76 payload bytes"
+    },
+    {
+      "va": "0x687476",
+      "hex": "85db7422",
+      "role": "message41 ignores an unknown actor"
+    },
+    {
+      "va": "0x68747a",
+      "hex": "8bc68b108993800000008d500c8bc3e8ce4f0500",
+      "role": "message41 description starts at payload12"
+    },
+    {
+      "va": "0x68878d",
+      "hex": "817d08820000000f8c62020000",
+      "role": "message50 requires130 payload bytes"
+    },
+    {
+      "va": "0x688875",
+      "hex": "8d45bc33c9ba40000000e848b1d7ff",
+      "role": "message50 clears a64-byte description"
+    },
+    {
+      "va": "0x688884",
+      "hex": "8d55bc8d4339b914000000e840abd7ff",
+      "role": "message50 copies20 bytes from payload57"
+    },
+    {
+      "va": "0x688894",
+      "hex": "8d55bca1c09372008b00e8b93b0500",
+      "role": "message50 applies the padded local description"
+    },
+    {
+      "va": "0x682863",
+      "hex": "0fb74606508d5590b9580000008d45f0e820cae0ff",
+      "role": "message1500 reads header word6 into88-byte snapshot"
+    },
+    {
+      "va": "0x6828a5",
+      "hex": "8d55a88bc3e8ad9b0500",
+      "role": "message1500 applies description at snapshot24"
+    },
+    {
+      "va": "0x48f2b9",
+      "hex": "8b7df83bdf7d028bfb",
+      "role": "stream copy uses minimum of record and declared lengths"
+    },
+    {
+      "va": "0x48f2d3",
+      "hex": "8b45fc03c78b55f82bd733c9e8e846f7ff",
+      "role": "short available field is zero padded"
+    }
+  ],
+  "registrations": [
+    {
+      "call": "0x67f05d",
+      "register_function": "0x67ea1c",
+      "message": 41,
+      "registration_ecx": 6,
+      "handler": "0x687460"
+    },
+    {
+      "call": "0x67f1ec",
+      "register_function": "0x67ea1c",
+      "message": 50,
+      "registration_ecx": 14,
+      "handler": "0x68875c"
+    },
+    {
+      "call": "0x67f2fd",
+      "register_function": "0x67ea1c",
+      "message": 1500,
+      "registration_ecx": 6,
+      "handler": "0x68281c"
+    }
+  ],
+  "description": {
+    "setter": "0x6dc45c",
+    "actor_offset": 40,
+    "bytes": 64,
+    "manual_use_flag": {
+      "description_offset": 13,
+      "actor_offset": 53,
+      "mask": 8,
+      "semantic_name": null
+    },
+    "remote_only_side_effect": "description byte0==3 sets actor760; local actor bypasses this assignment"
+  },
+  "message41": {
+    "handler": "0x687460",
+    "minimum_payload_bytes": 76,
+    "actor128_u32_offset": 0,
+    "description_offset": 12,
+    "description_bytes": 64,
+    "manual_flag_payload_offset": 25,
+    "requires_known_actor": true
+  },
+  "message50": {
+    "handler": "0x68875c",
+    "minimum_payload_bytes": 130,
+    "description_prefix_offset": 57,
+    "copied_prefix_bytes": 20,
+    "zero_tail_bytes": 44,
+    "manual_flag_payload_offset": 70,
+    "actor": "current local actor after creation"
+  },
+  "message1500": {
+    "handler": "0x68281c",
+    "snapshot_field_length": "original header WORD6",
+    "snapshot_bytes": 88,
+    "description_snapshot_offset": 24,
+    "manual_flag_snapshot_offset": 37,
+    "copy": "copy min(declared_length,88), zero-pad short available field, skip declared excess",
+    "decoder_input": "snapshot field bytes after original stream envelope, not raw framed or compressed wire data"
+  },
+  "current_gap": "Current SM_PLAYERWLDESP is a different structure. No equivalent current field or Buff has been established; no runtime item-use restriction is added.",
+  "limits": [
+    "The source is a server-supplied appearance description; its mask8 business meaning remains unresolved.",
+    "This predicate gates original manual690494; do not apply it to automatic or Book paths without separate evidence.",
+    "Offline decoders do not perform UID lookup, update GameState or implement original transport framing.",
+    "Insufficient snapshot input is rejected rather than emulating the original caller's uninitialized destination after a failed stream read.",
+    "Synthetic payload checks validate field interpretation, not a captured original server roundtrip."
+  ]
+}
