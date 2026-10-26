@@ -106,17 +106,18 @@ corof::awaitable<> ServerMap::on_AM_TRYSPACEMOVE(const ActorMsgPack &mpk)
     int nDstX = amTSM.EndX;
     int nDstY = amTSM.EndY;
 
-    if(!mapBin()->validC(amTSM.X, amTSM.Y)){
+    const bool randomDestination = !mapBin()->validC(nDstX, nDstY);
+    if(randomDestination){
         if(amTSM.StrictMove){
             m_actorPod->post(mpk.fromAddr(), AM_REJECTSPACEMOVE);
             co_return;
         }
 
-        nDstX = mathf::rand() % mapBin()->w();
-        nDstY = mathf::rand() % mapBin()->h();
     }
 
-    const auto loc = getRCValidGrid(false, false, amTSM.StrictMove ? 1 : 100, nDstX, nDstY);
+    const auto loc = randomDestination
+                   ? getRCValidGrid(false, false, -1)
+                   : getRCValidGrid(false, false, amTSM.StrictMove ? 1 : 100, nDstX, nDstY);
     if(!loc.has_value()){
         m_actorPod->post(mpk.fromAddr(), AM_REJECTSPACEMOVE);
         co_return;

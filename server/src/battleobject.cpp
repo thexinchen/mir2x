@@ -312,17 +312,18 @@ corof::awaitable<bool> BattleObject::requestMove(int dstX, int dstY, int speed, 
     }
 }
 
-corof::awaitable<bool> BattleObject::requestSpaceMove(int locX, int locY, bool strictMove)
+corof::awaitable<bool> BattleObject::requestSpaceMove(int locX, int locY, bool strictMove, bool randomDestination)
 {
-    if(strictMove){
+    if(randomDestination){
+        fflassert(!strictMove && locX == -1 && locY == -1);
+    }
+    else if(strictMove){
         if(!mapBin()->groundValid(locX, locY)){
             throw fflpanic("invalid destination: (mapID = {}, x = {}, y = {})", mapID(), locX, locY);
         }
     }
-    else{
-        if(!mapBin()->validC(locX, locY)){
-            throw fflpanic("invalid destination: (mapID = {}, x = {}, y = {})", mapID(), locX, locY);
-        }
+    else if(!mapBin()->validC(locX, locY)){
+        throw fflpanic("invalid destination: (mapID = {}, x = {}, y = {})", mapID(), locX, locY);
     }
 
     if(!canMove(true)){

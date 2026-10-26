@@ -149,7 +149,8 @@ class BattleObject: public CharObject
         corof::awaitable<bool> requestSpaceMove(
                 int,            // x
                 int,            // y
-                bool);          // strictMove
+                bool,           // strictMove
+                bool = false);  // randomDestination
 
     protected:
         corof::awaitable<bool> requestMapSwitch(
