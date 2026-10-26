@@ -592,6 +592,7 @@ func update_item(item: Dictionary) -> int:
 	var item_id: int = item.get("itemID", 0)
 	var seq_id: int = item.get("seqID", 0)
 	var grabbed_match: bool = grabbed_item.get("itemID", 0) == item_id and grabbed_item.get("seqID", 0) == seq_id
+	var grabbed_delta: int = int(item.get("count", 0)) - int(grabbed_item.get("count", 0)) if grabbed_match else 0
 	if grabbed_match:
 		grabbed_item = item if item.get("count", 0) > 0 else {}
 	for index in range(inventory.size()):
@@ -605,7 +606,7 @@ func update_item(item: Dictionary) -> int:
 			return changed
 	if grabbed_match:
 		state_changed.emit()
-		return 0
+		return grabbed_delta
 	if item_id != 0 and item.get("count", 0) > 0:
 		inventory.append(item)
 		state_changed.emit()
