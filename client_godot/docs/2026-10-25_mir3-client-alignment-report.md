@@ -1905,3 +1905,30 @@ MIR3_TEST_SERVER_DB="$PWD/build/Release/mir2x.db3" MIR3_INVENTORY_REFRESH_SCREEN
 ```
 
 证据→结论→后续路径：E107-1先复现移动/HP更新导致的控件重建，E107-2验证保留控件时相关数据和交互仍更新，E107-3以生产联网路径及服务器DB证明实际走路与用药，E107-4覆盖已有动作回归。此项减少Godot适配层开销，不把它包装成完整原版玩法对齐；原位移动作对应、其他卷轴服务端结算、GUI逐物品延迟与冲撞仍需后续推进，整体目标保持进行。
+
+## 批次 108：对齐数字物品快捷槽的人工重试窗口（2026-10-26）
+
+E108-1：既有 mir3-item-use.json 的103处指令证据包含6904DD的共享待确认检查及6904EC的无符号差值与3000ms比较，低于3000ms才拒绝；原数字槽经67E2D8→6527AC→64F560→690494进入该人工入口。自动药800ms和Book不替换存活待确认对象属于其他入口。本机与104各重新运行 test_mir3_item_use.py，13项校验通过；未改变原消息1006或不透明身份字段的解释。
+
+E108-2：当前网络层已有800/3000ms区分，但item_shortcut_bar.use_slot直接判断私有_item_use_pending_token非零就返回，绕开了人工3000ms规则。正常适配层回调也在3000ms过期，故此前通常会在后续网络处理帧释放，并非声称普通网络下永久卡住；错误差异体现在回调仍存活或到期尚未处理时。新增 item_shortcut_pending_smoke.gd/.tscn，保留一个未来才到期的合成回调，将发送年龄设为3500ms，旧代码确实拒绝数字槽入口。日志 /tmp/mir3-shortcut108-before.log，按预期失败，未把该合成状态当真实服务器回包。
+
+网络层新增 item_use_ready(retry_ms=3000)，先处理当前适配层已到期回调，再按原无符号32位差值判断是否可重试；只查询可用性，不自行替换仍存活的待确认请求。实际_send_item_use_request复用该判断，快捷槽也调用同一人工判断，避免UI与传输层规则不同。负参数仍表示Book不按年龄替换，自动药仍传800，人工传3000；既有回执关联、失败恢复及权威数量更新保持原有路径。不是新增通用药品冷却。
+
+E108-3：新增入口测试通过合成未来到期回调覆盖新鲜包内/腰带待确认阻挡、3500ms允许人工入口及查询后令牌不变。item_use_pending_smoke补充2^32回绕、800/3000/负参数区别、人工3000ms允许侧及Book仍阻挡；与 mir3_item_shortcuts_smoke 均在104通过。日志 /tmp/mir3-shortcut108-场景名.log。
+
+E108-4：新增 network_shortcut_retry_smoke.gd/.tscn 使用标准id_4实际生成两瓶现有药，经生产背包绑定数字1并拖起源引用。首次实际数字键发送后暂停NetworkClient的收包处理，同时人为延长首个回调到期时间，独立验证人工重试而非默认回调过期。首次立即重复必须不发请求、不重播声音；等待真实3100ms后再次通过生产数字键入口发送。恢复收包，要求两次实际请求ID各收到SM_OK、每次恰消耗1、第一旧回调执行后仍保留第二个待确认令牌、第二个回调完成后清空。暂停期间没有本地预扣数量，最终拖起引用刷新为权威数量，腰带、地图、位置及本轮药品数量基线不变。夹具使用独立保护配置文件路径，不写正常角色配置；实际药物效果可能改变HP。
+
+这属于受控客户端收包延迟与回调寿命注入，不是物理网络丢包或真实服务器延迟测试。无窗口运行实际间隔3101ms，Xvfb运行3112ms，均通过。日志 /tmp/mir3-shortcut108-retry-network.log、/tmp/mir3-shortcut108-window.log；截图 /tmp/mir3-shortcut108.png 已取回查看 G:/mir3/work/mir3-movement/shortcut-retry-108.png，源引用、权威数量及起点显示正常。测试调用生产输入方法及GUI方法，未声称物理键鼠操作。
+
+E108-5：network_item_shortcuts_smoke覆盖十个数字槽、两次实际GUI双击、重复抑制、全部引用刷新及腰带隔离，network_shortcut_drag_smoke覆盖拾起/交换/继续拖动/取消并重登录确认无实际转移，均通过。network_book_protection_smoke也通过，同角色重登录后两次实际自动随机卷间隔20045ms，证明本批公共判断调整没有把Book改成人工3000ms替换模式。请求门JSON更新network_client与item_shortcut_bar来源哈希，104独立生成cmp一致。服务器PID3708547持续运行，无C++修改、编译或重启；Xvfb VSync提示保留。
+
+复跑沿用批次104资源环境：
+
+```sh
+/home/czx/godot --headless --path client_godot res://tests/item_shortcut_pending_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/item_use_pending_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_shortcut_retry_smoke.tscn
+MIR3_SHORTCUT_RETRY_SCREENSHOT=/tmp/mir3-shortcut108.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_shortcut_retry_smoke.tscn
+```
+
+证据→结论→后续路径：E108-1限定原人工入口规则，E108-2先复现并消除快捷槽的额外拦截，E108-3验证时间/共享待确认状态，E108-4证明两次真实消费和迟到回执隔离，E108-5覆盖相邻入口及自动逃脱。网络/UI修复、离线测试、联网测试和报告分笔线性提交同步104；新增源文件/场景纳入，旧.uid、截图、日志、二进制及104已有build_signature修改排除。其他原版逻辑缺口仍继续推进，整体目标未完成。
