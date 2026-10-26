@@ -55,8 +55,41 @@ func _ready() -> void:
 	if bool(main.get("_swing_magic").get(thrust, false)):
 		_fail("F1 could not disable thrust after 500ms")
 		return
-	print("MIR3 MAGIC COMMAND GATE VISUAL PASS: real F1/F2 events, rapid cross-skill rejection, wall-clock enable/disable after 500ms")
+	var rush: int = main.get("_resources").magic_id("野蛮冲撞")
+	GameState.learned_magic.append({"magicID": rush})
+	GameState.magic_keys[rush] = 51
+	for uid in [606, 707, 808, 909]:
+		GameState.update_creature(uid, {"uid": uid, "type": 2, "x": 443, "y": 381, "action_type": 2})
+	var renderer: Control = main.get_node("WorldRenderer")
+	var mouse := get_viewport().get_mouse_position()
+	# A deterministic hover fixture exercises the actual focus resolver if the
+	# command incorrectly enters it; no focus/send method is replaced.
+	renderer.set("_actor_target_rects", {606: {"rect": Rect2(mouse - Vector2(10, 10), Vector2(20, 20)), "map_y": 381}})
+	if int(renderer.call("focus_uid_at_screen", mouse)) != 606:
+		_fail("rush hover fixture is not selectable")
+		return
+	main.set("_magic_focus_uid", 707)
+	main.set("_magic_history_uid", 808)
+	main.set("_locked_magic_target_uid", 909)
+	var response_before := int(NetworkClient.get("_next_response_id"))
+	_press(KEY_F3)
+	if not _rush_preserved_targets(): return
+	main.set("_last_magic_request_ms", -500)
+	main.set("_last_impulse_magic_ms", -3000)
+	_press(KEY_F3)
+	if not _rush_preserved_targets(): return
+	if int(NetworkClient.get("_next_response_id")) != response_before or GameState.player_x != 441 or GameState.player_y != 381 or GameState.player_action_type != 2:
+		_fail("unsupported rush sent a request or predicted an action/displacement")
+		return
+	print("MIR3 MAGIC COMMAND GATE VISUAL PASS: real F1/F2/F3 events, cross-skill500ms gate, rush preserves focus/history/lock before and after readiness, no fake rush action")
 	get_tree().quit()
+
+
+func _rush_preserved_targets() -> bool:
+	if main.get("_magic_focus_uid") != 707 or main.get("_magic_history_uid") != 808 or main.get("_locked_magic_target_uid") != 909:
+		_fail("rush function key replaced an ordinary spell target channel")
+		return false
+	return true
 
 func _press(keycode: int) -> void:
 	var key := InputEventKey.new()
