@@ -12,7 +12,7 @@ import export_mir3_auto_use as exporter
 class AutoUseEvidenceTest(unittest.TestCase):
     def test_documented_sample(self):
         result = exporter.extract(SAMPLE)
-        self.assertEqual(len(result["instruction_checks"]), 49)
+        self.assertEqual(len(result["instruction_checks"]), 65)
         self.assertEqual(result["controller"]["timer_ms"], 50)
         self.assertEqual([r["settings"][1]["default"] for r in result["channels"]], [2500, 3500, 300, 100])
         self.assertTrue(all(r["settings"][0]["default"] == 0 for r in result["channels"]))
@@ -27,6 +27,56 @@ class AutoUseEvidenceTest(unittest.TestCase):
         self.assertEqual(source["standard_record_offset_in_converter"] + source["standard_delay_offset"], 4271)
         self.assertEqual(source["normalized_record_offset_in_converter"] + source["normalized_delay_offset"], 104)
         self.assertGreater(source["standard_delay_offset"], source["summary_record_size"])
+
+    def test_book_tables_and_lifecycle(self):
+        result = exporter.extract(SAMPLE)
+        self.assertEqual(result["book_escape"]["tables"][0]["names"][:2], ["地牢逃脱卷", "回城卷"])
+        self.assertEqual(result["book_escape"]["tables"][1]["names"], ["随机传送卷", "随机传送石"])
+        self.assertEqual(result["book_escape"]["tables"][2]["names"], ["行会回城卷"])
+        self.assertEqual(result["helper_lifecycle"]["create_if_absent_call"], "0x6917f6")
+
+    def test_book_global_interval_boundary_and_wrap(self):
+        attempt = exporter.replay_book_attempt
+        self.assertFalse(attempt(20099, 100, 0, [], lambda i: True)["handled"])
+        self.assertTrue(attempt(20100, 100, 0, [], lambda i: True)["handled"])
+        self.assertTrue(attempt(1, 0, 0, [], lambda i: True)["handled"])
+        self.assertTrue(attempt(19984, 0xFFFFFFF0, 0, [], lambda i: True)["handled"])
+        self.assertFalse(attempt(99999, 0, 0, [], lambda i: True, actor_present=False)["handled"])
+
+    def test_book_priority_and_exact_reverse_lookup(self):
+        result = exporter.replay_book_attempt(20000, 0, 0, ["回城卷", "地牢逃脱卷", "地牢逃脱卷"], lambda i: True)
+        self.assertEqual(result, {"handled": True, "index": 2, "last_dispatch": 20000})
+        # One name lookup selects the last matching instance, not a retry of
+        # earlier duplicates. A failed dispatch continues with the next name.
+        called = []
+        def send(index):
+            called.append(index)
+            return index == 0
+        result = exporter.replay_book_attempt(20000, 0, 0, ["回城卷", "地牢逃脱卷", "地牢逃脱卷"], send)
+        self.assertEqual(called, [2, 0])
+        self.assertEqual(result["index"], 0)
+        result = exporter.replay_book_attempt(20000, 0, 0, ["回城卷 ", "地牢逃脱卷包"], lambda i: True)
+        self.assertIsNone(result["index"])
+
+    def test_book_no_dispatch_still_handled_without_advancing_global_tick(self):
+        for selection in [-2, -1, 3, 0, 1, 2]:
+            # -1 is excluded by the caller; the callee itself still returns1.
+            result = exporter.replay_book_attempt(25000, 100, selection, [], lambda i: True)
+            self.assertEqual(result, {"handled": True, "index": None, "last_dispatch": 100})
+        result = exporter.replay_book_attempt(25000, 100, 1, ["随机传送卷", "随机传送石"], lambda i: False)
+        self.assertEqual(result["last_dispatch"], 100)
+        self.assertTrue(result["handled"])
+
+    def test_book_interval_equality_cannot_change(self):
+        with self.changed_read(0x6C74A1, lambda code: code.__setitem__(12, 0x86)):
+            with self.assertRaisesRegex(ValueError, "instruction at 0x6c74a1"):
+                exporter.extract(SAMPLE)
+
+    def test_book_candidate_name_and_padding_cannot_change(self):
+        for offset in [1, 30]:
+            with self.changed_read(0x7276F0, lambda code: code.__setitem__(offset, code[offset] ^ 1)):
+                with self.assertRaises(ValueError):
+                    exporter.extract(SAMPLE)
 
     def test_delay_source_cannot_silently_use_adjacent_field(self):
         with self.changed_read(0x6C0AD5, lambda code: code.__setitem__(2, 0x61)):

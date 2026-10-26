@@ -1,6 +1,58 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "book_escape": {
+    "function": "0x6c7468",
+    "tables": [
+      {
+        "selection": 0,
+        "va": "0x7276f0",
+        "names": [
+          "地牢逃脱卷",
+          "回城卷",
+          "盟重传送石",
+          "比奇传送石",
+          "苍月岛传送石",
+          "白日门传送石",
+          "封魔谷传送石"
+        ]
+      },
+      {
+        "selection": 1,
+        "va": "0x7277cc",
+        "names": [
+          "随机传送卷",
+          "随机传送石"
+        ]
+      },
+      {
+        "selection": 2,
+        "va": "0x72780c",
+        "names": [
+          "行会回城卷"
+        ]
+      }
+    ],
+    "shared_dispatch_tick": "0x72782c",
+    "minimum_dispatch_interval_ms": 20000,
+    "zero_tick_bypasses_interval": true,
+    "elapsed_check": "u32(now-last) >=20000",
+    "tick_update": "only after local693D74 reports request dispatched, not server acknowledgement",
+    "name_lookup": "690D40 calls6D94C8 with mode1: descending inventory index, exact LStrCmp; no belt fallback",
+    "pending_rule": "693D74 requires pending item null; no800/3000ms replacement in this entry",
+    "outer_gate": "channel3 enabled, interval nonzero/due, rawHP<threshold, selection !=-1; attempt tick advances even when global20s gate blocks",
+    "handled_rule": "actor exists and global20s gate permits: return1 even if all names fail or selection outside0..2; otherwise0",
+    "backend_gap": "Current mir2x CM_CONSUMEITEM handles skill books and potions only; teleport scroll consumption is unimplemented. Do not expose live helper book protection yet."
+  },
+  "helper_lifecycle": {
+    "initial_status_handler": "0x691754",
+    "create_if_absent_call": "0x6917f6",
+    "factory": "0x66f030",
+    "enable": "0x66f0ed",
+    "role_exit_disable": "0x66d66c",
+    "role_exit_destroy": "0x66d674",
+    "scope": "Initial actor status creates and enables absent helper. Inventory/map readiness are current backend dispatch guards, not timer initialization conditions."
+  },
   "item_use_delay_source": {
     "converter": "0x6c0a00",
     "standard_record_size": 193,
@@ -15,6 +67,86 @@
     "scope": "Server-provided standard-item field; offline sample does not establish per-item values. Neither item.potion.time nor Buff duration is a substitute."
   },
   "instruction_checks": [
+    {
+      "va": "0x6c7493",
+      "hex": "833d2c787200007416",
+      "role": "book escape global zero tick bypasses20-second check"
+    },
+    {
+      "va": "0x6c74a1",
+      "hex": "2b052c7872003d204e00000f82c5000000",
+      "role": "book escape unsigned elapsed20000ms equality permits attempt"
+    },
+    {
+      "va": "0x6c74b9",
+      "hex": "be07000000bbf0767200",
+      "role": "book selection0 scans seven escape names"
+    },
+    {
+      "va": "0x6c74fc",
+      "hex": "be02000000bbcc777200",
+      "role": "book selection1 scans two random teleport names"
+    },
+    {
+      "va": "0x6c753c",
+      "hex": "be01000000bb0c787200",
+      "role": "book selection2 scans guild return name"
+    },
+    {
+      "va": "0x6c74dc",
+      "hex": "84c0740fe81b970400a32c787200",
+      "role": "book group0 updates global tick only on successful local dispatch"
+    },
+    {
+      "va": "0x6c751f",
+      "hex": "84c0740ce8d8960400a32c787200",
+      "role": "book group1 updates global tick only on successful local dispatch"
+    },
+    {
+      "va": "0x6c755f",
+      "hex": "84c0740ce898960400a32c787200",
+      "role": "book group2 updates global tick only on successful local dispatch"
+    },
+    {
+      "va": "0x6c7575",
+      "hex": "b301",
+      "role": "book callback reports handled even after missing all candidates or invalid selection"
+    },
+    {
+      "va": "0x690d4d",
+      "hex": "b1018b55fc8b867c030000e86b870400",
+      "role": "book lookup uses inventory mode1 reverse order"
+    },
+    {
+      "va": "0x6d9541",
+      "hex": "e83ec1d2ff7505895df8eb544b83fbff75c3",
+      "role": "book name equality uses LStrCmp and scans descending inventory indices"
+    },
+    {
+      "va": "0x693d83",
+      "hex": "a15c9972008b00e8d52b000084c00f8483000000",
+      "role": "book dispatch requires an empty pending-item object without800ms timeout replacement"
+    },
+    {
+      "va": "0x696964",
+      "hex": "85c00f94c0c3",
+      "role": "pending-item empty predicate is exact null test"
+    },
+    {
+      "va": "0x6917e5",
+      "hex": "a1709a7200833800750ca1bc9672008b00e835d8fdff",
+      "role": "first actor-status record creates absent helper"
+    },
+    {
+      "va": "0x66f0e4",
+      "hex": "b201a1444e75008b08ff5108",
+      "role": "new helper virtual method8 is enabled immediately"
+    },
+    {
+      "va": "0x66d663",
+      "hex": "33d2a1444e75008b08ff5108b8444e7500e87763daff",
+      "role": "role exit disables helper virtual method8 then destroys it"
+    },
     {
       "va": "0x6c0a39",
       "hex": "8dbb08100000b930000000f3a5a4",
@@ -996,7 +1128,7 @@
   "limits": [
     "Static initial medicine tables; runtime table editing has not been traced.",
     "Stored Percent keys compare raw scalar values; user-facing editor conversion remains unaudited.",
-    "Timer activation, configuration UI, derived helpers, mode1 callers and full book/escape actions remain incomplete.",
+    "Initial/exit timer activation and book routing are traced; configuration editor conversion, derived helpers and live backend scroll effects remain incomplete.",
     "Original slots0-51 are not mir2x itemID/seqID or a reason to resize its belt protocol.",
     "This artifact describes source evidence; Godot helper protection is a separate adapter, default disabled. GUI.MFA recovery still requires unavailable per-item delay values."
   ],
@@ -1308,6 +1440,77 @@
       {
         "original_name": "盟重传送石",
         "candidates": []
+      }
+    ],
+    "limits": "Name correspondence only; punctuation normalization is an explicit catalog adapter. No strong-to-large medicine mapping or equal recovery values inferred."
+  },
+  "book_item_name_comparison": {
+    "manifest_sha256": "5886087aade34b76b09bcd43cf41b22a11795bba79bdf3847b9c80275489e4bf",
+    "item_count": 1194,
+    "rows": [
+      {
+        "original_name": "地牢逃脱卷",
+        "candidates": [
+          {
+            "item_id": 152,
+            "current_name": "地牢逃脱卷",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "回城卷",
+        "candidates": [
+          {
+            "item_id": 153,
+            "current_name": "回城卷",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "盟重传送石",
+        "candidates": []
+      },
+      {
+        "original_name": "比奇传送石",
+        "candidates": []
+      },
+      {
+        "original_name": "苍月岛传送石",
+        "candidates": []
+      },
+      {
+        "original_name": "白日门传送石",
+        "candidates": []
+      },
+      {
+        "original_name": "封魔谷传送石",
+        "candidates": []
+      },
+      {
+        "original_name": "随机传送卷",
+        "candidates": [
+          {
+            "item_id": 151,
+            "current_name": "随机传送卷",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "随机传送石",
+        "candidates": []
+      },
+      {
+        "original_name": "行会回城卷",
+        "candidates": [
+          {
+            "item_id": 150,
+            "current_name": "行会回城卷",
+            "match": "exact"
+          }
+        ]
       }
     ],
     "limits": "Name correspondence only; punctuation normalization is an explicit catalog adapter. No strong-to-large medicine mapping or equal recovery values inferred."

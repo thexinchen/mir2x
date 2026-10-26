@@ -13,6 +13,22 @@ from export_mir3_target_history import EXPECTED_SAMPLE, read_va
 
 
 CHECKS = [
+    (0x6C7493, "833d2c787200007416", "book escape global zero tick bypasses20-second check"),
+    (0x6C74A1, "2b052c7872003d204e00000f82c5000000", "book escape unsigned elapsed20000ms equality permits attempt"),
+    (0x6C74B9, "be07000000bbf0767200", "book selection0 scans seven escape names"),
+    (0x6C74FC, "be02000000bbcc777200", "book selection1 scans two random teleport names"),
+    (0x6C753C, "be01000000bb0c787200", "book selection2 scans guild return name"),
+    (0x6C74DC, "84c0740fe81b970400a32c787200", "book group0 updates global tick only on successful local dispatch"),
+    (0x6C751F, "84c0740ce8d8960400a32c787200", "book group1 updates global tick only on successful local dispatch"),
+    (0x6C755F, "84c0740ce898960400a32c787200", "book group2 updates global tick only on successful local dispatch"),
+    (0x6C7575, "b301", "book callback reports handled even after missing all candidates or invalid selection"),
+    (0x690D4D, "b1018b55fc8b867c030000e86b870400", "book lookup uses inventory mode1 reverse order"),
+    (0x6D9541, "e83ec1d2ff7505895df8eb544b83fbff75c3", "book name equality uses LStrCmp and scans descending inventory indices"),
+    (0x693D83, "a15c9972008b00e8d52b000084c00f8483000000", "book dispatch requires an empty pending-item object without800ms timeout replacement"),
+    (0x696964, "85c00f94c0c3", "pending-item empty predicate is exact null test"),
+    (0x6917E5, "a1709a7200833800750ca1bc9672008b00e835d8fdff", "first actor-status record creates absent helper"),
+    (0x66F0E4, "b201a1444e75008b08ff5108", "new helper virtual method8 is enabled immediately"),
+    (0x66D663, "33d2a1444e75008b08ff5108b8444e7500e87763daff", "role exit disables helper virtual method8 then destroys it"),
     (0x6C0A39, "8dbb08100000b930000000f3a5a4", "converter copies193-byte standard record to object4104"),
     (0x6C0A48, "8d7304", "normalized record starts at converter object4"),
     (0x6C0AD5, "8b83af100000894664", "standard record167 supplies normalized record100 delay"),
@@ -76,6 +92,48 @@ TABLES = [
     (0x727500, ["魔法药(小)", "魔法药(中)", "强效魔法药", "", "", "", "", ""]),
     (0x7275F8, ["太阳水", "强效太阳水", "万年雪霜", "疗伤药", "", "", "", ""]),
 ]
+BOOK_TABLES = [
+    (0x7276F0, ["地牢逃脱卷", "回城卷", "盟重传送石", "比奇传送石", "苍月岛传送石", "白日门传送石", "封魔谷传送石"]),
+    (0x7277CC, ["随机传送卷", "随机传送石"]),
+    (0x72780C, ["行会回城卷"]),
+]
+
+
+def book_rules(sample):
+    tables = []
+    for selection, (address, expected) in enumerate(BOOK_TABLES):
+        names = []
+        for index, name in enumerate(expected):
+            record = read_va(sample, address + index * 31, 31)
+            if record[0] > 30 or any(record[1 + record[0]:]):
+                raise ValueError("invalid book shortstring record")
+            decoded = record[1:1 + record[0]].decode("gbk")
+            if decoded != name:
+                raise ValueError("unexpected book candidate order")
+            names.append(decoded)
+        tables.append({"selection": selection, "va": hex(address), "names": names})
+    return {"function": "0x6c7468", "tables": tables,
+            "shared_dispatch_tick": "0x72782c", "minimum_dispatch_interval_ms": 20000,
+            "zero_tick_bypasses_interval": True, "elapsed_check": "u32(now-last) >=20000",
+            "tick_update": "only after local693D74 reports request dispatched, not server acknowledgement",
+            "name_lookup": "690D40 calls6D94C8 with mode1: descending inventory index, exact LStrCmp; no belt fallback",
+            "pending_rule": "693D74 requires pending item null; no800/3000ms replacement in this entry",
+            "outer_gate": "channel3 enabled, interval nonzero/due, rawHP<threshold, selection !=-1; attempt tick advances even when global20s gate blocks",
+            "handled_rule": "actor exists and global20s gate permits: return1 even if all names fail or selection outside0..2; otherwise0",
+            "backend_gap": "Current mir2x CM_CONSUMEITEM handles skill books and potions only; teleport scroll consumption is unimplemented. Do not expose live helper book protection yet."}
+
+
+def replay_book_attempt(now, last_dispatch, selection, inventory_names, dispatch, actor_present=True):
+    """Reference replay of6C7468/690D40, after the outer channel3 gate."""
+    if not actor_present or (last_dispatch and ((now - last_dispatch) & 0xFFFFFFFF) < 20000):
+        return {"handled": False, "index": None, "last_dispatch": last_dispatch}
+    names = BOOK_TABLES[selection][1] if 0 <= selection < 3 else []
+    for name in names:
+        # 6D94C8(mode1) chooses exactly one instance of each candidate name.
+        index = next((i for i in range(len(inventory_names) - 1, -1, -1) if inventory_names[i] == name), None)
+        if index is not None and dispatch(index):
+            return {"handled": True, "index": index, "last_dispatch": now}
+    return {"handled": True, "index": None, "last_dispatch": last_dispatch}
 GUI_HP_NAMES = ["急救丸(小)", "金创药(小)", "急救丸(中)", "太阳水", "金创药(中)",
                 "急救丸(大)", "强效太阳水", "金创药(大)", "九叶灵芝(小)", "急救丸(特)",
                 "急救瓶", "千年雪霜", "万年雪霜", "金创药(特)", "雪霜菁华", "九叶灵芝(中)",
@@ -295,7 +353,11 @@ def extract(path, item_names=None):
                          "settings": [config_default(sample, *row) for row in defaults],
                          "actor_scalar_offset": 365 if name == "MP" else 361})
     result = {
-        "schema_version": 4, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 5, "sample_sha256": EXPECTED_SAMPLE,
+        "book_escape": book_rules(sample),
+        "helper_lifecycle": {"initial_status_handler": "0x691754", "create_if_absent_call": "0x6917f6",
+                             "factory": "0x66f030", "enable": "0x66f0ed", "role_exit_disable": "0x66d66c",
+                             "role_exit_destroy": "0x66d674", "scope": "Initial actor status creates and enables absent helper. Inventory/map readiness are current backend dispatch guards, not timer initialization conditions."},
         "item_use_delay_source": {
             "converter": "0x6c0a00", "standard_record_size": 193,
             "standard_record_offset_in_converter": 4104,
@@ -330,7 +392,7 @@ def extract(path, item_names=None):
         "limits": [
             "Static initial medicine tables; runtime table editing has not been traced.",
             "Stored Percent keys compare raw scalar values; user-facing editor conversion remains unaudited.",
-            "Timer activation, configuration UI, derived helpers, mode1 callers and full book/escape actions remain incomplete.",
+            "Initial/exit timer activation and book routing are traced; configuration editor conversion, derived helpers and live backend scroll effects remain incomplete.",
             "Original slots0-51 are not mir2x itemID/seqID or a reason to resize its belt protocol.",
             "This artifact describes source evidence; Godot helper protection is a separate adapter, default disabled. GUI.MFA recovery still requires unavailable per-item delay values.",
         ],
@@ -338,6 +400,7 @@ def extract(path, item_names=None):
     if item_names is not None:
         result["current_item_name_comparison"] = compare_items(item_names)
         result["gui_item_name_comparison"] = compare_items(item_names, list(dict.fromkeys(GUI_HP_NAMES + GUI_MP_NAMES + ESCAPE_NAMES[:-1])))
+        result["book_item_name_comparison"] = compare_items(item_names, [name for _, names in BOOK_TABLES for name in names])
     return result
 
 
