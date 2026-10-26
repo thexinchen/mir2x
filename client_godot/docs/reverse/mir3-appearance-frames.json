@@ -1,0 +1,474 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "aura_state_instruction_checks": 71,
+  "instruction_checks": [
+    {
+      "va": "0x4f7349",
+      "hex": "66833b007676",
+      "role": "group loader requires nonzero first WORD count"
+    },
+    {
+      "va": "0x4f737c",
+      "hex": "0fb703508d4304b9010000008b15ccf44800e8cdf7f0ff",
+      "role": "group loader resizes dynamic array to WORD count"
+    },
+    {
+      "va": "0x4f7396",
+      "hex": "0fb7038bc803c903c903c98b5304",
+      "role": "group loader reads eight bytes per record"
+    },
+    {
+      "va": "0x6fa323",
+      "hex": "8b52048b0cc2894e048b4cc204894e08",
+      "role": "effect lookup copies selected eight-byte group"
+    },
+    {
+      "va": "0x6e4dce",
+      "hex": "0fb6533680ea08740580ea08751c",
+      "role": "only8/16-direction groups add direction stride"
+    },
+    {
+      "va": "0x6e4ddc",
+      "hex": "0fb650020fb648036603d10fb64b2b660fafd1660310",
+      "role": "direction stride includes visible frames and padding"
+    },
+    {
+      "va": "0x6e4df8",
+      "hex": "0fb71066895338",
+      "role": "single-direction group uses first image directly"
+    },
+    {
+      "va": "0x6e4dff",
+      "hex": "0fb64002660343386689433a",
+      "role": "visible frame endpoint excludes padding count"
+    },
+    {
+      "va": "0x6e4b9a",
+      "hex": "8bd02b560c0fb74e343bd17635",
+      "role": "advance only when elapsed ticks exceed group interval"
+    },
+    {
+      "va": "0x6e4bbc",
+      "hex": "0fb74638894608837e18007e13",
+      "role": "wrap to first image; nonpositive repeat count remains live"
+    },
+    {
+      "va": "0x6fb587",
+      "hex": "b9180000008b45f8e86011d1ff",
+      "role": "MIX index reader consumes24-byte header"
+    },
+    {
+      "va": "0x6fb5a2",
+      "hex": "8b45f08947148bf003f603f6",
+      "role": "MIX index count determines four-byte offset table"
+    },
+    {
+      "va": "0x6fb976",
+      "hex": "8b0085c07e54",
+      "role": "frame header reader skips nonpositive file offsets"
+    },
+    {
+      "va": "0x6fba0b",
+      "hex": "8b0085c00f8ebd00000083c010",
+      "role": "pixel reader skips empty index and seeks16 bytes past frame offset"
+    },
+    {
+      "va": "0x6fba27",
+      "hex": "8b40088945f4837df4007e68817df46df114007f5f",
+      "role": "positive compressed lengths up to1372525 use inflate branch"
+    },
+    {
+      "va": "0x6fba69",
+      "hex": "e82270d7ff",
+      "role": "pixel reader invokes original decompression helper"
+    },
+    {
+      "va": "0x4915e7",
+      "hex": "0fbf0003c083c003c1e80203c003c0",
+      "role": "flag0 pixel rows use four-byte-aligned two-byte pixel storage"
+    },
+    {
+      "va": "0x6e214f",
+      "hex": "e818d50100",
+      "role": "human appearance refresh extracts packed costume value"
+    },
+    {
+      "va": "0x6e2154",
+      "hex": "0fb6d04a8b45fce804a5ffff",
+      "role": "costume key uses low byte of extracted word minus one before actor112 setter"
+    },
+    {
+      "va": "0x6ff66c",
+      "hex": "c1e810c3",
+      "role": "packed costume extractor returns high WORD"
+    }
+  ],
+  "sources": {
+    "1.dat": {
+      "sha256": "95fe9f8091f1c317272726fafee454e3987ac23dee7a7739b32502c316c1cc81",
+      "bytes": 420
+    },
+    "1.MIX": {
+      "sha256": "0e5c82a3bde2081af0d85d7dc255632d1890d18ed0c8a8d0f10054109c2758fd",
+      "bytes": 9944
+    },
+    "1.MIZ": {
+      "sha256": "c24ef6b5dce1484630c09a7401ada3dabf348775a0ed0e4b925d166a54ba1b87",
+      "bytes": 20583721
+    },
+    "300.dat": {
+      "sha256": "80f802fd796d671dcb5455805fcf146c2a0319e961208f5ed2b3c8b3598828da",
+      "bytes": 404
+    },
+    "300.MIX": {
+      "sha256": "775214212f5bab67d1279a06bc6261a586f126b4d168316d0bbcd8693e8df7a0",
+      "bytes": 1704
+    },
+    "300.MIZ": {
+      "sha256": "3a352d24b54353f2d3c5579ee48892d365341256be6f412c8dc6c3ab89b6bca0",
+      "bytes": 16115524
+    }
+  },
+  "libraries": {
+    "1": {
+      "image_count": 2480,
+      "group_count": 52,
+      "group_trailing_bytes": 0
+    },
+    "300": {
+      "image_count": 420,
+      "group_count": 26,
+      "group_trailing_bytes": 192
+    }
+  },
+  "original_costume_key": {
+    "source_actor_offset": 128,
+    "target_actor_offset": 112,
+    "formula": "((packed_appearance >> 16) & 255) - 1",
+    "matches": [
+      {
+        "actor112": 186,
+        "packed_byte16_23": 187
+      },
+      {
+        "actor112": 216,
+        "packed_byte16_23": 217
+      }
+    ]
+  },
+  "costume_effects": [
+    {
+      "resource_id": 714,
+      "image_library": "300",
+      "group_index": 19,
+      "color": 0,
+      "light": 0,
+      "comment": "2018情人节时装特效",
+      "line": 609,
+      "first_image": 290,
+      "visible_frames": 10,
+      "direction_padding": 0,
+      "interval": 100,
+      "directions": 1,
+      "reserved": 0,
+      "frames": [
+        {
+          "image": 290,
+          "file_offset": 16112627,
+          "present": true,
+          "width": 94,
+          "height": 96,
+          "x_offset": -22,
+          "y_offset": -78,
+          "storage_flag": 0,
+          "compressed_bytes": 2881,
+          "row_stride": 188,
+          "decoded_bytes": 18048,
+          "decoded_sha256": "01c4df6363816c34c9be51b5fd014221ebcb30171338e9d5e53a2aa49cccb68e"
+        },
+        {
+          "image": 291,
+          "file_offset": 16076517,
+          "present": true,
+          "width": 97,
+          "height": 103,
+          "x_offset": -24,
+          "y_offset": -81,
+          "storage_flag": 0,
+          "compressed_bytes": 3833,
+          "row_stride": 196,
+          "decoded_bytes": 20188,
+          "decoded_sha256": "d2f4f6bc95fb5d97759bb86aaaf9364d7137c2d7783c8c25e0170ced33d207b9"
+        },
+        {
+          "image": 292,
+          "file_offset": 16080366,
+          "present": true,
+          "width": 98,
+          "height": 107,
+          "x_offset": -25,
+          "y_offset": -81,
+          "storage_flag": 0,
+          "compressed_bytes": 4065,
+          "row_stride": 196,
+          "decoded_bytes": 20972,
+          "decoded_sha256": "1374fa99e7f3b29b5dd9144d136038a523ba6297e45b8bab0abc1287f34ca67f"
+        },
+        {
+          "image": 293,
+          "file_offset": 16084447,
+          "present": true,
+          "width": 96,
+          "height": 109,
+          "x_offset": -22,
+          "y_offset": -80,
+          "storage_flag": 0,
+          "compressed_bytes": 4150,
+          "row_stride": 192,
+          "decoded_bytes": 20928,
+          "decoded_sha256": "1a1f2fd37766fc549278d5e3045dd6571d4f6d6b9b1955fe0c357e83df54ee67"
+        },
+        {
+          "image": 294,
+          "file_offset": 16088613,
+          "present": true,
+          "width": 100,
+          "height": 113,
+          "x_offset": -25,
+          "y_offset": -81,
+          "storage_flag": 0,
+          "compressed_bytes": 4263,
+          "row_stride": 200,
+          "decoded_bytes": 22600,
+          "decoded_sha256": "92cb1c375a48240c16fb406dfe819ca53ce9937ab1e439788f2af35f75467b9d"
+        },
+        {
+          "image": 295,
+          "file_offset": 16092892,
+          "present": true,
+          "width": 98,
+          "height": 117,
+          "x_offset": -23,
+          "y_offset": -81,
+          "storage_flag": 0,
+          "compressed_bytes": 4242,
+          "row_stride": 196,
+          "decoded_bytes": 22932,
+          "decoded_sha256": "c5010347f144e7b641d2f462c4ffd26afbe65000cf8d9c1df8c893292eb51e58"
+        },
+        {
+          "image": 296,
+          "file_offset": 16097150,
+          "present": true,
+          "width": 99,
+          "height": 117,
+          "x_offset": -23,
+          "y_offset": -80,
+          "storage_flag": 0,
+          "compressed_bytes": 4237,
+          "row_stride": 200,
+          "decoded_bytes": 23400,
+          "decoded_sha256": "4e41799e350af3e88aa7b60bc6c0f51dda5dd9e8c69abb19968de2861b8afeb7"
+        },
+        {
+          "image": 297,
+          "file_offset": 16101403,
+          "present": true,
+          "width": 98,
+          "height": 120,
+          "x_offset": -23,
+          "y_offset": -80,
+          "storage_flag": 0,
+          "compressed_bytes": 4199,
+          "row_stride": 196,
+          "decoded_bytes": 23520,
+          "decoded_sha256": "cfe3d2cef8dc4fcc64494989fad6a81e14d420ab7fe093bd263ac579c7376708"
+        },
+        {
+          "image": 298,
+          "file_offset": 16105618,
+          "present": true,
+          "width": 95,
+          "height": 122,
+          "x_offset": -23,
+          "y_offset": -80,
+          "storage_flag": 0,
+          "compressed_bytes": 4028,
+          "row_stride": 192,
+          "decoded_bytes": 23424,
+          "decoded_sha256": "d7a04bc331bcbcacb3ee69a4d138781a7f6f35c2c6f6795916f028df4f3617f2"
+        },
+        {
+          "image": 299,
+          "file_offset": 16109662,
+          "present": true,
+          "width": 95,
+          "height": 96,
+          "x_offset": -24,
+          "y_offset": -79,
+          "storage_flag": 0,
+          "compressed_bytes": 2949,
+          "row_stride": 192,
+          "decoded_bytes": 18432,
+          "decoded_sha256": "9224835eb18891e8a41297935ac7477139e04eecbc3291a1c1fed7ac86fd5502"
+        }
+      ],
+      "present_frames": 10
+    },
+    {
+      "resource_id": 785,
+      "image_library": "300",
+      "group_index": 25,
+      "color": 0,
+      "light": 0,
+      "comment": "时装雪花特效",
+      "line": 690,
+      "first_image": 400,
+      "visible_frames": 16,
+      "direction_padding": 4,
+      "interval": 100,
+      "directions": 1,
+      "reserved": 0,
+      "frames": [
+        {
+          "image": 400,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 401,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 402,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 403,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 404,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 405,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 406,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 407,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 408,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 409,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 410,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 411,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 412,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 413,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 414,
+          "file_offset": 0,
+          "present": false
+        },
+        {
+          "image": 415,
+          "file_offset": 0,
+          "present": false
+        }
+      ],
+      "present_frames": 0
+    }
+  ],
+  "extra_human_appearance": [
+    {
+      "tier": 0,
+      "minimum": 3,
+      "maximum": 4,
+      "library": "1",
+      "first_image": 2350,
+      "frame_count": 1,
+      "interval": 1000,
+      "x_offset": 13,
+      "y_offset": -90,
+      "frame": {
+        "image": 2350,
+        "file_offset": 0,
+        "present": false
+      }
+    },
+    {
+      "tier": 1,
+      "minimum": 5,
+      "maximum": 9,
+      "library": "1",
+      "first_image": 2351,
+      "frame_count": 1,
+      "interval": 1000,
+      "x_offset": 13,
+      "y_offset": -90,
+      "frame": {
+        "image": 2351,
+        "file_offset": 0,
+        "present": false
+      }
+    },
+    {
+      "tier": 2,
+      "minimum": 10,
+      "maximum": null,
+      "library": "1",
+      "first_image": 2352,
+      "frame_count": 1,
+      "interval": 1000,
+      "x_offset": 13,
+      "y_offset": -90,
+      "frame": {
+        "image": 2352,
+        "file_offset": 0,
+        "present": false
+      }
+    }
+  ],
+  "limits": [
+    "Current supplied resource hashes only; zero offset means no local frame record, not that every version lacks it.",
+    "Decoded byte layout and stride are verified; RGB channel conversion, blend mode and orientation are not reproduced here.",
+    "Original packed appearance and current item shapes are distinct inputs; no current equipment correspondence is established.",
+    "This is static resource evidence, not an original server or Godot rendering roundtrip."
+  ]
+}

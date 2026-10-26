@@ -757,7 +757,7 @@
         "line": 690
       }
     ],
-    "limit": "group index is not a first-frame number; MIX/MIZ frame metadata and current asset correspondence remain unverified"
+    "limit": "group index is not a first-frame number; see mir3-appearance-frames.json for source frame metadata and missing records; current equipment correspondence remains unverified"
   },
   "limits": [
     "Static sample and current local configuration evidence; no original server roundtrip was captured.",

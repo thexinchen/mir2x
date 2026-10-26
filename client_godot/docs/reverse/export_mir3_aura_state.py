@@ -197,7 +197,7 @@ def extract(sample_path, registry_path, actor_buff_path, effects_list_path):
         "appearance_effect_config": {"filename": "effects.lst", "sha256": EXPECTED_EFFECTS_LIST,
                                      "section": "#EFFECTS", "loader": "0x6fa91c", "lookup": "0x6fa28c",
                                      "rows": effect_rows,
-                                     "limit": "group index is not a first-frame number; MIX/MIZ frame metadata and current asset correspondence remain unverified"},
+                                     "limit": "group index is not a first-frame number; see mir3-appearance-frames.json for source frame metadata and missing records; current equipment correspondence remains unverified"},
         "limits": [
             "Static sample and current local configuration evidence; no original server roundtrip was captured.",
             "Message657 vector copies and message1500 snapshots are different original representations, not current mir2x wire structs.",
