@@ -1828,3 +1828,34 @@ MIR3_RANDOM_SCROLL_SCREENSHOT=/tmp/mir3-scroll104.png xvfb-run -a /home/czx/godo
 ```
 
 证据→结论→后续路径：E104-1/E104-2接通原物品列表中的一个明确后端缺口，E104-3证明真实请求、结算和四个入口相接；E104-4/E104-5通过失败优先测试修复远距离传送的实际显示/动作错误。F104-1为手工随机卷和自身权威瞬移链已可运行；自动Book四路调度接入、其他传送目的地结算、GUI逐物品延迟、冲撞及其他未决玩法仍需继续，整体目标保持进行。
+
+## 批次 105：自动逃脱 Book 通道及采集奖励复核（2026-10-26）
+
+沿用批次104已验证的随机卷服务端结算，本批接通 helper.Set 的第四路 Book。原版指令证据继续来自 mir3-auto-use.json（schema5、原样本SHA256 eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021），不新增未经证明的其他卷轴目的地或服务器奖励公式。普通逆向报告 flavor=null。
+
+E105-1：原 6C4A40 的50ms轮询按 HP→MP→Special→Book 调度。Book默认检查间隔100ms，使用原始HP严格低于阈值、非零间隔和 RenewBookNowBookIndex != -1 的外层条件；满足时先更新尝试时间，即便缺物品、20秒全局门限未过或有待确认物品也如此。前一路未报告停止且下一路是Book时，在同一回调继续；直接太阳水分支需先实际发送，Book才能看到刚建立的物品待确认状态。其他特殊药找到后停止，下一回调再检查Book。
+
+E105-2：6C7468 的全局72782C为0时放行，否则无符号32位差值至少20000ms。690D40→6D94C8(mode1)按背包倒序精确匹配名称，没有腰带回退。原三组名称保存在模型中，当前只允许后端已实现的随机传送卷，UI只显示未选择/随机传送卷。选择为-1时不更新尝试时间，其他无效索引不发请求。693D74入口只检查共享待确认对象是否为空，不能套用人工3000ms或自动药800ms替换窗口。
+
+新增 NetworkClient.send_protection_book 使用负retry参数，拒绝替换仍存活的待确认请求；判断依据令牌而非包内物品字典，因为腰带请求没有包内身份。已有传输层回调超时仍会正常释放待确认状态，这属于当前协议适配。Book时钟由NetworkClient单例持有，本地发送成功后记录实际发送完成时刻，服务端SM_ERROR不撤销；断线及重建角色主场景不清零，不写入角色配置，也不因普通手工用药更新。原低层socket失败返回语义尚未完全还原，当前明确以传输接口返回OK作为开始计时条件，失败不开始计时。
+
+E105-3：mir3_protection_smoke覆盖四路调度、倒序精确名称、无腰带回退、阈值相等、默认100ms、20秒边界和32位回绕、尝试时间与成功时间分离、太阳水发送前后顺序、待确认阻挡、失败不更新时间、配置及角色切换。item_use_pending_smoke额外构造已过去5000ms但回调仍存活的腰带请求，验证Book仍拒绝替换；覆盖服务端拒绝、传输失败、普通用药及断线对全局时钟的影响。两项与 runtime_config_smoke、mir3_corpse_smoke、self_space_move_smoke 均在104通过，日志 /tmp/mir3-book105-场景名.log。
+
+E105-4：新增 network_book_protection_smoke.gd/.tscn 使用标准id_4测试账号，生产设置页选择随机卷并启用第四路，以默认100ms检查间隔自动消费。每次要求实际匹配请求ID的SM_OK、卷数量减1及服务端权威SpaceMove；第一次后销毁主场景、断线、同UID重新登录并创建新主场景，要求配置恢复且全局时钟保留。使用真实时间等待第二次，不篡改时钟。无窗口运行实际间隔20154ms，Xvfb运行20026ms，均通过；数量与起点按本轮基线归还。日志 /tmp/mir3-book105-network.log、/tmp/mir3-book105-window.log。取回并查看 G:/mir3/work/mir3-movement/book-protection-105.png，第四路及选择框完整显示。测试调用生产GUI信号，未声称物理鼠标操作；配置文件为夹具独立文件，测试后删除。
+
+E105-5：用户再次确认沿用现有掉落表、肉类延后采集发放。源码已实现且无需重复改奖励：死亡只抽一次，肉类保留于尸体，其他正常掉落，领取不重抽。此次104双人复跑暴露旧夹具 _ground_meat_count 把地面itemID整数当作物品字典，出现SCRIPT ERROR但后续仍打印PASS；该轮不能作为完整通过证据。修正为遍历实际地面ID列表并统计肉类条目（地面协议不含堆叠数量），没有修改生产掉落规则。
+
+最终有效双人复跑目录为 /tmp/mir3-corpse-race80.AVg7Qt，汇总日志 /tmp/mir3-corpse105-fixed.log：两次领取相差1ms，击杀者0份、争抢者1份；活体拒绝、死亡不直接入包/不落肉、只发一次已抽取奖励及重复拒绝通过，双方归位(407,126)/(405,118)。两端完整日志均检查无SCRIPT ERROR或ERROR。鸡表可能另抽出额外肉，获1份不表示固定奖励为1；测试奖励保留在标准测试角色库存。既有缺音效02000140及退出ObjectDB警告仍存在，未宣称修复。
+
+E105-6：network_mir3_protection_smoke 原三路药品、network_random_scroll_smoke 四路手工入口及拒绝用例、network_item_use_receipt_smoke 人工/腰带/旧无回执请求回归在104顺序通过，日志同 /tmp/mir3-book105-场景名.log。此次没有C++修改或重启，服务器PID3708547继续运行。请求门及技能对应快照更新来源哈希，两端独立重新生成并cmp一致。按网络、模型、界面、联网测试、采集夹具修正、报告分笔线性提交，新增源文件和场景纳入，旧.uid、日志、截图、二进制及既有build_signature修改排除。
+
+复跑沿用批次104资源环境：
+
+```sh
+/home/czx/godot --headless --path client_godot res://tests/mir3_protection_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/item_use_pending_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_book_protection_smoke.tscn
+MIR3_BOOK_SCREENSHOT=/tmp/mir3-book105.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_book_protection_smoke.tscn
+```
+
+证据→结论→后续路径：E105-1/E105-2限定自动Book的调度与名称/时间/待确认规则，E105-3/E105-4覆盖模型、真实结算及同角色重登录的时钟保留，E105-5修复并复核用户指定的采集奖励检查，E105-6确认既有入口回归。当前实现一个有后端支持的自动逃脱品种；其他回城/传送石、GUI逐物品延迟、冲撞等缺口仍需后续取证和实现，整体对齐目标继续进行。
