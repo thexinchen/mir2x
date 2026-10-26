@@ -3,6 +3,7 @@ extends Node
 signal connection_changed(connected: bool, message: String)
 signal message_received(head_code: int, payload: PackedByteArray)
 signal response_received(response_id: int, head_code: int, payload: PackedByteArray)
+signal item_use_state_changed
 
 # CMType enum (client -> server)
 const CM_PING := 1
@@ -161,6 +162,7 @@ var _next_response_id := 1
 var _response_callbacks: Dictionary = {}
 var _item_use_serial := 0
 var _item_use_pending_token := 0
+var pending_item_use: Dictionary = {}
 var _message_dispatch_paused := false
 var _deferred_messages: Array[Dictionary] = []
 
@@ -176,9 +178,13 @@ func _process(_delta: float) -> void:
 				connection_changed.emit(true, "已连接服务器")
 			StreamPeerTCP.STATUS_ERROR:
 				_item_use_pending_token = 0
+				pending_item_use = {}
+				item_use_state_changed.emit()
 				connection_changed.emit(false, "连接服务器失败")
 			StreamPeerTCP.STATUS_NONE:
 				_item_use_pending_token = 0
+				pending_item_use = {}
+				item_use_state_changed.emit()
 				connection_changed.emit(false, "服务器连接已断开")
 	if status != StreamPeerTCP.STATUS_CONNECTED:
 		return
@@ -196,6 +202,7 @@ func connect_to_server() -> Error:
 		return OK
 	_peer = StreamPeerTCP.new()
 	_item_use_pending_token = 0
+	pending_item_use = {}
 	_receive_buffer.clear()
 	_last_status = StreamPeerTCP.STATUS_NONE
 	var host := str(ProjectSettings.get_setting("network/server_host", "127.0.0.1"))
@@ -215,6 +222,8 @@ func disconnect_from_server() -> void:
 	_receive_buffer.clear()
 	_response_callbacks.clear()
 	_item_use_pending_token = 0
+	pending_item_use = {}
+	item_use_state_changed.emit()
 	_message_dispatch_paused = false
 	_deferred_messages.clear()
 
@@ -516,9 +525,12 @@ func _send_item_use_request(head: int, payload: PackedByteArray, callback: Calla
 	_item_use_serial += 1
 	var token := _item_use_serial
 	_item_use_pending_token = token
+	pending_item_use = {"itemID": payload.decode_u32(0), "seqID": payload.decode_u32(4)} if head == CM_CONSUMEITEM else {}
 	var complete := func(reply_head: int, reply_payload: PackedByteArray):
 		if _item_use_pending_token == token:
 			_item_use_pending_token = 0
+			pending_item_use = {}
+			item_use_state_changed.emit()
 		if callback.is_valid():
 			callback.call(reply_head, reply_payload)
 	# Original manual slots enter690494's shared3000ms pending check.
@@ -527,6 +539,8 @@ func _send_item_use_request(head: int, payload: PackedByteArray, callback: Calla
 	var error := _send_request(head, payload, false, complete, 3000)
 	if error != OK and _item_use_pending_token == token:
 		_item_use_pending_token = 0
+		pending_item_use = {}
+	item_use_state_changed.emit()
 	return error
 
 

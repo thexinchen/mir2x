@@ -24,11 +24,13 @@ func _ready() -> void:
 	add_child(network)
 	network.set_process(false)
 	_expect(network.send_consume_item(6, 101) == OK, "first inventory use accepted")
+	_expect(network.pending_item_use == {"itemID": 6, "seqID": 101}, "pending use exposes exact inventory identity for reference retention")
 	var id: int = network.sent.back()[2]
 	_expect(int(network._response_callbacks[id].expires) - Time.get_ticks_msec() in range(2990, 3001), "manual pending window is3000ms")
 	_expect(network.send_consume_belt_item(0) == ERR_BUSY and network.send_consume_item(6, 102) == ERR_BUSY, "inventory blocks both entry paths")
 	_expect(network.sent.size() == 1, "busy uses never reach transport")
 	network.finish(id, NetworkClient.SM_OK)
+	_expect(network.pending_item_use.is_empty(), "matching receipt clears pending reference identity")
 	_expect(network.send_consume_belt_item(0) == OK, "success immediately permits next use without fixed cooldown")
 	id = network.sent.back()[2]
 	_expect(network.send_consume_item(6, 101) == ERR_BUSY, "belt also blocks inventory")
@@ -50,6 +52,7 @@ func _ready() -> void:
 	network.disconnect_from_server()
 	_expect(network.send_consume_item(6, 101) == OK, "disconnect releases pending state")
 	old_callback.call(NetworkClient.SM_ERROR, PackedByteArray())
+	_expect(network.pending_item_use == {"itemID": 6, "seqID": 101}, "pre-disconnect result cannot erase new inventory identity")
 	_expect(network.send_consume_belt_item(0) == ERR_BUSY, "pre-disconnect callback cannot release new-session use")
 	network.disconnect_from_server()
 	if _failures.is_empty():

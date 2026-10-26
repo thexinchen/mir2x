@@ -51,6 +51,10 @@ var inventory: Array = []  # compact list of SDItem; the panel computes grid pla
 var belt: Array = []  # 6 slots, each is SDItem or null
 var wear: Dictionary = {}  # wear location -> SDItem
 var grabbed_item: Dictionary = {}
+var item_shortcuts = preload("res://scripts/game/mir3_item_shortcuts.gd").new()
+var grabbed_shortcut: Dictionary = {}
+var inventory_initialized := false
+var _shortcut_owner_uid := 0
 var secured_items: Array = []
 var secured_items_reset_serial := 0
 
@@ -192,6 +196,12 @@ func update_quest_description(name: String, fsm: String, desp: Variant, main_fsm
 
 
 func set_player_online(online_data: Dictionary) -> void:
+	var next_uid: int = online_data.get("uid", 0)
+	if next_uid != _shortcut_owner_uid:
+		item_shortcuts.clear_all()
+		_shortcut_owner_uid = next_uid
+	grabbed_shortcut = {}
+	inventory_initialized = false
 	hud_minimized = false
 	player_health_initialized = false
 	player_hp = 0
@@ -540,6 +550,7 @@ func get_creature(uid: int) -> Dictionary:
 
 func update_inventory(items: Array) -> void:
 	inventory = items
+	inventory_initialized = true
 	state_changed.emit()
 
 
