@@ -1,6 +1,21 @@
 {
-  "schema_version": 9,
+  "schema_version": 10,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "global_drag_cancel": {
+    "input_branch": "0x65f526",
+    "held_predicate": "0x696d20",
+    "helper_global": "0x734950",
+    "held_interface_offset": 12,
+    "secondary_metadata_offset": 25,
+    "source_kind_filter": null,
+    "dispatch": "0x663428",
+    "manager": "0x6fd7a4",
+    "context_copy": "0x6fe2ac",
+    "source_release": "0x6fd96c",
+    "cursor_reset": "0x6fd7cc",
+    "ordering": "right press cancels held cursor before GUI/world routing",
+    "limits": "Owner-specific release properties/callbacks are incomplete; this does not define server item disposal or inventory placement geometry."
+  },
   "instruction_checks": [
     {
       "va": "0x68f8b6",
@@ -421,6 +436,36 @@
       "va": "0x65f526",
       "hex": "807dff017515e8ef77030084c0740c8bc6e8ec3e0000e948020000",
       "role": "right press with held cursor cancels before GUI dispatch"
+    },
+    {
+      "va": "0x4f3f84",
+      "hex": "a150497300c3",
+      "role": "global drag helper getter"
+    },
+    {
+      "va": "0x696d23",
+      "hex": "e85cd2e5ff83780c00750fe851d2e5ff80781900750433c05dc3b0015dc3",
+      "role": "held predicate checks item interface or secondary metadata, without source-kind restriction"
+    },
+    {
+      "va": "0x66342b",
+      "hex": "e8540be9ffe86fa30900",
+      "role": "global right cancellation invokes drag manager"
+    },
+    {
+      "va": "0x6fd7aa",
+      "hex": "8b4308e8fa0a00008b4308e8de010000",
+      "role": "cancel copies persistent cursor to context then releases it"
+    },
+    {
+      "va": "0x6fd99e",
+      "hex": "8bc3e8c7ffffff8bc3e880000000",
+      "role": "conditional source release is followed by cursor reset"
+    },
+    {
+      "va": "0x6fda2f",
+      "hex": "8b4008e895fdffff",
+      "role": "cancel reset reaches persistent cursor cleanup"
     },
     {
       "va": "0x65f388",

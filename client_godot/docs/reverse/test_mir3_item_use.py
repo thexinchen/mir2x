@@ -26,7 +26,7 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 106)
+        self.assertEqual(len(result["instruction_checks"]), 112)
         self.assertEqual(len(result["shortcut_rectangles"]), 10)
         self.assertEqual(len(result["special_shortcut_actions"]["records"]), 30)
         self.assertEqual(len(result["shortcut_drag_interface"]["methods"]), 5)
@@ -40,6 +40,24 @@ class ItemUseEvidenceTest(unittest.TestCase):
         self.assertEqual((guard["actor_byte_offset"], guard["mask"]), (53, 8))
         self.assertIsNone(guard["semantic_name"])
         self.assertEqual(guard["before"], "shared pending3000ms check")
+
+    def test_global_cancel_is_not_restricted_to_shortcut_kind(self):
+        cancel = self.extract()["global_drag_cancel"]
+        self.assertIsNone(cancel["source_kind_filter"])
+        self.assertEqual(cancel["held_interface_offset"], 12)
+        self.assertEqual(cancel["secondary_metadata_offset"], 25)
+        self.assertEqual(cancel["cursor_reset"], "0x6fd7cc")
+
+    def test_global_cancel_predicate_and_reset_cannot_silently_change(self):
+        original = exporter.read_va
+        for changed in [0x696D23, 0x6FD99E, 0x6FDA2F]:
+            def altered(image, address, length):
+                code = bytearray(original(image, address, length))
+                if address == changed: code[-1] ^= 1
+                return bytes(code)
+            with self.subTest(address=hex(changed)), patch.object(exporter, "read_va", altered):
+                with self.assertRaisesRegex(ValueError, "instruction at " + hex(changed)):
+                    self.extract()
 
     def test_manual_guard_offset_or_mask_cannot_silently_change(self):
         original = exporter.read_va

@@ -97,6 +97,12 @@ CHECKS = [
     (0x6FD985, "e8d6ffffff", "cancel checks source release property bit0"),
     (0x6FD990, "e893020000", "permitted cancel clears active source reference"),
     (0x65F526, "807dff017515e8ef77030084c0740c8bc6e8ec3e0000e948020000", "right press with held cursor cancels before GUI dispatch"),
+    (0x4F3F84, "a150497300c3", "global drag helper getter"),
+    (0x696D23, "e85cd2e5ff83780c00750fe851d2e5ff80781900750433c05dc3b0015dc3", "held predicate checks item interface or secondary metadata, without source-kind restriction"),
+    (0x66342B, "e8540be9ffe86fa30900", "global right cancellation invokes drag manager"),
+    (0x6FD7AA, "8b4308e8fa0a00008b4308e8de010000", "cancel copies persistent cursor to context then releases it"),
+    (0x6FD99E, "8bc3e8c7ffffff8bc3e880000000", "conditional source release is followed by cursor reset"),
+    (0x6FDA2F, "8b4008e895fdffff", "cancel reset reaches persistent cursor cleanup"),
     (0x65F388, "c745f8181b6600", "input callback record ends with661B18"),
     (0x708C8E, "8b46388983180100008b463c89831c010000", "D3D backend installs final callback as control event280"),
     (0x708DC6, "8b46388983180100008b463c89831c010000", "DDraw backend installs final callback as control event280"),
@@ -278,7 +284,17 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 9, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 10, "sample_sha256": EXPECTED_SAMPLE,
+        "global_drag_cancel": {
+            "input_branch": "0x65f526", "held_predicate": "0x696d20",
+            "helper_global": "0x734950", "held_interface_offset": 12,
+            "secondary_metadata_offset": 25, "source_kind_filter": None,
+            "dispatch": "0x663428", "manager": "0x6fd7a4",
+            "context_copy": "0x6fe2ac", "source_release": "0x6fd96c",
+            "cursor_reset": "0x6fd7cc",
+            "ordering": "right press cancels held cursor before GUI/world routing",
+            "limits": "Owner-specific release properties/callbacks are incomplete; this does not define server item disposal or inventory placement geometry.",
+        },
         "instruction_checks": evidence, "reply_registrations": registrations,
         "manual_actor_guard": {"entry_call": "0x6904d0", "predicate": "0x6946a4",
                                "flag_helper": "0x6df7f4", "actor_byte_offset": 53,
