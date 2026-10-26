@@ -1606,7 +1606,7 @@ func _draw_creature(c: Dictionary, view_x: int, view_y: int, body_alpha := 1.0) 
 	var sprite_drawn := false
 	match c_type:
 		1: sprite_drawn = _draw_monster_sprite(render_creature, cx, cy, body_alpha)
-		2: sprite_drawn = _draw_hero_sprite(c.get("gender", 0), c.get("direction", 5), c.get("action_type", 2), c.get("desp", {}), cx, cy, visual_started_ms, c.get("action_speed", 100), c.get("action_magic_id", 0), uid, c.get("y", 0), c.get("action_step", 0))
+		2: sprite_drawn = _draw_hero_sprite(c.get("gender", 0), c.get("direction", 5), c.get("action_type", 2), c.get("desp", {}), cx, cy, visual_started_ms, c.get("action_speed", 100), c.get("action_magic_id", 0), uid, c.get("y", 0), c.get("action_step", 0), body_alpha)
 		3: sprite_drawn = _draw_npc_sprite(c, cx, cy)
 	if not sprite_drawn:
 		draw_circle(Vector2(center.x + 2, center.y + 14), 10, Color(0, 0, 0, 0.3 * body_alpha))
@@ -1808,7 +1808,7 @@ func _wrap_player_say(text: String, font: Font) -> Array[String]:
 	return result
 
 
-func _draw_hero_sprite(gender: int, direction: int, action_type: int, desp: Dictionary, start_x: int, start_y: int, action_started_ms := 0, action_speed := 100, magic_id := 0, uid := 0, map_y := 0, action_step := 0) -> bool:
+func _draw_hero_sprite(gender: int, direction: int, action_type: int, desp: Dictionary, start_x: int, start_y: int, action_started_ms := 0, action_speed := 100, magic_id := 0, uid := 0, map_y := 0, action_step := 0, body_alpha := 1.0) -> bool:
 	var motion_data := _hero_motion(action_type, magic_id, desp, action_step)
 	var frame_index := _motion_frame(action_type, motion_data[1], action_started_ms, action_speed)
 	if action_type == 9:
@@ -1841,28 +1841,28 @@ func _draw_hero_sprite(gender: int, direction: int, action_type: int, desp: Dict
 	if weapon_shape > 0:
 		var weapon_gfx: int = ((weapon_shape - 1) << 9) | (motion_data[0] << 3) | direction_index
 		weapon_key = (gender << 22) | ((weapon_gfx & 0x1FFFF) << 5) | frame_index
-		_draw_sprite_frame(actor_resource.frame("weapon", weapon_key | (1 << 23)), start_x, start_y, 0.5)
-	_draw_sprite_frame(shadow, start_x, start_y, 0.5)
+		_draw_sprite_frame(actor_resource.frame("weapon", weapon_key | (1 << 23)), start_x, start_y, 0.5 * body_alpha)
+	_draw_sprite_frame(shadow, start_x, start_y, 0.5 * body_alpha)
 	var weapon_order: int = actor_resource.hero_weapon_order(motion_data[0], direction_index + 1, frame_index)
 	if weapon_key != 0 and weapon_order == 1:
-		_draw_sprite_frame(actor_resource.frame("weapon", weapon_key), start_x, start_y, 1.0)
+		_draw_sprite_frame(actor_resource.frame("weapon", weapon_key), start_x, start_y, body_alpha)
 	_draw_hero_attached_magic(uid, start_x, start_y, direction_index + 1, false)
-	_draw_sprite_frame(body, start_x, start_y, 1.0)
+	_draw_sprite_frame(body, start_x, start_y, body_alpha)
 	var layer: Dictionary = actor_resource.frame("hero", body_key | (1 << 24))
-	_draw_sprite_frame(layer, start_x, start_y, 1.0, _hero_dress_mod_color(wear))
+	_draw_sprite_frame(layer, start_x, start_y, body_alpha, _hero_dress_mod_color(wear))
 	var helmet_shape := _wear_shape(wear, 2)
 	if helmet_shape > 0:
 		var helmet_gfx: int = ((helmet_shape - 1) << 9) | (motion_data[0] << 3) | direction_index
 		var helmet_key: int = (gender << 22) | ((helmet_gfx & 0x1FFFF) << 5) | frame_index
-		_draw_sprite_frame(actor_resource.frame("helmet", helmet_key), start_x, start_y, 1.0)
+		_draw_sprite_frame(actor_resource.frame("helmet", helmet_key), start_x, start_y, body_alpha)
 	else:
 		var hair: int = desp.get("hair", 0)
 		if hair > 0:
 			var hair_gfx: int = ((hair - 1) << 9) | (motion_data[0] << 3) | direction_index
 			var hair_key: int = (gender << 22) | ((hair_gfx & 0x1FFFF) << 5) | frame_index
-			_draw_sprite_frame(actor_resource.frame("hair", hair_key), start_x, start_y, 1.0, _hero_hair_mod_color(desp))
+			_draw_sprite_frame(actor_resource.frame("hair", hair_key), start_x, start_y, body_alpha, _hero_hair_mod_color(desp))
 	if weapon_key != 0 and weapon_order == 0:
-		_draw_sprite_frame(actor_resource.frame("weapon", weapon_key), start_x, start_y, 1.0)
+		_draw_sprite_frame(actor_resource.frame("weapon", weapon_key), start_x, start_y, body_alpha)
 	_draw_hero_attached_magic(uid, start_x, start_y, direction_index + 1, true)
 	if action_type == 7:
 		_draw_attack_motion_effect(magic_id, direction, action_started_ms, start_x, start_y)
