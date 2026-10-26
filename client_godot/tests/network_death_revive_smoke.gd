@@ -45,6 +45,14 @@ func _process(_delta: float) -> void:
 	var overlay := _main.get_node("DeathOverlay") as ColorRect
 	match _stage:
 		Stage.WAIT_READY:
+			var observer_exchange := OS.get_environment("MIR3_DEATH_OBSERVER_EXCHANGE")
+			if not observer_exchange.is_empty():
+				if not FileAccess.file_exists(observer_exchange + "/subject.uid"):
+					var subject_file := FileAccess.open(observer_exchange + "/subject.uid", FileAccess.WRITE)
+					subject_file.store_string(str(GameState.player_uid))
+					subject_file.close()
+				if not FileAccess.file_exists(observer_exchange + "/observer.ready"):
+					return
 			if _aura_pending and _health_received and GameState.player_hp <= 0 and not _initial_revive_sent:
 				_submit_command("@revive")
 				_initial_revive_sent = true
@@ -148,6 +156,9 @@ func _process(_delta: float) -> void:
 			if _aura_pending and Time.get_ticks_msec() - _aura_sent_ms < 5000:
 				return
 			var live_click := InputEventMouseButton.new()
+			var observer_exchange := OS.get_environment("MIR3_DEATH_OBSERVER_EXCHANGE")
+			if not observer_exchange.is_empty() and not FileAccess.file_exists(observer_exchange + "/observer.done"):
+				return
 			live_click.button_index = MOUSE_BUTTON_RIGHT
 			live_click.pressed = true
 			live_click.position = Vector2(500, 300)
