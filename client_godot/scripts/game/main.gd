@@ -252,7 +252,7 @@ func _exit_tree() -> void:
 
 func _refresh_grabbed_item_icon() -> void:
 	var item: Dictionary = game_state.grabbed_item
-	if not item.is_empty(): game_state.grabbed_shortcut = {}
+	if not item.is_empty(): game_state.cancel_shortcut_drag()
 	if item.is_empty(): item = game_state.grabbed_shortcut.get("item", {})
 	if item.is_empty():
 		grabbed_item_icon.hide()
@@ -443,7 +443,7 @@ func _layout_fps_overlay(text: String) -> Vector2i:
 
 func _handle_mouse_click(event: InputEventMouseButton) -> void:
 	if not game_state.grabbed_shortcut.is_empty():
-		game_state.grabbed_shortcut = {}
+		game_state.cancel_shortcut_drag()
 		game_state.state_changed.emit()
 		return
 	var grid: Vector2i = world_renderer.grid_from_screen(int(event.position.x), int(event.position.y))

@@ -28,6 +28,34 @@ func clear_all() -> void:
 	for slot in SLOT_COUNT: clear(slot)
 
 
+func begin_drag(slot: int) -> Dictionary:
+	if slot < 0 or slot >= SLOT_COUNT or bindings[slot].is_empty(): return {}
+	var cursor := bindings[slot].duplicate(true)
+	cursor.source_slot = slot
+	return cursor
+
+
+func place_drag(slot: int, cursor: Dictionary) -> Dictionary:
+	var source := int(cursor.get("source_slot", -1))
+	if slot < 0 or slot >= SLOT_COUNT or source < 0 or source >= SLOT_COUNT: return cursor
+	if slot == source: return {}
+	var incoming := cursor.duplicate(true)
+	incoming.erase("source_slot")
+	var displaced := bindings[slot].duplicate(true)
+	bindings[slot] = incoming
+	if displaced.is_empty():
+		clear(source)
+		return {}
+	bindings[source] = displaced
+	var next_cursor := displaced.duplicate(true)
+	next_cursor.source_slot = source
+	return next_cursor
+
+
+func cancel_drag(cursor: Dictionary) -> void:
+	clear(int(cursor.get("source_slot", -1)))
+
+
 func resolve(slot: int, inventory: Array, held: Dictionary = {}, pending: Dictionary = {}) -> Dictionary:
 	if slot < 0 or slot >= SLOT_COUNT or bindings[slot].is_empty(): return {}
 	var binding: Dictionary = bindings[slot]

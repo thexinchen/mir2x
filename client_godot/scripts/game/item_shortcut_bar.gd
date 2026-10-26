@@ -82,6 +82,7 @@ func activate_slot(slot: int, button: int) -> int:
 	if slot < 0 or slot >= Model.SLOT_COUNT: return 0
 	if button == MOUSE_BUTTON_LEFT:
 		if not _state.grabbed_item.is_empty():
+			_state.cancel_shortcut_drag()
 			var item: Dictionary = _state.grabbed_item
 			if not _state.item_shortcuts.bind_item(slot, item, _resources.item_is_packable(int(item.itemID))): return 0
 			var present := false
@@ -91,11 +92,9 @@ func activate_slot(slot: int, button: int) -> int:
 			_state.grabbed_item = {}
 			_state.grabbed_shortcut = {}
 		elif not _state.grabbed_shortcut.is_empty():
-			_state.item_shortcuts.bindings[slot] = _state.grabbed_shortcut.duplicate(true)
-			_state.grabbed_shortcut = {}
+			_state.grabbed_shortcut = _state.item_shortcuts.place_drag(slot, _state.grabbed_shortcut)
 		elif not _state.item_shortcuts.bindings[slot].is_empty():
-			_state.grabbed_shortcut = _state.item_shortcuts.bindings[slot].duplicate(true)
-			_state.item_shortcuts.clear(slot)
+			_state.grabbed_shortcut = _state.item_shortcuts.begin_drag(slot)
 		else: return 0
 		_state.state_changed.emit()
 		slot_action_requested.emit(1, slot)

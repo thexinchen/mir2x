@@ -254,6 +254,10 @@ func _on_item_input(event: InputEvent, key: String) -> void:
 	if event.button_index not in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 		return
 	get_viewport().set_input_as_handled()
+	if event.button_index == MOUSE_BUTTON_LEFT and not _state.grabbed_shortcut.is_empty():
+		_state.cancel_shortcut_drag()
+		_state.state_changed.emit()
+		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
 		_consume_or_equip(key)
 	elif event.button_index == MOUSE_BUTTON_LEFT:
@@ -266,7 +270,7 @@ func _on_item_input(event: InputEvent, key: String) -> void:
 func _on_grid_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT and not _state.grabbed_shortcut.is_empty():
-			_state.grabbed_shortcut = {}
+			_state.cancel_shortcut_drag()
 			_state.state_changed.emit()
 			return
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -311,7 +315,10 @@ func _update_scroll_from_value() -> void:
 func _grab_item(key: String) -> void:
 	if not _bins.has(key):
 		return
-	_state.grabbed_shortcut = {}
+	if not _state.grabbed_shortcut.is_empty():
+		_state.cancel_shortcut_drag()
+		_state.state_changed.emit()
+		return
 	var bin: Dictionary = _bins[key]
 	var old_grabbed: Dictionary = _state.grabbed_item
 	var selected: Dictionary = bin.item

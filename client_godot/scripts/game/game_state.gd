@@ -551,6 +551,11 @@ func update_inventory(items: Array) -> void:
 	state_changed.emit()
 
 
+func cancel_shortcut_drag() -> void:
+	item_shortcuts.cancel_drag(grabbed_shortcut)
+	grabbed_shortcut = {}
+
+
 func start_inventory_operation(operation: Dictionary) -> void:
 	inventory_operation = operation
 	inventory_operation_cost = {}

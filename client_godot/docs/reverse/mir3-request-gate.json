@@ -500,11 +500,11 @@
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "a5e1d91377b5c6eb5ff786aadae1cc69f5c85284f3f74e82059375a184706ecb"
+        "sha256_lf": "0ede1ab78d08cfea5792df0d03b981ac721cb557b0de0e19b38731e9204bcd1c"
       },
       "godot_game_state": {
         "file": "game_state.gd",
-        "sha256_lf": "cddfb4dfc1f6e8a937c47e408533ebb14f0a7228d4b9611f0c31b63d42084d42"
+        "sha256_lf": "942bf739a0b164fe1c306bdcd19283f7f84cbab42605ed7194de3d33602e1535"
       },
       "godot_request_gate": {
         "file": "mir3_request_gate.gd",
@@ -512,15 +512,15 @@
       },
       "godot_item_shortcuts": {
         "file": "mir3_item_shortcuts.gd",
-        "sha256_lf": "0192ed08d746b067d41de699181ddb8c5efc6e0d665386924debfa896f5030e2"
+        "sha256_lf": "773bd75380b794861a7237b420fe8e7deef8df189d89aad6b8fec1631aa63345"
       },
       "godot_item_shortcut_bar": {
         "file": "item_shortcut_bar.gd",
-        "sha256_lf": "9cdba2fac04ddaeea13efaf69c3e91dfad7c8bbe4142e9e84e26f88b27d43105"
+        "sha256_lf": "d4d760eb1a64e9649a43a8959b0634d2e4cbeda5573caae7f9188b15d2a78ac6"
       },
       "godot_inventory_panel": {
         "file": "inventory_panel.gd",
-        "sha256_lf": "1397d1c111a9b6ab3768665804d3b70636abb8136c413d1a6a2e5d6f234153e1"
+        "sha256_lf": "2dcb83944a2308afde52f0e214d16b16928a0149dc8def1f7d1a82ba04cdb870"
       }
     },
     "godot_send_action": "CM_ACTION uses fixed send without a response ID",
