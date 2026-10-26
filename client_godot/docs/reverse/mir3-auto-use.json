@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -181,6 +181,31 @@
       "va": "0x5fd11b",
       "hex": "e82080ffff",
       "role": "AutoBack first path calls named item use directly, not escape/exit dispatcher"
+    },
+    {
+      "va": "0x5f9946",
+      "hex": "8b45085033d233c0e881ffffff",
+      "role": "middle MP branch falls back to grade0 with special fallback disabled"
+    },
+    {
+      "va": "0x5f99a6",
+      "hex": "8b45085033d2b801000000e81effffff",
+      "role": "large MP branch falls back to grade1 with special fallback disabled"
+    },
+    {
+      "va": "0x5f99fd",
+      "hex": "8b45085033d2b802000000e8c7feffff",
+      "role": "special MP branch falls back to grade2 with special fallback disabled"
+    },
+    {
+      "va": "0x5f9689",
+      "hex": "8b450850b801000000e8c5ffffff",
+      "role": "strong solar fallback proceeds to ordinary solar"
+    },
+    {
+      "va": "0x5f96ac",
+      "hex": "8b450850b802000000e8a2ffffff",
+      "role": "snow fallback proceeds to strong solar then ordinary solar"
     }
   ],
   "channels": [
@@ -736,7 +761,69 @@
           "pointer": "0x5f4488"
         }
       ],
-      "mp_selection_scope": "bands select5F98D4 branches; recursive medicine and special fallback still need complete extraction",
+      "mp_name_calls": [
+        {
+          "va": "0x5f98ed",
+          "hex": "b8389a5f00",
+          "name": "清心丸(小)"
+        },
+        {
+          "va": "0x5f98fb",
+          "hex": "b84c9a5f00",
+          "name": "魔法药(小)"
+        },
+        {
+          "va": "0x5f991c",
+          "hex": "b8609a5f00",
+          "name": "清心丸(中)"
+        },
+        {
+          "va": "0x5f992a",
+          "hex": "b8749a5f00",
+          "name": "清新瓶"
+        },
+        {
+          "va": "0x5f9938",
+          "hex": "b8849a5f00",
+          "name": "魔法药(中)"
+        },
+        {
+          "va": "0x5f998a",
+          "hex": "b8989a5f00",
+          "name": "清心丸(大)"
+        },
+        {
+          "va": "0x5f9998",
+          "hex": "b8ac9a5f00",
+          "name": "魔法药(大)"
+        },
+        {
+          "va": "0x5f99e1",
+          "hex": "b8c09a5f00",
+          "name": "清心丸(特)"
+        },
+        {
+          "va": "0x5f99ef",
+          "hex": "b8d49a5f00",
+          "name": "魔法药(特)"
+        },
+        {
+          "va": "0x5f966f",
+          "hex": "b8cc965f00",
+          "name": "太阳水"
+        },
+        {
+          "va": "0x5f967b",
+          "hex": "b8dc965f00",
+          "name": "强效太阳水"
+        },
+        {
+          "va": "0x5f969e",
+          "hex": "b8f0965f00",
+          "name": "万年雪霜"
+        }
+      ],
+      "mp_selection": "try current grade then recursively lower MP grades with special fallback disabled; only the outer grade may try its solar/snow fallback; grade0 never tries solar",
       "item_use": [
         "0x5f5140",
         "0x690494"

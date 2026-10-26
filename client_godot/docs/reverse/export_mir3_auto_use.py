@@ -49,6 +49,11 @@ CHECKS = [
     (0x5FE054, "8950088b500883fa067f0485d27d0533d2895008c3", "escape selector clamps both negative and greater-than6 to0"),
     (0x690A7C, "8983180d00008d957cffffffa15c9972008b008b08ff510c8b45e08983200d0000", "manual entry stores shared actor use tick and delay from item record offset100"),
     (0x5FD11B, "e82080ffff", "AutoBack first path calls named item use directly, not escape/exit dispatcher"),
+    (0x5F9946, "8b45085033d233c0e881ffffff", "middle MP branch falls back to grade0 with special fallback disabled"),
+    (0x5F99A6, "8b45085033d2b801000000e81effffff", "large MP branch falls back to grade1 with special fallback disabled"),
+    (0x5F99FD, "8b45085033d2b802000000e8c7feffff", "special MP branch falls back to grade2 with special fallback disabled"),
+    (0x5F9689, "8b450850b801000000e8c5ffffff", "strong solar fallback proceeds to ordinary solar"),
+    (0x5F96AC, "8b450850b802000000e8a2ffffff", "snow fallback proceeds to strong solar then ordinary solar"),
 ]
 
 # Each row is (channel, object offset, enable/interval/threshold push addresses).
@@ -80,6 +85,13 @@ GUI_KEY_LOADS = [
     (0x5FA3AA, "HPBackCheck2"), (0x5FA3C8, "HPBackVal2"), (0x5FA3E2, "HPBackModel2"),
     (0x5FA442, "MPBackCheck1"), (0x5FA460, "MPBackVal1"), (0x5FA47A, "MPBackModel1"),
     (0x5FA4DA, "MPBackCheck2"), (0x5FA4F8, "MPBackVal2"), (0x5FA512, "MPBackModel2"),
+]
+MP_NAME_LOADS = [
+    (0x5F98ED, "清心丸(小)"), (0x5F98FB, "魔法药(小)"),
+    (0x5F991C, "清心丸(中)"), (0x5F992A, "清新瓶"), (0x5F9938, "魔法药(中)"),
+    (0x5F998A, "清心丸(大)"), (0x5F9998, "魔法药(大)"),
+    (0x5F99E1, "清心丸(特)"), (0x5F99EF, "魔法药(特)"),
+    (0x5F966F, "太阳水"), (0x5F967B, "强效太阳水"), (0x5F969E, "万年雪霜"),
 ]
 
 
@@ -154,6 +166,16 @@ def gui_rules(sample):
         if key != expected or section != "Protect":
             raise ValueError(f"unexpected GUI config key at {address:#x}")
         keys.append({"key": key, "section": section, "va": hex(address), "hex": code.hex()})
+    mp_calls = []
+    for address, expected in MP_NAME_LOADS:
+        code = read_va(sample, address, 5)
+        if code[0] != 0xB8:
+            raise ValueError(f"unexpected MP name load at {address:#x}")
+        pointer = struct.unpack_from("<I", code, 1)[0]
+        length = struct.unpack("<I", read_va(sample, pointer - 4, 4))[0]
+        if length > 64 or read_va(sample, pointer, length).decode("gb18030") != expected:
+            raise ValueError(f"unexpected MP branch name at {address:#x}")
+        mp_calls.append({"va": hex(address), "hex": code.hex(), "name": expected})
     return {
         "configuration": {"file_family": "character.MFA", "loader": "0x5f9d94", "saver": "0x5fab00", "keys": keys,
                           "auto_and_manual": "automatic takes precedence; loader disables manual if both are set",
@@ -165,7 +187,8 @@ def gui_rules(sample):
                                "hp_selection": "scan original indexes17..0; skip weights above deficit; try adjacent equal-weight group in forward order, then continue backward; do not sort this nonmonotonic table",
                                "mp_minimum_deficit": 40, "mp_deficit_bands": [40, 110, 180, 250],
                                "mp_name_options": string_table(0x725E5C, GUI_MP_NAMES),
-                               "mp_selection_scope": "bands select5F98D4 branches; recursive medicine and special fallback still need complete extraction",
+                               "mp_name_calls": mp_calls,
+                               "mp_selection": "try current grade then recursively lower MP grades with special fallback disabled; only the outer grade may try its solar/snow fallback; grade0 never tries solar",
                                "item_use": ["0x5f5140", "0x690494"],
                                "frame_gate": "6911C0: unsigned elapsed since actor3352 > actor3360 delay, or delay0; separate from pending3000ms",
                                "delay_source": "690A7C stores actor3352;690A97 stores latest item record offset100 into actor3360, one shared actor pair rather than separate per-item timers",
@@ -195,6 +218,21 @@ def hp_candidate_order(deficit, records):
             start -= 1
         result.extend(row["name"] for row in records[start:index + 1])
         index = start - 1
+    return result
+
+
+def mp_candidate_order(deficit, rules):
+    """Replay5F9B1C/5F98D4/5F965C's automatic MP candidate ordering."""
+    if deficit < 40:
+        return []
+    names = [row["name"] for row in rules["mp_name_calls"]]
+    grade = min((deficit - 40) // 70, 3)
+    groups = [names[0:2], names[2:5], names[5:7], names[7:9]]
+    result = []
+    for index in range(grade, -1, -1):
+        result.extend(groups[index])
+    if grade:
+        result.extend(list(reversed(names[9:9 + grade])))
     return result
 
 
@@ -249,7 +287,7 @@ def extract(path, item_names=None):
                          "settings": [config_default(sample, *row) for row in defaults],
                          "actor_scalar_offset": 365 if name == "MP" else 361})
     result = {
-        "schema_version": 2, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 3, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "channels": channels,
         "book_selection": config_default(sample, 0x6C3B98, "RenewBookNowBookIndex", -1),
         "initial_medicine_tables": medicine_tables(sample),
