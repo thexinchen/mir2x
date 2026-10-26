@@ -12,12 +12,50 @@ import export_mir3_auto_use as exporter
 class AutoUseEvidenceTest(unittest.TestCase):
     def test_documented_sample(self):
         result = exporter.extract(SAMPLE)
-        self.assertEqual(len(result["instruction_checks"]), 26)
+        self.assertEqual(len(result["instruction_checks"]), 36)
         self.assertEqual(result["controller"]["timer_ms"], 50)
         self.assertEqual([r["settings"][1]["default"] for r in result["channels"]], [2500, 3500, 300, 100])
         self.assertTrue(all(r["settings"][0]["default"] == 0 for r in result["channels"]))
         self.assertEqual(result["book_selection"]["default"], -1)
         self.assertEqual(result["initial_medicine_tables"][2]["names"][:4], ["太阳水", "强效太阳水", "万年雪霜", "疗伤药"])
+        self.assertEqual(result["gui_rules"]["escape_protection"]["options"][6]["name"], "小退")
+
+    def test_gui_hp_order_preserves_nonmonotonic_original_priority(self):
+        records = exporter.gui_rules(SAMPLE.read_bytes())["automatic_recovery"]["hp_table"]
+        self.assertEqual(exporter.hp_candidate_order(29, records), [])
+        self.assertEqual(exporter.hp_candidate_order(30, records), ["急救丸(小)", "金创药(小)"])
+        self.assertEqual(exporter.hp_candidate_order(70, records)[:4], ["急救瓶", "急救丸(中)", "太阳水", "金创药(中)"])
+
+    def test_gui_hp_weight_change_rejected(self):
+        with self.changed_read(0x725E14, lambda code: code.__setitem__(0, 31)):
+            with self.assertRaisesRegex(ValueError, "HP recovery weights"):
+                exporter.extract(SAMPLE)
+
+    def test_auto_back_cannot_silently_change_to_exit_dispatch(self):
+        with self.changed_read(0x5FD11B, lambda code: code.__setitem__(1, code[1] ^ 1)):
+            with self.assertRaisesRegex(ValueError, "instruction at 0x5fd11b"):
+                exporter.extract(SAMPLE)
+
+    def test_gui_exit_option_cannot_alias_return_scroll(self):
+        original = exporter.read_va
+        def altered(sample, address, length):
+            if address == 0x72603C + 6 * 4:
+                return original(sample, 0x72603C, length)
+            return original(sample, address, length)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "GUI name table"):
+                exporter.extract(SAMPLE)
+
+    def test_gui_hp_switch_cannot_silently_read_mp_switch(self):
+        original = exporter.read_va
+        def altered(sample, address, length):
+            code = bytearray(original(sample, address, length))
+            if address == 0x5F9F11:
+                code[1:5] = original(sample, 0x5FA0BF, 10)[1:5]
+            return bytes(code)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "GUI config key"):
+                exporter.extract(SAMPLE)
 
     def changed_read(self, address, change):
         original = exporter.read_va
