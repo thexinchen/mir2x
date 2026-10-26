@@ -420,6 +420,7 @@ class Player final: public BattleObject
     private:
         bool hasInventoryItem(uint32_t, uint32_t, size_t) const;
         const SDItem &addInventoryItem(SDItem, bool);
+        void restoreReservedItem(SDItem);
 
     private:
         size_t removeInventoryItem(const SDItem &);

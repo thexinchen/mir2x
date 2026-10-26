@@ -1116,7 +1116,7 @@ corof::awaitable<> Player::net_CM_CONSUMEITEM(uint8_t, const uint8_t *buf, size_
     // applying the effect, including stale requests for an already used item.
     if(!ir || cmCI.count != 1 || !cmCI.seqID || !hasInventoryItem(cmCI.itemID, cmCI.seqID, 1)){
         fnReply(false);
-        return {};
+        co_return;
     }
 
     bool consumed = false;
@@ -1125,6 +1125,29 @@ corof::awaitable<> Player::net_CM_CONSUMEITEM(uint8_t, const uint8_t *buf, size_
     }
     else if(ir.isPotion()){
         consumed = consumePotion(cmCI.itemID);
+    }
+    else if(cmCI.itemID == DBCOM_ITEMID(u8"随机传送卷")){
+        if(!canMove(true)){
+            fnReply(false);
+            co_return;
+        }
+        // Reserve before awaiting the map: another inventory operation must
+        // not spend the same scroll while the destination is being selected.
+        auto reserved = findInventoryItem(cmCI.itemID, cmCI.seqID);
+        reserved.count = 1;
+        const auto removed = removeInventoryItem(cmCI.itemID, cmCI.seqID, 1);
+        fflassert(removed == 1);
+        {
+            const auto rollback = sgf::guard([this, &reserved, &consumed]()
+            {
+                if(!consumed){
+                    restoreReservedItem(std::move(reserved));
+                }
+            });
+            consumed = co_await requestSpaceMove(-1, -1, false, true);
+        }
+        fnReply(consumed);
+        co_return;
     }
     else{
         // TODO
@@ -1135,7 +1158,7 @@ corof::awaitable<> Player::net_CM_CONSUMEITEM(uint8_t, const uint8_t *buf, size_
         fflassert(removed == 1);
     }
     fnReply(consumed);
-    return {};
+    co_return;
 }
 
 corof::awaitable<> Player::net_CM_CONSUMEBELTITEM(uint8_t, const uint8_t *buf, size_t, uint64_t respID)
@@ -1150,19 +1173,62 @@ corof::awaitable<> Player::net_CM_CONSUMEBELTITEM(uint8_t, const uint8_t *buf, s
     const auto slot = to_d(cmCBI.slot);
     if(!(slot >= 0 && slot < 6)){
         fnReply(false);
-        return {};
+        co_return;
     }
 
     auto &item = m_sdItemStorage.belt.list.at(slot);
     if(!item){
         fnReply(false);
-        return {};
+        co_return;
     }
 
     const auto &ir = DBCOM_ITEMRECORD(item.itemID);
+    if(item.itemID == DBCOM_ITEMID(u8"随机传送卷")){
+        if(!canMove(true)){
+            fnReply(false);
+            co_return;
+        }
+        auto reserved = item;
+        reserved.count = 1;
+        if(--item.count == 0){
+            item = {};
+            dbRemoveBeltItem(slot);
+        }
+        else{
+            dbUpdateBeltItem(slot, item);
+        }
+        postNetMessage(SM_BELT, cerealf::serialize(m_sdItemStorage.belt));
+        bool moved = false;
+        {
+            const auto rollback = sgf::guard([this, slot, &reserved, &moved]()
+            {
+                if(moved){
+                    return;
+                }
+                auto &target = m_sdItemStorage.belt.list.at(slot);
+                if(!target){
+                    target = reserved;
+                }
+                else if(target.itemID == reserved.itemID && target.seqID == reserved.seqID && target.count < SYS_INVGRIDMAXHOLD){
+                    target.count++;
+                }
+                else{
+                    // A concurrent slot change must not be overwritten by a
+                    // failed use. Return the reserved scroll to inventory.
+                    restoreReservedItem(std::move(reserved));
+                    return;
+                }
+                dbUpdateBeltItem(slot, target);
+                postNetMessage(SM_BELT, cerealf::serialize(m_sdItemStorage.belt));
+            });
+            moved = co_await requestSpaceMove(-1, -1, false, true);
+        }
+        fnReply(moved);
+        co_return;
+    }
     if(!ir || !ir.isPotion() || !consumePotion(item.itemID)){
         fnReply(false);
-        return {};
+        co_return;
     }
 
     fflassert(item.count > 0);
@@ -1175,7 +1241,7 @@ corof::awaitable<> Player::net_CM_CONSUMEBELTITEM(uint8_t, const uint8_t *buf, s
     }
     postNetMessage(SM_BELT, cerealf::serialize(m_sdItemStorage.belt));
     fnReply(true);
-    return {};
+    co_return;
 }
 
 corof::awaitable<> Player::net_CM_MAKEITEM(uint8_t, const uint8_t *buf, size_t, uint64_t)

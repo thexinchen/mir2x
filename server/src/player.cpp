@@ -1815,6 +1815,14 @@ const SDItem &Player::addInventoryItem(SDItem item, bool keepSeqID)
     return addedItem;
 }
 
+void Player::restoreReservedItem(SDItem item)
+{
+    // Rollback is not a newly gained reward and must not trigger gain quests.
+    const auto &restored = m_sdItemStorage.inventory.add(std::move(item), false);
+    dbUpdateInventoryItem(restored);
+    postNetMessage(SM_UPDATEITEM, cerealf::serialize(SDUpdateItem {.item = restored}));
+}
+
 size_t Player::removeInventoryItem(const SDItem &item)
 {
     return removeInventoryItem(item.itemID, item.seqID);
