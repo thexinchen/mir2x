@@ -29,6 +29,13 @@ func _ready() -> void:
 	_expect(int(network._response_callbacks[id].expires) - Time.get_ticks_msec() in range(2990, 3001), "manual pending window is3000ms")
 	_expect(network.send_consume_belt_item(0) == ERR_BUSY and network.send_consume_item(6, 102) == ERR_BUSY, "inventory blocks both entry paths")
 	_expect(network.sent.size() == 1, "busy uses never reach transport")
+	var original_sent: int = network._item_use_sent_ms
+	network._item_use_sent_ms = Time.get_ticks_msec() - 0x100000000 - 1000
+	_expect(not network.item_use_ready() and network.item_use_ready(800) and not network.item_use_ready(-1), "readiness preserves unsigned wrap and distinct manual/automatic/Book windows")
+	_expect(network._item_use_pending_token != 0 and network._response_callbacks.has(id), "readiness alone does not replace live pending callback")
+	network._item_use_sent_ms = Time.get_ticks_msec() - 3000
+	_expect(network.item_use_ready() and not network.item_use_ready(-1), "manual equality permits retry while Book retains live pending")
+	network._item_use_sent_ms = original_sent
 	network.finish(id, NetworkClient.SM_OK)
 	_expect(network.pending_item_use.is_empty(), "matching receipt clears pending reference identity")
 	_expect(network.send_consume_belt_item(0) == OK, "success immediately permits next use without fixed cooldown")
