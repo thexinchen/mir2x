@@ -1942,6 +1942,14 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 				var elapsed := float(Time.get_ticks_msec() - game_state.player_action_started_ms) / 1000.0
 				_player_action_timer = maxf(0.001, death_duration - elapsed)
 				return
+	if uid != game_state.player_uid and creature.get("type", 0) == 2 and action_type == 2 \
+			and (previous_creature.get("action_type", 0) == 13 or not previous_creature.get("forced_action_queue", []).is_empty()):
+		# Current protocol has Stand rather than the original explicit revive
+		# command. Pair it with an observed HP0 -> positive HP transition.
+		creature["remote_revive_action"] = data.duplicate(true)
+		game_state.update_creature(uid, creature)
+		_try_finish_remote_revive(uid)
+		return
 	if previous_creature.get("action_type", 0) == 13 or not previous_creature.get("forced_action_queue", []).is_empty():
 		return
 	if previous_creature.get("monster_pending_forced_action", {}).get("type", 0) == 13:
@@ -2557,6 +2565,8 @@ func _start_creature_death_action(uid: int, action: Dictionary, creature: Dictio
 	var queue: Array[Dictionary] = _forced_correction_steps(start, target, max_step)
 	if start != target and queue.is_empty():
 		return
+	for key in ["remote_revive_action", "remote_revive_health", "remote_revive_waiting", "dead_fade_requested_ms"]:
+		creature.erase(key)
 	queue.append({"kind": "death", "action": action.duplicate(true)})
 	creature["forced_action_queue"] = queue
 	game_state.update_creature(uid, creature)
@@ -2688,6 +2698,7 @@ func _advance_creature_forced_action(uid: int) -> void:
 	if creature.get("type", 0) == 1:
 		_queue_monster_death_effect(uid, creature)
 	_play_action_seff(uid, action, creature)
+	_try_finish_remote_revive(uid)
 
 
 func _schedule_creature_idle(uid: int, action_type: int, started_ms: int, delay: float) -> void:
@@ -2711,6 +2722,10 @@ func _schedule_creature_idle_check(uid: int, action_type: int, started_ms: int, 
 func _finish_creature_action(uid: int, action_type: int, started_ms: int) -> void:
 	var creature: Dictionary = game_state.get_creature(uid)
 	if creature.is_empty() or creature.get("action_type", 0) != action_type or creature.get("action_started_ms", -1) != started_ms:
+		return
+	if action_type == 13:
+		creature.erase("remote_revive_waiting")
+		_try_finish_remote_revive(uid)
 		return
 	if not creature.get("forced_action_queue", []).is_empty():
 		_advance_creature_forced_action(uid)
@@ -2963,7 +2978,37 @@ func _handle_health(payload: PackedByteArray) -> void:
 	var reader := CerealReader.new(payload)
 	var data := reader.read_sd_health()
 	if _reader_ok(reader, "SM_HEALTH"):
+		var uid: int = data.get("uid", 0)
+		var creature: Dictionary = game_state.get_creature(uid)
+		var was_zero: bool = creature.get("health_initialized", false) and int(creature.get("hp", 0)) <= 0
 		game_state.update_entity_health(data)
+		if uid != game_state.player_uid and creature.get("type", 0) == 2 and was_zero and int(data.get("hp", 0)) > 0 \
+				and (creature.get("action_type", 0) == 13 or not creature.get("forced_action_queue", []).is_empty()):
+			creature["remote_revive_health"] = true
+			game_state.update_creature(uid, creature)
+			_try_finish_remote_revive(uid)
+
+
+func _try_finish_remote_revive(uid: int) -> void:
+	var creature: Dictionary = game_state.get_creature(uid)
+	var pending: Dictionary = creature.get("remote_revive_action", {})
+	if creature.get("type", 0) != 2 or pending.is_empty() or not creature.get("remote_revive_health", false) \
+			or int(creature.get("hp", 0)) <= 0 or creature.get("action_type", 0) != 13 \
+			or not creature.get("forced_action_queue", []).is_empty():
+		return
+	var started_ms: int = creature.get("action_started_ms", 0)
+	var duration := _creature_action_duration(13, creature.get("action_speed", 100), creature)
+	var remaining := duration - float(Time.get_ticks_msec() - started_ms) / 1000.0
+	if remaining > 0.001:
+		if not creature.get("remote_revive_waiting", false):
+			creature["remote_revive_waiting"] = true
+			_schedule_creature_idle_check(uid, 13, started_ms, duration, remaining)
+		return
+	for key in ["remote_revive_action", "remote_revive_health", "remote_revive_waiting", "dead_fade_requested_ms"]:
+		creature.erase(key)
+	creature["action_type"] = 2
+	game_state.update_creature(uid, creature)
+	_handle_action_data(pending, true)
 
 
 func _handle_exp(payload: PackedByteArray) -> void:
@@ -3332,6 +3377,8 @@ func _handle_notify_dead(payload: PackedByteArray) -> void:
 		"y": creature.get("y", 0),
 	}
 	var previous := creature.duplicate(true)
+	for key in ["remote_revive_action", "remote_revive_health", "remote_revive_waiting", "dead_fade_requested_ms"]:
+		creature.erase(key)
 	creature["action_type"] = 13
 	creature["action_started_ms"] = Time.get_ticks_msec()
 	creature["action_speed"] = 100
@@ -3353,6 +3400,8 @@ func _request_dead_fade_out(uid: int) -> void:
 	if creature_type == 1 and not _resources.monster_dead_fade_out(creature.get("monster_id", 0)):
 		return
 	if creature_type != 1 and creature_type != 2:
+		return
+	if int(creature.get("dead_fade_requested_ms", 0)) > 0:
 		return
 	creature["dead_fade_requested_ms"] = Time.get_ticks_msec()
 	game_state.update_creature(uid, creature)
