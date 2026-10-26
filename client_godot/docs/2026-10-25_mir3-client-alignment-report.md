@@ -1682,3 +1682,40 @@ python3 client_godot/docs/reverse/test_mir3_auto_use.py --sample /tmp/mir3-histo
 取证/JSON、18项负例与重放、资源导出/读取、新场景验收、报告分笔线性提交并同步104；新增源文件和场景纳入提交，旧.uid、生成的二进制元数据、构建产物、日志及104既有build_signature修改排除。ActorResource变化不在现有请求门/技能指纹的输入列表，不伪造重新生成这些无变化的指纹。
 
 证据→结论→后续路径：E100-1补齐GUI蓝药选择，E100-2阻止将声明值误作实际后端恢复公式，E100-3/E100-4证明真实元数据链已在Linux构建并由Godot读取。F100-1提供下一步运行接入的数据基础；原使用延迟字段来源、保护配置迁移及实际自动消费仍未完成，整体目标保持继续。
+
+## 批次 101：定时保护运行接入与使用延迟来源（2026-10-26）
+
+本批沿用既有样本SHA-256 eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021。新增的是helper.Set定时保护三路运行和配置，不是GUI.MFA自动恢复已经全部完成；书籍通道、原始启动条件、GUI恢复所需的逐物品延迟值仍未恢复完整。
+
+E101-1：6C0A00将193字节标准物品记录复制到转换器对象+4104，再从对象+4271读取DWORD，写到ESI+100。6C0A48使ESI=对象+4，6C0D0A返回的也是对象+4，故该值为标准记录+167→归一化记录+100，不能误读成标准记录+89或转换器对象+100。6BFB30从物品对象+16复制120字节给调用者。67F4BC注册消息4502到6845D8，后者按协商步长读取并通过4E76C8更新完整标准表；消息2109的685C48仅读取56字节摘要，不含167处字段。原值由服务器提供，离线样本不能给出每种药的实际数值；当前potion.time和Buff持续时间均不能替代。尚未直接恢复6BF7D0混合代码区域的全部装载过程，不将未解析片段当成已证实。
+
+export_mir3_auto_use.py扩展为schema4，新增8处固定指令检查，总49处；新增字段来源与相邻字段误用负例，两端20项Python测试通过。104从独立样本重新生成mir3-auto-use.json并cmp一致。原证据仍严格区分helper800ms待确认检查、人工入口3000ms检查、GUI物品使用延迟与Buff时长。
+
+E101-2：新增mir3_protection.gd按50ms检查，保持HP→MP→Special→未实现的Book通道顺序。三路默认关闭，间隔2500/3500/300ms、阈值10；比较实际HP/MP数值严格小于阈值，间隔0停用、到期相等可尝试，缺药或发送忙也推进本路尝试时间。每个药品等级先背包后腰带，再试下一等级。特殊药首项太阳水的原分支未设置停止标志，跳过当前禁用书籍通道；较高等级命中则保留下一回调进入书籍通道的顺序。使用当前实际Buff效果元数据排除缺失/不支持的药品，不根据旧名称臆造强效药映射。
+
+这是现有后端适配：紧凑背包与六格腰带替代原槽号；全角括号只做已记录的名称适配；等待连接、库存/生命初始化、加载遮罩关闭后运行，原版完整外部启停链仍待继续。没有客户端预扣药品、预测生命值或改动服务器恢复公式。
+
+E101-3：网络用药接口增加可选automatic参数，既有人工调用保持3000ms，helper调用800ms。达到本入口等待时间可替换待确认物品，旧关联回调仍保留，各回调用令牌隔离；旧成功不释放新请求。关联回包超时仍为3000ms，不把800ms当成所有回包生命周期或固定喝药冷却。替换发送失败且旧请求仍存活时恢复旧状态；即时成功/失败都立即释放匹配状态。item_use_pending_smoke通过共享背包/腰带门、800/3000差异、旧回包、替换传输失败恢复、断线及即时释放。
+
+设置→游戏→保护页增加定时保护的体力、魔法、特殊药开关及原始数值阈值、毫秒间隔。复用既有可见勾选框，按服务器端点/角色UID保存在本地mir3_helper.cfg，字段沿用RenewHP/MP/Special的IsAuto/Time/Percent；不把上方既有GUI配置43–46接成helper.Set。角色加载重新开始计时，不跨角色启用。默认关闭，书籍没有虚构可用入口。
+
+E101-4：新增mir3_protection_smoke.gd/.tscn在104通过默认值、到期/阈值边界、药品等级与库存位置顺序、特殊通道轮转、缺药计时、零间隔、不支持Buff排除、32位时钟回绕及角色配置隔离。新增network_mir3_protection_smoke.gd/.tscn使用标准测试角色id_4，在真实主场景打开配置页，以真实控件开启三路；夹具各生成一份当前ID6/10/14，用临时300ms间隔和高于当前最大值的阈值触发，分别取得匹配请求ID的实际SM_OK和库存减一。不是以模型选中或回调超时冒充服务端消费。三路成功后关闭，腰带、地图与坐标不变，隔离的测试配置文件删除，既有用户配置不改。
+
+初次联网夹具错误使用不存在的GameState.map_uid，报错并超时；修正为当前player_map_uid后headless和Xvfb均通过。窗口截图/tmp/mir3-protection101.png已取回并查看，确认可见开关、数值及列标题；本地证据G:/mir3/work/mir3-movement/protection-101.png不纳入源码提交。此处验证通过实际控件信号操作，不声称使用了物理鼠标点击。
+
+104的runtime_config_smoke、inventory_interaction_smoke、world_action_smoke、quick_bar_smoke及真实network_item_use_receipt_smoke回归通过。手工用药保留七种明确失败回包、背包/腰带成功、每次一份、拒绝时数量不变及旧无回包请求兼容。部分既有用例退出仍有ObjectDB泄漏警告，Xvfb有VSync支持警告，未把它们描述为本批修复。日志位于/tmp/mir3-protection101-*.log；网络夹具仅对标准测试账号运行，实际Buff可能持续到其正常结束。
+
+请求门指纹升至schema10，增加保护控制器和设置页来源，重算网络/主场景等快照；技能对应JSON仅更新主场景哈希。104独立重新生成两份JSON均cmp一致。服务器PID3609924未重启，本批无C++修改；前一采集确认复跑已完成server目标构建。按取证、网络、客户端、测试、报告分笔线性提交同步104；新增源文件和场景纳入，旧.uid、生成数据、截图、日志、既有build_signature修改排除。
+
+```sh
+export MIR2X_WORLD_RES="$PWD/client_godot/build/world_res"
+export MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture"
+export MIR2X_AUDIO_RES="$PWD/client_godot/build/audio"
+/home/czx/godot --headless --path client_godot res://tests/mir3_protection_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/item_use_pending_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_mir3_protection_smoke.tscn
+MIR3_PROTECTION_SCREENSHOT=/tmp/mir3-protection101.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_mir3_protection_smoke.tscn
+python3 client_godot/docs/reverse/test_mir3_auto_use.py --sample /tmp/mir3-history-unpacked.exe
+```
+
+证据→结论→后续路径：E101-1确定延迟字段来自服务端标准表而非Buff，E101-2/E101-3接入已有证据充分的helper三路定时恢复，E101-4证明在Linux实际主场景配置、持久化和服务端消费相接。F101-1是定时保护已可运行；GUI恢复的逐药延迟、书籍/逃脱完整执行、原配置编辑转换及启动条件仍需继续，不能据此宣告全部原版游戏逻辑对齐完成。
