@@ -1525,3 +1525,35 @@ MIR3_SHORTCUTS_RECONNECT=1 MIR3_SHORTCUTS_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/clien
 104的quick_bar_smoke、inventory_interaction_smoke、item_use_pending_smoke和完整world_action_smoke均通过，日志/tmp/mir3-shortcuts96-场景名.log。main和快捷栏变化后的请求门指纹、技能对照指纹已刷新，104独立生成cmp一致。服务器PID3609924继续运行；本批仅GDScript/Python/文档变更，没有C++重编译或服务器重启。退出ObjectDB与软件渲染VSync警告仍保留，不声称已修复。
 
 证据、鼠标入口修复及对应单元/指纹、实际GUI联网验证、报告分笔线性提交并同步104；旧.uid、日志、样本和既有build_signature修改排除。证据→结论→后续路径：E96-1/E96-2修正F93中未取证的右键使用假设，E96-3给出旧实现负例及释放边界，E96-4给出真实GUI、逐次服务端回报和重登录权威库存验证。F96-1使快捷鼠标操作进一步对齐原版，特殊物品动作、自动用药、完整技能与其他玩法仍待继续恢复，整体目标未完成。
+
+## 批次 97：快捷引用刷新身份、共享游标及源格使用优先级（2026-10-26）
+
+本批纠正E93/F93中“非分组引用始终绑定同一实例”的实现假设，并恢复源格与游标共享引用更新。原版非分组刷新并非永久锁住原实例：它按名称选取当前背包第一项，再替换原快捷代理内部的物品。此前Godot按seqID过滤会在旧实例消失后误删引用；拖动深拷贝还会让游标保留旧数量。现在非分组选择当前同类第一项，分组累计当前数量，拖动游标共享原引用内的物品数据。
+
+范围、授权与原样本哈希沿用scope.md和E96，报告flavor=null。E97-1：6D9384非flag2分支通过物品VMT+24取得名称，调用6DA2E8。后者从背包索引0开始比较名称字符串，首项匹配即返回该格，不比较原快捷的64位实例身份、不累加后面的同名物品；随后6D9384调用命中物品VMT+88克隆。flag2分支继续克隆并按名称总量设置数量，可为0。找不到非分组物品时，6526A0仍按待确认物品名称比较，匹配则保留已有代理而非把缓存数量改成0。
+
+E97-2：6526FB的Supports接口GUID与4F2ACD的代理接口一致，接口位于对象+24，VMT为4F2A21；method24经4F28D7调整this并分派对象虚方法12。TShortcutItem虚表4F2C50的该方法为4F3048，先传递已有标记，再调用4F2EE8，把新物品接口写到代理对象+20。因此刷新替换的是共享代理内部物品，未把快捷格的外层代理换成另一个对象。6FE12C拾起时复制该接口到游标，源格仍保留；源格刷新可被游标观察到。4F3048中的标记数值只作为接口状态保留证据，不据此发明图标透明度公式。
+
+64F598/64F5A8还明确规定：若当前持有kind7且源格号与本次使用格号相同，64F560先选择游标持有代理，否则选择快捷格代理；随后仍要通过既有物品身份/名称查找实际背包物品。清掉一个格的接口并不销毁另一个持有者，因此“源格已清”也不能直接等同于“游标不存在”。未解析出的原物品身份编码仍不等同于当前itemID/seqID。
+
+export_mir3_item_use.py升为schema8，增加上述10处指令与共享代理接口/虚方法绑定检查，累计103处指令/数据检查、两条物品回报注册。新增负例把代理setter换成空方法，必须拒绝；本机与104的13项完整性测试通过，两端独立提取cmp一致。shortcut_reference_refresh单独记录非分组、分组、共享游标、待确认保留、源键优先级及身份域限制。
+
+F97-1：Mir3ItemShortcuts仍对首次绑定的真实物品做独立快照，但begin_drag和交换/转移只复制外层字典，共享内部item字典；刷新原地更新该item，保留引用关系。不同快捷格从背包独立绑定仍彼此独立；交换后的被替换游标跟随写回原源格的那份引用，不与目的格串联。分组归零更新共享item.count，非分组缺失但同类物品正在待确认时保留已有缓存，完全缺失时只清格引用。
+
+use_slot通过新增resolve_use选择活动源游标，其他格使用当前格；无论哪条路径，实际发送前都要求解析到当前拥有的itemID/seqID，不能因源格被替换而误用另一种物品。当前“同类”仍按itemID、分组仍按packable元数据适配，原版是名称及flag2；本批恢复选择/更新规则，不宣称已证明所有跨ID同名物品、标志或64位身份数值的一一对应。
+
+E97-3：104旧76ccea2运行/tmp/shortcut-refresh97-proof.gd，在/tmp/mir3-shortcuts97-old.log同时失败于“non-grouped shortcut lost despite a current item of the same kind”和“held shortcut retained stale total after source refresh”；该负例只用本地合成数据，不改变服务器物品。新实现相同探针通过。仓库mir3_item_shortcuts_smoke扩展检查非分组第一项/不累加、同类待确认保留、共享实例/数量替换、分组归零、清格不销毁游标、源游标优先及缺少实际实例时拒绝误用替代格。交换后再刷新源格，要求被替换游标更新而目的格保持独立。
+
+E97-4：network_item_shortcuts_smoke在第一个数字键使用前持有源快捷引用，实际等待对应SM_OK及服务端数量减少一件，再等待正常state_changed驱动刷新，要求游标缓存数量与权威背包总量一致，最后点击源格结束拖动。随后九键、逐次双击消费、待确认重复拦截、死亡0键、同UID新会话清引用及重新绑定全部通过，药品总量归位、腰带不变，日志/tmp/mir3-shortcuts97-use.log。实际重新登录出现一次已知03分离重试，没有重启服务器。
+
+104实际GUI的network_shortcut_drag_smoke复跑通过，日志/tmp/mir3-shortcut-drag97.log：右键取消、交换及被替换图标、同源结束、空格移动与背包取消仍成立；实际重新登录后全部库存实例数量、腰带、地图与位置保持一致。上述联网数量验证使用分组药品，非分组换实例与代理优先级由确定性模型及原版字节证据覆盖，不冒充已做服务器装备实例轮换实验。
+
+```sh
+python3 client_godot/docs/reverse/export_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json --output /tmp/mir3-item-use97.json
+python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+MIR3_SHORTCUTS_RECONNECT=1 MIR3_SHORTCUTS_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_item_shortcuts_smoke.tscn
+```
+
+mir3_item_shortcuts_smoke、quick_bar_smoke、inventory_interaction_smoke、item_use_pending_smoke及完整world_action_smoke在104通过，日志/tmp/mir3-shortcuts97-场景名.log。模型/快捷栏变更后的请求门指纹刷新，104独立生成cmp一致；main和技能指纹未变。服务端PID3609924保持，无C++变更、重编译或重启；退出ObjectDB与软件渲染VSync警告保留。证据、运行逻辑及对应单元/指纹、实际联网断言、报告分笔线性提交，同步104；旧.uid、临时探针、日志、样本与既有build_signature修改排除。
+
+证据→结论→后续路径：E97-1/E97-2推翻F93的永久实例绑定假设并约束共享更新，E97-3给出旧版负例与当前模型边界，E97-4确认真实服务端扣量后持有游标同步且不破坏物品归属。F97-1进一步恢复引用行为，自动用药、特殊物品动作、完整技能及其余玩法仍需继续分析，整体目标未完成。
