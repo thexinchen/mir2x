@@ -2166,3 +2166,28 @@ test "$result" -eq 0
 服务器PID3708547持续运行。本批只新增联网夹具与报告，不修改生产来源，因此不重新生成已有规则/来源快照，也不重复编译C++。测试代码/场景与报告分两笔线性提交同步104，新增文件纳入，旧.uid、日志、截图、采样载荷、临时基线脚本、二进制及已有build_signature修改排除。
 
 证据→结论→后续路径：E116-1证明真实移动端点，E116-2证明集中输入来自实际服务端，F116-1/E116-3核对原报文顺序、动画中点、最终权威位置和物品不变，E116-4验证旧实现会被同一夹具拒绝。此轮补强连续移动适配的联网证据；冲撞结算、原状态语义、逐物品延迟及其他剩余逻辑仍需继续，整体目标未完成。
+
+## 批次 117：服务器技能定义字段及变长记录的安全离线解码（2026-10-26）
+
+本批继续补齐施法数据来源，不把当前资源表的mp/coolDown当作原服务器记录。范围沿用G:/mir3/work/mir3-movement/scope.md，flavor=null；样本SHA256仍为eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021。IDA旧worker明确返回不可达/会话不存在后，使用技能自带start.ps1/open.ps1重新打开解包样本，新会话42453087完成取证；没有因单纯观察超时重启忙进程。
+
+E117-1（source_ref=6940DC/6AB2E8）：原消息97以注册点691031、模式6、注册函数690D74进入6940DC，再转发技能定义载入器。原12字节头DWORD0作为有符号步长、WORD10作为记录数；步长为0时用载荷长度除以记录数的有符号整数商。每个运行时记录分配102字节并清零，只从payload+i*stride复制min(stride,83)字节，不将整段stride都当作定义字段。byte82为0进入主列表，为非0进入备用列表，恰为1还调用56385C；不把所有非0都当作同一个回调条件。随后主列表排序和备用处理另行发生，离线输出保留载荷顺序及重复ID，不伪装为最终运行时列表。
+
+E117-2（source_ref=67CFD3/67CFEB/67C9FE/67D5D7）：定义偏移0是基础ID WORD；DWORD64既单独写到actor3292，也在普通施法路径加1200、按32位回绕写到共享延迟。WORD68被零扩展后，与actor365的当前MP按有符号比较，门槛大于当前MP时退出；这里只证明人工施法准入阈值，不证明服务器实际扣除数量或当前MagicRecord.mp/mpInc公式。byte76控制普通施法/命令分支，byte81被目标解析器比较，其中等于2有明确分支；byte72保持原值，不凭位置给它增加业务枚举。此前11字节学习更新路径没有提供这些原定义值。
+
+F117-1（severity=n/a_re，confidence=high，status=source_verified，evidence=E117-1/E117-2，location=新增export_mir3_skill_definitions.py及mir3-skill-definitions.json）：新增14处原指令校验及完整消息97注册核对，导出字段/复制契约，并提供decode_definitions(header,payload)。命令行可将--header和--payload成对传入，对原始字段进行离线解码。输出含83字节补零前缀、基础ID、原延迟及+1200回绕值、原MP门槛、原模式/分支字节、主/备用列表选择，不连接服务器、不写Godot状态、不填入未经证明的每技能值。运行时93起的描述字符串、派生byte101、名称处理和后续备用列表变换未被当作网络前缀模拟。
+
+E117-3：载入器原长度门只检查min(stride,83)*count <= payload长度，却按完整stride确定每次复制的源偏移。步长100、条数2时，166字节已经通过该粗检查，但第二次从100开始复制83字节，实际需要183字节。离线工具另核对最后一次实际复制的结束位置，拒绝166字节而接受183字节；不会为了凑齐两个完整stride而误要求200字节。负步长、0步长且0条数、截断头和原检查不通过的载荷也明确拒绝；不模拟原越界读取、负复制长度或除零。正步长0条数允许空结果；隐式步长的余数字节不进入记录。
+
+E117-4：新增11项测试，本机和104通过。覆盖14处指令逐处篡改、注册处理器/调用点/模式/注册函数错误、错误样本、无符号MP65535及延迟32位回绕、1至83的每个短前缀补零边界、100步长的跨记录定位、83字节复制上限、粗检查通过而末记录越界、隐式步长除法余数、0长度定义、重复ID与两列表保留、全部256种byte81/82值及82==1回调区别、头/载荷截断及非法有符号步长，并实际启动CLI读取合成字段文件和拒绝缺少配对参数。这些输入是合成字段，不是原服务器采样，不能据测试值65535等推导某个真实技能的MP要求。
+
+104日志/tmp/mir3-skill117-tests.log、/tmp/mir3-skill117-export.log；独立提取/tmp/mir3-skill117.json与仓库JSON逐字节cmp一致。服务器PID3708547继续运行，本批无生产变更、编译或重启，不把既有联网玩法PASS算作本批新增玩法验收。提取器/JSON、测试、报告分三笔线性提交同步104；新增文件纳入，旧.uid、样本、日志、二进制及104已有build_signature修改排除。
+
+```sh
+python3 client_godot/docs/reverse/test_mir3_skill_definitions.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+python3 client_godot/docs/reverse/export_mir3_skill_definitions.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json --output /tmp/mir3-skill117.json
+cmp /tmp/mir3-skill117.json client_godot/docs/reverse/mir3-skill-definitions.json
+# 有原始字段时另加：--header message97-header.bin --payload message97-payload.bin
+```
+
+证据→结论→后续路径：E117-1恢复定义装载范围，E117-2把延迟/MP/目标入口关联到原字段，F117-1形成可复跑解码接口，E117-3/E117-4验证步长与真实读取边界。仍缺原服务器下发的各技能定义数据，故没有向Godot移植臆造的耗蓝、延迟或目标模式；这些数据、冲撞结算及其他剩余逻辑继续推进，整体目标未完成。
