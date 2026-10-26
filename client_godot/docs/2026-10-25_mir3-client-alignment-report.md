@@ -1557,3 +1557,45 @@ MIR3_SHORTCUTS_RECONNECT=1 MIR3_SHORTCUTS_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/clien
 mir3_item_shortcuts_smoke、quick_bar_smoke、inventory_interaction_smoke、item_use_pending_smoke及完整world_action_smoke在104通过，日志/tmp/mir3-shortcuts97-场景名.log。模型/快捷栏变更后的请求门指纹刷新，104独立生成cmp一致；main和技能指纹未变。服务端PID3609924保持，无C++变更、重编译或重启；退出ObjectDB与软件渲染VSync警告保留。证据、运行逻辑及对应单元/指纹、实际联网断言、报告分笔线性提交，同步104；旧.uid、临时探针、日志、样本与既有build_signature修改排除。
 
 证据→结论→后续路径：E97-1/E97-2推翻F93的永久实例绑定假设并约束共享更新，E97-3给出旧版负例与当前模型边界，E97-4确认真实服务端扣量后持有游标同步且不破坏物品归属。F97-1进一步恢复引用行为，自动用药、特殊物品动作、完整技能及其余玩法仍需继续分析，整体目标未完成。
+
+## 批次 98：自动用药配置、选择顺序及独立GUI保护入口（2026-10-26）
+
+本批从快捷引用转入自动保护，完成运行核心取证、可复现提取和当前物品目录对照，没有启用Godot自动消费。发现原版不只有一条自动保护路径：TmirHelper四路控制使用800ms待确认包装，另一个GUI保护控制器以1000ms检查并调用手动用物入口，部分选项会退出游戏。不能把现有四个默认true的mir2x开关直接接成同一个800ms定时消费器。
+
+范围、授权与原样本哈希沿用scope.md及E97，报告flavor=null。新增export_mir3_auto_use.py与mir3-auto-use.json/schema1；独立验证原始样本SHA-256、26处指令/数据、13项Protect配置读取的键名/默认值/虚表入口及三张31字节ShortString药名初始表。原始槽位、物品名称、当前itemID和seqID保持各自数值域，不据此扩充腰带协议。
+
+E98-1：6C35EC构造器将helper虚方法4装到对象+8的Timer，设置50ms；基类相应虚表项6C33D0为6C4A40。另一个100ms Timer接虚方法0，是不同入口。6C4A40按helper+17分派HP、MP、special、book四路；成功后前进一步并返回；失败也前进一步，只有新路号为3时继续在同次回调检查book，否则返回。路3前进回0。因此不是每50ms同时遍历全部四路，也不是四路固定按同一频率发送药品。
+
+6C4C60的四块配置分别在helper+104/120/136/152，块内+0启用、+4间隔、+8阈值、+12上次尝试时间。每路必须启用且间隔非0，无符号now-last达到间隔后，再比较当前标量严格小于阈值；等于阈值不触发。HP/special/book读取actor+361，MP读取+365，book另要求helper+100不为-1。进入尝试后即记录该次tick，即使找不到药品或共享待确认包装未发出新请求，也不能按“只有收到成功才开始间隔”实现。
+
+原角色.Set的Protect节默认值如下。键名的Percent不能单独证明控制器做百分比换算：此控制器直接读取actor+361/+365，与保存的整数比较，未读取最大值或进行除法；683469直接写入该HP/MP状态，另见E98-4的当前值/最大值区分。界面编辑器是否换算输入值仍需追踪，暂不把UI输入单位宣称为已完全恢复。
+
+| 通道 | 启用键（默认false） | 间隔键与默认毫秒 | 阈值键与默认整数 |
+|---|---|---|---|
+| HP | RenewHPIsAuto | RenewHPTime=2500 | RenewHPPercent=10 |
+| MP | RenewMPIsAuto | RenewMPTime=3500 | RenewMPPercent=10 |
+| special | RenewSpecialIsAuto | RenewSpecialTime=300 | RenewSpecialPercent=10 |
+| book | RenewBookIsAuto | RenewBookTime=100 | RenewBookPercent=10 |
+
+RenewBookNowBookIndex默认-1。提取器从完整AnsiString读取键名，未沿用IDA截断成RenewBookNowBoo的标签。构造器把各路last_tick设为当前tick，不能让新建控制器第一帧无视配置间隔立即触发。Timer启用/停用及派生职业helper的完整入口仍需后续核实。
+
+E98-2：6C4AF4选取三张静态初始表，每表8项、每项31字节。HP非空项依次为金创药(小)、金创药(中)、强效金创药；MP依次为魔法药(小)、魔法药(中)、强效魔法药；special为太阳水、强效太阳水、万年雪霜、疗伤药，其余初始项为空。6C4EB0从原背包槽6查到51，6C4FB8查原腰带槽0到5，两者使用CompareStringA(locale0x400,NORM_IGNORECASE)比较名称。mode0对每个品级先查背包、再查腰带，才递归下一个品级；HP/MP从品级0开始。special先尝试太阳水的背包/腰带，再从品级1继续。不能实现成“扫完背包全部品级后再看腰带”。运行时修改这些初始表的入口尚未追踪。
+
+E98-3：当前Godot资源目录item_name.m2xmeta共1194项。十个原药名中，太阳水、强效太阳水、万年雪霜有直接同名项（当前ID14/15/38）；四个小/中红蓝药在仅统一全角/半角括号后可对应（当前ID6/7/10/11）。强效金创药、强效魔法药、疗伤药暂无该规则下的对应项，不把当前“大”药自动当成原“强效”药，也不从名称推出恢复量相等。JSON记录资源清单SHA-256及每一候选项，标明exact或parenthesis_only；括号处理是当前目录适配，不声称等于原CompareStringA所有语言学规则。
+
+E98-4：5FD040是另一GUI保护控制器，使用自身+884记录tick，无符号经过1000ms才检查；其actor+361当前HP与+369最大HP明确分开，MP对应+365/+373。它先检查一个物品选择，再检查+808的HP保护和+832/+856的MP保护，带自身开关、阈值和选择项。5FE004将选择6交给66D4F0显式退出，其他项经过5F5140查物品并调用690494的手动用物入口。因此E90的800ms只适用于已确认的helper路径，不能扩大为所有自动保护的统一窗口。GUI保护的配置读写、启用条件、选择表及与helper的并行关系未完全恢复；本批保留为后续必须追踪的路径，未用猜测将退出项当作药品。
+
+F98-1：对照当前实现，RuntimeConfigPanel的保护页只有43—46四个布尔开关及UnusedWaitSeconds控件；common/src/sdruntimeconfig.hpp的相应mir2x默认值为true，Godot默认布尔回退也为true。该页没有原四路独立间隔、阈值或book选择配置，main._process目前未接入上述原版控制器。缺口是实际运行逻辑与配置结构，不是仅修改四个中文标签。本批没有改这些运行代码或协议，也没有消耗任何角色药品；接入前应先恢复两个控制器的配置所有权/启用边界，并明确三种未对应药品及book动作的实际适配。
+
+E98-5：test_mir3_auto_use.py的10项检查在本机和104通过，负例覆盖未知样本、间隔相等边界被改成排除、阈值有符号比较变更、默认间隔/配置键被替换、ShortString越界/非零填充、品级顺序交换、以及目录截断；目录测试还要求不能把强效药错误对应为“大”药。104从自己的原始样本和物品目录独立提取，与仓库JSON逐字节cmp一致，Python模块编译通过。首次cmp发现Windows默认CRLF与Linux LF不同，提取器改为显式LF后复跑通过；未将首次失败计为一致性通过。
+
+```sh
+python3 client_godot/docs/reverse/export_mir3_auto_use.py --sample /tmp/mir3-history-unpacked.exe --item-names client_godot/build/world_res/sprites/item_name.m2xmeta --output /tmp/mir3-auto-use98.json
+cmp client_godot/docs/reverse/mir3-auto-use.json /tmp/mir3-auto-use98.json
+python3 client_godot/docs/reverse/test_mir3_auto_use.py --sample /tmp/mir3-history-unpacked.exe
+python3 -m py_compile client_godot/docs/reverse/export_mir3_auto_use.py client_godot/docs/reverse/test_mir3_auto_use.py
+```
+
+本批只新增取证工具、校验、JSON及报告，未改变GDScript、C++或资源映射，不重复宣称已做自动用药GUI/联网验收或服务器重编译。服务器PID3609924保持。工具/提取结果、负例测试、报告分笔线性提交并同步104；旧.uid、日志、样本及104原有build_signature改动排除。
+
+证据→结论→后续路径：E98-1/E98-2给出helper配置/调度/选择规格，E98-3约束当前物品名称适配，E98-4揭示必须独立恢复的GUI保护路径，E98-5使核心证据可重跑。F98-1明确尚未实现的自动保护配置与运行链路；下一步继续5FD040相关界面、持久化和激活入口取证，再接入实际Godot消费。自动用药及整体游戏逻辑对齐仍未完成。
