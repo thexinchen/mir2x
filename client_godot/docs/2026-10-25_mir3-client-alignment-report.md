@@ -1959,3 +1959,33 @@ MIR3_HELD_GAIN_SCREENSHOT=/tmp/mir3-held109.png xvfb-run -a /home/czx/godot --ma
 ```
 
 证据→结论→后续路径：E109-1将人工入口条件限定为真实字段及掩码，防止未经证明地改变死亡用药；E109-2先复现并修复手持物品的数量增量返回，E109-3核对真实回包反馈及重复回报幂等，E109-4覆盖相邻界面、快捷槽和完整动作回归。该标志位的业务含义、原位移动作对应、其他传送结算、GUI逐物品延迟及冲撞仍需继续取证和实现，整体对齐目标保持进行。
+
+## 批次 110：人工使用标志的服务端描述来源及离线解码（2026-10-26）
+
+继续E109的actor byte53 mask8，追踪实际写入路径而不按经验给它命名。新增 export_mir3_actor_description.py、mir3-actor-description.json 及校验测试。本批只新增原版来源取证和离线解码能力，没有改变当前Godot物品使用、角色状态、协议或服务器结算。样本SHA256仍为eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021，报告flavor=null。
+
+E110-1：6DC45C以rep movsd复制16个DWORD（64字节）到actor+40，因此actor+53就是描述第13字节。它对非本机演员另将description[0]==3写到actor760；本机演员跳过此额外赋值。本批不将760命名为某个当前状态或将description[0]编号直接当作Godot枚举。6DF7F4仍只测试actor53的8位掩码，其业务含义未证明，且该条件已知作用于人工690494，不能未经单独取证就套到自动药或Book入口。
+
+E110-2：恢复三个服务端入口的实际复制范围：
+
+| 原消息 | 处理器 | 描述来源 | mask8字节位置 |
+| --- | --- | --- | --- |
+| 41 | 687460 | 至少76字节payload，已知演员；payload+12完整64字节，并先写actor128 | payload+25 |
+| 50 | 68875C | 至少130字节payload；先清零64字节临时描述，只复制payload+57开始的20字节，再用于当前本机演员 | payload+70 |
+| 1500 | 68281C | header WORD6指定snapshot字段长度，归一化为88字节；描述位于snapshot+24 | snapshot+37 |
+
+1500使用48F298：只有流包含声明字段长度时才复制min(声明长度,88)，短字段尾部补零，长字段跳过多余部分。因此标志字节在声明长度37时仍为补零，长度38才来自输入。离线snapshot解码输入是原流封装之后的字段，不是直接把TCP包、压缩数据或当前mir2x报文当88字节结构。流不足时工具拒绝，不模拟原调用者在读取失败后可能使用未初始化目的区的行为。
+
+E110-3：提取器验证15处指令，核对三条注册的消息、处理器、注册调用点、注册函数和registration_ecx（41/1500为6，50为14），导出schema1字段契约。提供message41/message50/snapshot1500三种离线解码函数；命令行支持--payload与--payload-kind成对传入，snapshot1500另需--field-length。输出保留原64字节描述hex及原始flag字节，只将已证明的mask8判断标为manual_use_guard_set，semantic_name继续为null，不添加HP0或当前Buff映射。
+
+E110-4：10项测试覆盖原样本/指令篡改、注册处理器/调用点/模式错误、三种来源的全部256个flag字节、41的完整64字节与DWORD字段、50仅复制20字节并清44字节尾、1500在0/24/37/38/87/88/100等长度的复制/补零/消费范围、截断与非法WORD长度、错误样本，以及真实启动命令行读取payload文件。测试数据为合成字段，不是原服务器流量捕获；不会据此声称状态语义已恢复。
+
+本机与104的10项测试通过，104独立生成 /tmp/mir3-actor-description110.json 与仓库JSON cmp一致，日志 /tmp/mir3-actor110-export.log、/tmp/mir3-actor110-tests.log。服务器PID3708547仍在运行，无生产变更，因此本批未重复编译或运行既有玩法场景，未把此前联网PASS算成本批新玩法验证。提取器/JSON、校验测试、报告分笔线性提交同步104，旧.uid、样本、日志、二进制及已有build_signature修改排除。
+
+```sh
+python3 client_godot/docs/reverse/export_mir3_actor_description.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json --output /tmp/mir3-actor-description110.json
+python3 client_godot/docs/reverse/test_mir3_actor_description.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+cmp /tmp/mir3-actor-description110.json client_godot/docs/reverse/mir3-actor-description.json
+```
+
+证据→结论→后续路径：E110-1确定写入归属，E110-2把标志关联到三个原网络字段，E110-3/E110-4提供可用于后续原始payload对照的解码与完整性验证。当前SM_PLAYERWLDESP结构不同，尚未建立对应字段；不能仅凭服务端描述来源就给Godot加一个自拟的禁止状态。该状态的业务解释、位移动作对应、传送目的地结算、逐物品延迟和冲撞等仍需继续推进，整体目标未完成。
