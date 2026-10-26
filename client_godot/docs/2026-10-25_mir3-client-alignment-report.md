@@ -1219,3 +1219,41 @@ MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/buil
 ```
 
 证据→结论→后续路径：E86-1为独立目标指针、条件历史写入与按UID清理；E86-2为解析和后续门控顺序；E86-3为旧实现失败、新实现专项及实际换图/重连通过。F86-1补齐已确认许可技能的独立历史状态，源代码、测试/指纹、报告分三笔线性提交，旧.uid和临时日志排除。其余原版目标模式、未知服务器字段以及此前资源、减伤/吸收/时长等缺口继续保留，整体目标未完成。
+
+## 批次 87：远端玩家复活回报与死亡展示生命周期（2026-10-26）
+
+本批复核演员移除/尸体状态时发现实际玩法缺陷：远端玩家复活后，观察端即使收到正HP和真实Stand，仍被“尸体忽略后续动作”分支固定在动作13。本机控制自己的复活正常，不能据此推断观察其他玩家也正常。已在104双客户端复现并修正，且验证提前复活不能跳过已有死亡纠偏和死亡动作。
+
+E87-1：原版0x6DB2F0对27、1316、1321在0x6DB355/0x6DB359清演员+124死亡及+156死亡展示标记，再调用光环校准；其他普通动作在死亡分支中不会按活人处理。原版这些编号不等于当前mir2x ActionType编号，+156也没有在本批被误称为当前alpha淡出值。当前服务器Player::onRevive经既有Lua触发及dispatchAction/reportAction发Stand，健康包另外更新；因此本批以当前协议的实际健康恢复和Stand组合适配复活，没有凭空给当前协议增加原版编号。
+
+E87-2：新增network_remote_revive_smoke观察端，既有network_death_revive_smoke可通过MIR3_DEATH_OBSERVER_EXCHANGE启用握手。被观察者保持在线，观察端先确认其已知且有正HP，再允许真实@die/@revive流程；观察端必须看到该UID实际HP0、死亡动作、恢复正HP和后续Stand，最后检查自己的演员状态恢复为2，且没有残留纠偏或淡出。UID经文本保存，避免JSON浮点数损失64位UID。该流程没有把观察端状态强制改为活人来代替网络验证。
+
+104旧7f0fe8b运行新增夹具失败：/tmp/mir3-remote-revive87.U4t9sJ观察日志为“positive HP and real Stand left remote actor dead:13”，被观察者自己的复活仍通过。新实现普通模式/tmp/mir3-remote-revive87.m7YrsT通过；纠偏模式/tmp/mir3-remote-revive87.OLduHE也通过。纠偏模式仅在观察端将演员显示位置移到真实可走的四或六格外，服务器人物位置不改；要求随后真实死亡回报驱动纠偏，健康已恢复时仍观察到死亡动作，最终回到实际权威位置。两端都正常退出，被观察者服务器位置(407,126)、观察者(405,118)保持；复活HP为现有服务器规则产生的1，没有宣称恢复某个更早的HP值。
+
+F87-1：远端玩家的死亡或死亡纠偏期间收到Stand，先保存在演员的remote_revive_action。只有已初始化健康实际从HP0变为正数，才确认remote_revive_health；正HP单独到达、Stand单独到达、死亡前残留的正HP都不能让尸体直接复活。两者到达顺序均可处理。已有纠偏队列先完成，死亡动画剩余时间通过既有带UID/动作类型/开始时间校验的完成回调等待；之后再应用所保存的权威Stand。当前协议若缺少所需健康转换或Stand证据，会保留死亡状态而不推测复活；原版显式复活动作的全部业务规则尚未移植。
+
+新死亡开始及已确认复活都会清理上一生命周期的复活候选和dead_fade_requested_ms，避免复活后再次死亡继承旧淡出时间。重复淡出通知现在保留首次请求时间；当前原生Hero::deadFadeOut和ClientMonster::deadFadeOut仅在fadeOut为0时设1，为这项当前协议适配提供直接对照，未据此声称原版MIR3使用同一alpha曲线。
+
+新增remote_revive_smoke通过真实健康负载解码和动作处理，覆盖HP/Stand两种顺序、单独包拒绝、旧正HP拒绝、真实可走路径的死亡纠偏、等待死亡动画、移除后同UID替换不接受旧完成回调、重复淡出不重启及下一次死亡清理。104 headless及Xvfb窗口均通过。world_action_smoke、self_server_move_queue_smoke、mir3_removed_target_smoke、aura_lifecycle_smoke、mir3_target_history_smoke通过；实际network_request_gate_smoke的移动、长按、重连和十秒延迟读取也通过并恢复原位。既有Xvfb VSync及ObjectDB退出警告未作为本批新缺陷处理。
+
+可在104仓库根目录按以下流程重跑双客户端纠偏模式；普通模式去掉MIR3_REMOTE_REVIVE_CORRECTION变量。脚本账户沿用既有测试夹具，测试会执行实际死亡/复活。
+
+```sh
+export MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio"
+export MIR3_DEATH_OBSERVER_EXCHANGE="$(mktemp -d /tmp/mir3-remote-revive.XXXXXX)"
+export MIR3_REMOTE_REVIVE_CORRECTION=1
+timeout 35 /home/czx/godot --headless --path client_godot res://tests/network_death_revive_smoke.tscn > "$MIR3_DEATH_OBSERVER_EXCHANGE/subject.log" 2>&1 &
+subject_pid=$!
+for attempt in $(seq 1 100); do test -s "$MIR3_DEATH_OBSERVER_EXCHANGE/subject.uid" && break; sleep .1; done
+timeout 30 xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_remote_revive_smoke.tscn
+observer_result=$?
+wait "$subject_pid"
+subject_result=$?
+test "$observer_result" -eq 0 && test "$subject_result" -eq 0
+```
+
+main变化后的请求门及技能对照指纹已刷新，104独立生成与仓库JSON一致。本批无C++变更，服务器PID3558161持续运行，没有为客户端修正重启服务。实现、测试/指纹、报告分三笔线性提交，旧.uid、临时日志及游戏资产排除。
+
+关于本批起始的可见范围调查：0x679674包含按X/Y绝对差13及20的条件，0x6DB9A0又按演员+137的5/12/24值分流；这不是已证明的统一尸体距离或原版服务器流送半径。本批没有将当前服务器SYS_VIEWR=15的范围盲目替换为13或20，相关分类语义继续保留待查。
+
+证据→结论→后续路径：E87-1为原版显式复活和当前服务器回报来源；E87-2为真实双客户端负例/正例及纠偏模式；E87-3为顺序、旧状态和回调隔离边界回归。F87-1关闭当前适配中“自己已复活、别人仍看作尸体”的确定性缺陷。原版更多复活规则、演员分类/范围、技能模式、资源及服务器数值缺口继续保留，整体目标未完成。
