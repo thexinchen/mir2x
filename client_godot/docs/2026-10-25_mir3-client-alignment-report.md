@@ -2076,3 +2076,30 @@ cmp /tmp/mir3-impulse113.json client_godot/docs/reverse/mir3-impulse-animation.j
 服务器PID3708547仍在运行。本批没有生产源码变更、编译或重启，不把上批Godot联网PASS当成本批新增玩法验证。提取器/JSON、测试、报告分三笔线性提交同步104；旧.uid、样本、日志、截图、二进制及已有build_signature修改排除。
 
 证据→结论→后续路径：E113-1恢复接收字段，E113-2连接队列与帧域，E113-3排除初始化翻译表的低编号重映射，F113-1明确原反馈到原动画的对应而保留当前协议边界，E113-4/E113-5提供可复跑解码与负例。还需确定原反馈与真实技能/推移场景的业务对应、当前服务端结算及其他剩余逻辑，整体对齐目标继续进行。
+
+## 批次 114：本机角色连续权威移动中的重复边丢步（2026-10-26）
+
+E114-1：沿用批次113已核验的原6DB054队列追加证据，比对Godot本机角色的_player_server_action_queue。原函数将收到的动作作为记录加入演员列表，不按当前正在播放的坐标全局去重。当前mir2x普通客户端走路不回显自身，但Player::randomMove及队伍跟随会通过reportAction向自身发送服务器驱动移动。若报文在客户端一帧内集中处理，A→B→A的边序列可能在第一段尚未播放完时全部进入接收入口；不能因为最后一段坐标与第一段相同就判为重复。此处是当前协议适配与队列不变量，不宣称原6/7/9/37已经映射成当前ACTION_MOVE。
+
+F114-1（severity=n/a_re，confidence=high，status=fixed，evidence=E114-1/E114-2，location=client_godot/scripts/game/main.gd::_handle_action_data）：原入口先以_matches_active_move匹配正在播放的动作，早于检查后续队列。因此“16→17、17→16、16→17、stand17”在首段播放时到达，第三段被丢弃，最终从16直接套用stand17，缺少再次前进的动画。修复仅将本机角色的活动动作去重限定在后续队列为空时；队列非空则按接收顺序进入既有追加路径，仍由队尾比较抑制相邻相同报文。立即重复当前动作不重启动画，相邻队尾重复不膨胀队列，穿插返回后的同一条边得以保留。远端角色原有判定、瞬移清队列及动作计时逻辑未改。
+
+E114-2：扩展self_server_move_queue_smoke，在生产SM_ACTION解码入口投递当前协议编码的上述循环，同时加入立即重复首段和连续重复第三段。修复前/tmp/mir3-cycle114-before.log明确失败于队列应有3项及第三段应为移动而非stand。修复后检查首段时间戳不变、返回先播放、再次前进后才stand、最终队列清空。循环后两段由真实_process帧推进，并在第三段开始0.2秒后检查renderer.player_draw_grid().x位于16和17之间，防止只检查最终坐标而漏掉跳格。
+
+104无窗口/tmp/mir3-cycle114-headless-final.log及Xvfb/tmp/mir3-cycle114-window.log通过；截图/tmp/mir3-cycle114.png已取回G:/mir3/work/mir3-movement/server-cycle-114.png并查看，记录第三段行走中帧。夹具设置的是离线角色和比奇地图，报文为受控重放，不是原服务器流量，也不是在线捕获到的循环。原有真实帧首/次移动插值、长按暂停、延迟拾取取消、移动后死亡/复活顺序、瞬移/切图清队列覆盖继续通过。
+
+E114-3：self_space_move_smoke、mir3_movement_smoke、mir3_request_gate_smoke及完整world_action_smoke在104通过，日志/tmp/mir3-cycle114-场景名.log。network_movement_rejection_smoke使用id_3实际发送无效起点，收到reportStand后清旧路线而保留按住的右键，再实际走到相邻格；第二次拒绝回复证明移动被服务器接受，随后返回405,118并由第三次reportStand核实。普通移动没有自身回显。此联网回归验证拒绝恢复及正常走路，不被用作循环权威包实测证据。
+
+E114-4：network_inventory_refresh_smoke使用id_4实际完成407,126↔408,126四次行走，每次以只读SQLite连接检查服务端数据库坐标；未重建不变的背包控件。随后真实新增/消费一份药并匹配SM_OK，数量回到基线、人物归位407,126。日志/tmp/mir3-cycle114-network_inventory_refresh_smoke.log。只读探测不写数据库，药效可能改变HP，不承诺恢复旧HP。本轮成功日志检查未见SCRIPT ERROR/ERROR，Xvfb的VSync提示仍保留。
+
+E114-5：仅main的生产来源变化，请求门、技能对应及位移动画三份JSON重算来源哈希；原指令规则未更改。在104分别独立生成/tmp/mir3-request114.json、/tmp/mir3-skill114.json、/tmp/mir3-impulse114.json，与仓库逐份cmp一致。服务器PID3708547持续运行，本批无C++修改、编译或重启。生产修复与指纹、动作队列测试、报告分三笔线性提交同步104；旧.uid、日志、截图、样本、二进制及既有build_signature修改排除。
+
+沿用批次104资源环境复跑：
+
+```sh
+/home/czx/godot --headless --path client_godot res://tests/self_server_move_queue_smoke.tscn
+MIR3_SERVER_CYCLE_SCREENSHOT=/tmp/mir3-cycle114.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/self_server_move_queue_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_movement_rejection_smoke.tscn
+MIR3_TEST_SERVER_DB=$PWD/build/Release/mir2x.db3 /home/czx/godot --headless --path client_godot res://tests/network_inventory_refresh_smoke.tscn
+```
+
+证据→结论→后续路径：E114-1提供队列顺序依据，E114-2先复现F114-1再通过真实渲染帧检查修复效果，E114-3/E114-4提供不同角色的真实走路与服务器位置验证，E114-5保持来源快照可复跑。冲撞结算、原反馈业务命名、逐物品延迟及其他剩余逻辑仍需继续推进，整体对齐目标未完成。
