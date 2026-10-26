@@ -13,6 +13,17 @@ func _run() -> void:
 		_submit_command("@revive")
 		if not await _wait(func(): return GameState.player_hp > 0, "live protection actor"): return
 	var helper: RefCounted = _main.get_mir3_protection()
+	# Original helper is created on the first actor-status packet, before the
+	# inventory/loading gates used by this backend adapter permit dispatch.
+	helper.load_role("")
+	GameState.inventory_initialized = false
+	_main.get_node("MapLoadingOverlay").show()
+	_main.call("_process_mir3_protection")
+	if helper.role.is_empty() or not helper.last_request.is_empty():
+		_fail("first initialized health did not start helper while loading stayed guarded")
+		return
+	GameState.inventory_initialized = true
+	_main.get_node("MapLoadingOverlay").hide()
 	var panel: Control = load("res://scenes/game/panels/runtime_config.tscn").instantiate()
 	_main.add_child(panel)
 	panel.call("_select_main_page", 3)
@@ -23,7 +34,9 @@ func _run() -> void:
 	var origin := Vector2i(GameState.player_x, GameState.player_y)
 	var map_uid: int = GameState.player_map_uid
 	var belt_before: Array = GameState.belt.duplicate(true)
-	for channel in 3:
+	var repetitions := clampi(int(OS.get_environment("MIR3_PROTECTION_REPEAT")), 1, 10)
+	for iteration in 3 * repetitions:
+		var channel := iteration % 3
 		var item_id: int = [6, 10, 14][channel]
 		var before := count_item(item_id)
 		NetworkClient.send_make_item(item_id, 1)
@@ -56,8 +69,15 @@ func _run() -> void:
 	if GameState.belt != belt_before or GameState.player_map_uid != map_uid or Vector2i(GameState.player_x, GameState.player_y) != origin:
 		_fail("automatic recovery changed belt/map/position")
 		return
+	# Let the final potion's suspended timer resume after the deferred callable
+	# was removed, including Buff expiration before normal actor logout.
+	var wait_for_expiration := not OS.has_environment("MIR3_PROTECTION_FAST_LOGOUT")
+	if wait_for_expiration: await get_tree().create_timer(3.5).timeout
+	if not NetworkClient.is_connected_to_server():
+		_fail("server disconnected during final potion timer/expiration")
+		return
 	DirAccess.remove_absolute(CONFIG)
-	print("NETWORK MIR3 PROTECTION PASS: real settings persistence, HP/MP/special timed requests, matching wire SM_OK, one item each, unchanged belt/map/position")
+	print("NETWORK MIR3 PROTECTION PASS: rounds=%d expiration_wait=%s; health starts helper before inventory/map dispatch gates, real settings persistence, HP/MP/special timed requests, matching wire SM_OK, one item each, unchanged belt/map/position" % [repetitions, wait_for_expiration])
 	_finished = true
 	NetworkClient.disconnect_from_server()
 	get_tree().quit()
