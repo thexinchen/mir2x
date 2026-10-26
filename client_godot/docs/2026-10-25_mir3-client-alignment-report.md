@@ -1881,3 +1881,27 @@ cmp /tmp/mir3-impulse-animation106.json client_godot/docs/reverse/mir3-impulse-a
 ```
 
 证据→结论→后续路径：E106-1/E106-2把原动画限制关联到具体帧表、反向位移及端点行为，E106-3明确当前动作对应仍不足，E106-4为后续实现提供可复核的指令和数据契约。未把仅有数字相同或显示相似当成玩法等价；后续仍需恢复原服务端消息的具体业务来源和当前协议的对应方式，再接入动画限制与冲撞结算。整体Godot对齐目标继续进行。提取器/JSON、测试、报告分笔线性提交同步104，旧.uid及生成二进制、样本、日志均排除，保留104已有build_signature修改。
+
+## 批次 107：修复移动期间背包反复重建（2026-10-26）
+
+原位移动作的当前协议对应仍未证明，本批没有凭数字给瞬移或施法增加300/1000ms限制。在核对移动期间UI行为时发现当前Godot自己的状态更新问题：inventory_panel._refresh直接连接全局state_changed，任何行走、HP或无关状态变化都free整个ItemGrid并重建所有按钮及说明文本。这不是原版玩法数值规则；本批修复此适配开销，保持已有背包操作、物品结算及原输入逻辑。
+
+E107-1：新增 inventory_refresh_smoke.gd/.tscn，在33件物品、120次位置/HP更新中，旧代码实际创建3960个物品按钮，同一按钮实例已被替换，测试按预期失败。日志 /tmp/mir3-inventory107-before.log，单轮同步耗时204193us。生产面板新增包含物品/格子布局、滚动行及有效选择项的深副本快照；值相同时保留按钮、悬停和说明文本。金币、操作模式/标题/按钮、报价仍在快照检查前刷新，不因物品不变而停更。真实内容或布局变化时沿用原重建逻辑，不缓存网络请求结果。
+
+E107-2：最终同一33件/120次夹具创建按钮0个，单轮3513us；两次时间仅为该固定同步夹具的测量，不代表整场游戏帧率或所有配置的加速比。测试验证悬停遮罩及说明文本实例保留、金币独立刷新、原地修改堆叠数量、嵌套耐久数组变化、进入/退出交易选择、报价变化、拖起和放置后位置更新。原 inventory_interaction_smoke（含滚动、整理、Tooltip及交易/修理检查）和 quick_bar_smoke 均通过，日志 /tmp/mir3-inventory107-场景名.log。快照用深拷贝，避免原地更改物品字典或嵌套数组时被当成未变。
+
+E107-3：新增 network_inventory_refresh_smoke.gd/.tscn，在104使用标准id_4测试角色打开生产背包，四次往返(407,126)↔(408,126)，要求每段正常路径完成且控件实例不变。通过MIR3_TEST_SERVER_DB指定当前测试服务器数据库，Python sqlite3以mode=ro读取该在线角色的fld_map/fld_mapx/fld_mapy，逐段核对真实服务端持久化端点。探针按角色实际名字参数绑定查询，不写数据库，也不拿本地预测或SM_OK本身冒充位置接受证据。随后生成一瓶现有药，通过生产背包使用方法消费，要求真实请求ID匹配SM_OK及数量回到本轮基线；背包新增物品时也必须实际刷新。
+
+夹具初版用CM_QUERYCORECORD查询自己，但现有服务端明确过滤AimUID==UID，等待超时；改为只读DB证据后又发现Godot JSON数组元素为float、直接与int数组比较不相等，修正为逐个按float数值精确比较，未截断小数或放宽坐标断言。这些失败运行不计PASS，未改生产协议来迁就测试。最终无窗口及Xvfb运行通过，四段数据库位置均匹配；Xvfb最终日志 /tmp/mir3-inventory107-window-final.log。截图 /tmp/mir3-inventory107.png 取回 G:/mir3/work/mir3-movement/inventory-refresh-107.png 查看，物品、数量、背包布局及起点坐标正常。测试调用生产方法/GUI信号，未声称进行了物理鼠标操作；测试药物实际效果可能改变HP，不承诺恢复测试前HP。
+
+E107-4：完整 world_action_smoke 与 network_random_scroll_smoke 在104通过，覆盖现有走路/追击/施法/采矿等动作、手工随机卷各入口及拒绝用例。请求门JSON仅更新inventory_panel来源哈希，两端独立重生成并cmp一致。服务器PID3708547持续运行，本批无C++变更、编译或重启。既有退出ObjectDB警告及Xvfb VSync提示仍存在，不作为已修复项目。生产修复与快照、离线回归、联网回归、报告分笔线性提交同步104，新增源文件/场景纳入，旧.uid、日志、截图、服务器二进制及已有build_signature修改排除。
+
+复跑资源环境沿用批次104；联网夹具另需明确指定本机测试服务器DB：
+
+```sh
+/home/czx/godot --headless --path client_godot res://tests/inventory_refresh_smoke.tscn
+MIR3_TEST_SERVER_DB="$PWD/build/Release/mir2x.db3" /home/czx/godot --headless --path client_godot res://tests/network_inventory_refresh_smoke.tscn
+MIR3_TEST_SERVER_DB="$PWD/build/Release/mir2x.db3" MIR3_INVENTORY_REFRESH_SCREENSHOT=/tmp/mir3-inventory107.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_inventory_refresh_smoke.tscn
+```
+
+证据→结论→后续路径：E107-1先复现移动/HP更新导致的控件重建，E107-2验证保留控件时相关数据和交互仍更新，E107-3以生产联网路径及服务器DB证明实际走路与用药，E107-4覆盖已有动作回归。此项减少Godot适配层开销，不把它包装成完整原版玩法对齐；原位移动作对应、其他卷轴服务端结算、GUI逐物品延迟与冲撞仍需后续推进，整体目标保持进行。
