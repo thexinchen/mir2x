@@ -1859,3 +1859,25 @@ MIR3_BOOK_SCREENSHOT=/tmp/mir3-book105.png xvfb-run -a /home/czx/godot --max-fps
 ```
 
 证据→结论→后续路径：E105-1/E105-2限定自动Book的调度与名称/时间/待确认规则，E105-3/E105-4覆盖模型、真实结算及同角色重登录的时钟保留，E105-5修复并复核用户指定的采集奖励检查，E105-6确认既有入口回归。当前实现一个有后端支持的自动逃脱品种；其他回城/传送石、GUI逐物品延迟、冲撞等缺口仍需后续取证和实现，整体对齐目标继续进行。
+
+## 批次 106：推进原版位移动画与施法限制的对应取证（2026-10-26）
+
+本批继续追踪尚未接入的300/1000ms动画限制，新增 export_mir3_impulse_animation.py、mir3-impulse-animation.json 和负例测试。样本仍为同一SHA256 eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021；普通逆向报告 flavor=null。其他回城卷当前仅有候选名称，没有确定的原服务端回城坐标/行会归属结算，不能凭名称添加客户端选点规则。
+
+E106-1：重新通过IDA读取原6DE6E0的动作分支、6DE650表选择及6DE674记录消费。原6/7共用分支6DEA27；原9为6DE981，普通走路11为6DE8B3，原37为6DEB49。actor byte57等于3选727A00，否则72789C；没有把此字节命名为职业或当前job。原9在actor byte760为0时选表+0x0C，与普通行走的常规记录相同；非零时选+0xE4。原6/7通常选表+0x24，只有global729D10所指对象byte64与actor byte760同时非零才选固定727C6C。原37选表+0x24并创建、附加原效果参数235；没有把235当当前magicID235。
+
+七个实际记录均有6帧、方向间隔4；普通表的+0x0C/+0x24/+0xE4基帧为80/240/1520，另一表为1600/1680/2080，特殊6/7记录基帧1760。+0x0C记录间隔字段200ms，其余本次记录100ms。6DE674复制12字节记录，用DWORD0加actor108及direction*(BYTE4+BYTE5)得到起帧，末帧为起帧+BYTE4-1，WORD6写actor216。DWORD8本次不消费，含义不命名。这些字段不等于已证明的整段动作耗时，也不替代当前speed或物品延迟。
+
+E106-2：原6DD9D8中6/37正向推进帧，9反向推进帧；6/9/37允许在尚未到端点时一次推进第二帧。6FED1C的实际分支表为[4,5,6,7,0,1,2,3]，原9初始化和后续位移插值采用此反方向。位移参数为1格，6DBA68按48/32像素格大小计算显示偏移。动作7不属于300ms限制集合，且后段恢复已保存的actor坐标，不能因为共用初始帧就将其与6等同。此前已取证的6/37每动画更新刷新300ms限制、9回到起帧时设置1000ms限制继续引用原setter/predicate校验。
+
+E106-3：当前common/src/actionnode.hpp中5=PUSHMOVE、6=SPACEMOVE、9=SPELL；Godot动作3/5按步长共用行走/跑步帧，6采用权威瞬移，9采用施法帧。当前Hero::motionValid还明确拒绝MOTION_PUSHBACK/PUSHBACKFLY。以上不足以证明原9与当前5的协议语义等价，更不能把原6的300ms限制附到当前瞬移上。新JSON记录这些生产源码的LF哈希及明确比较结论，本批未修改生产玩法、请求协议或传送坐标。
+
+E106-4：提取器校验24处指令、动作跳转表、七个帧记录及八方向反向表；8项测试含逐指令篡改、6/7/9/11/37分支改写、帧数/间隔/保留字段变动、特殊记录、反向表错误及错误样本拒绝。早期核对修正了手写相对call字节及11分支起址，最终均使用IDA指令与样本实际表确认，错误提取运行不算通过。本机与104的8项测试通过，104独立生成 /tmp/mir3-impulse-animation106.json 与提交JSON cmp一致。服务器PID3708547持续运行，本批无C++修改、编译或重启，也没有将既有联网PASS冒充本批新增玩法验证。
+
+```sh
+python3 client_godot/docs/reverse/export_mir3_impulse_animation.py --sample /tmp/mir3-history-unpacked.exe --output /tmp/mir3-impulse-animation106.json
+python3 client_godot/docs/reverse/test_mir3_impulse_animation.py --sample /tmp/mir3-history-unpacked.exe
+cmp /tmp/mir3-impulse-animation106.json client_godot/docs/reverse/mir3-impulse-animation.json
+```
+
+证据→结论→后续路径：E106-1/E106-2把原动画限制关联到具体帧表、反向位移及端点行为，E106-3明确当前动作对应仍不足，E106-4为后续实现提供可复核的指令和数据契约。未把仅有数字相同或显示相似当成玩法等价；后续仍需恢复原服务端消息的具体业务来源和当前协议的对应方式，再接入动画限制与冲撞结算。整体Godot对齐目标继续进行。提取器/JSON、测试、报告分笔线性提交同步104，旧.uid及生成二进制、样本、日志均排除，保留104已有build_signature修改。
