@@ -488,7 +488,7 @@
     "source_snapshots": {
       "godot_network": {
         "file": "network_client.gd",
-        "sha256_lf": "1a9808b83d652122f111d663297c2298135b076dcb65013376ea5e02a695a715"
+        "sha256_lf": "336ac8338eee443c7fd25c6cfdbda8836cfa2e76e844448465f9b0501a4eee7f"
       },
       "native_playerop": {
         "file": "playerop.cpp",
@@ -496,7 +496,7 @@
       },
       "native_playernet": {
         "file": "playernet.cpp",
-        "sha256_lf": "2f7b77648ad47aee69a336403c9eeac9c1bdb123241b4e5dda7dc8fd1a0c6cc7"
+        "sha256_lf": "dbc853a256db71244feac1f2ee21071ea3baf47fd6bbaa5d601fe098e597c338"
       },
       "godot_main": {
         "file": "main.gd",

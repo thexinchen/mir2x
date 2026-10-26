@@ -48,8 +48,9 @@ func activate_slot(slot: int, button: int) -> int:
 		var item := _belt_item(slot)
 		if item.is_empty():
 			return ACTION_NONE
+		if NetworkClient.send_consume_belt_item(slot) == ERR_BUSY:
+			return ACTION_NONE
 		AudioService.play_seff_at(_resources.item_sound_effect(int(item.get("itemID", 0))), 0, 0, 0, 0)
-		NetworkClient.send_consume_belt_item(slot)
 		slot_action_requested.emit(ACTION_CONSUME, slot)
 		return ACTION_CONSUME
 	if button != MOUSE_BUTTON_LEFT:

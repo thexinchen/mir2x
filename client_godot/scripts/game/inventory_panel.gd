@@ -345,8 +345,11 @@ func _consume_or_equip(key: String) -> Error:
 	var item: Dictionary = _bins[key].item
 	var item_type: String = _resources.item_type(int(item.get("itemID", 0)))
 	if item_type in ["恢复药水", "强化药水", "技能书"]:
+		var error := NetworkClient.send_consume_item(item.get("itemID", 0), item.get("seqID", 0), 1)
+		if error == ERR_BUSY:
+			return error
 		_play_item_sound(int(item.get("itemID", 0)))
-		return NetworkClient.send_consume_item(item.get("itemID", 0), item.get("seqID", 0), 1)
+		return error
 	var wear_types := {"衣服": 1, "头盔": 2, "武器": 3, "鞋": 4, "项链": 5, "手镯": 6, "戒指": 8}
 	if wear_types.has(item_type):
 		_play_item_sound(int(item.get("itemID", 0)))

@@ -159,6 +159,8 @@ var _receive_buffer := PackedByteArray()
 var _last_status := StreamPeerTCP.STATUS_NONE
 var _next_response_id := 1
 var _response_callbacks: Dictionary = {}
+var _item_use_serial := 0
+var _item_use_pending_token := 0
 var _message_dispatch_paused := false
 var _deferred_messages: Array[Dictionary] = []
 
@@ -173,8 +175,10 @@ func _process(_delta: float) -> void:
 			StreamPeerTCP.STATUS_CONNECTED:
 				connection_changed.emit(true, "已连接服务器")
 			StreamPeerTCP.STATUS_ERROR:
+				_item_use_pending_token = 0
 				connection_changed.emit(false, "连接服务器失败")
 			StreamPeerTCP.STATUS_NONE:
+				_item_use_pending_token = 0
 				connection_changed.emit(false, "服务器连接已断开")
 	if status != StreamPeerTCP.STATUS_CONNECTED:
 		return
@@ -191,6 +195,7 @@ func connect_to_server() -> Error:
 	if status == StreamPeerTCP.STATUS_CONNECTED or status == StreamPeerTCP.STATUS_CONNECTING:
 		return OK
 	_peer = StreamPeerTCP.new()
+	_item_use_pending_token = 0
 	_receive_buffer.clear()
 	_last_status = StreamPeerTCP.STATUS_NONE
 	var host := str(ProjectSettings.get_setting("network/server_host", "127.0.0.1"))
@@ -209,6 +214,7 @@ func disconnect_from_server() -> void:
 	_peer.disconnect_from_host()
 	_receive_buffer.clear()
 	_response_callbacks.clear()
+	_item_use_pending_token = 0
 	_message_dispatch_paused = false
 	_deferred_messages.clear()
 
@@ -487,17 +493,41 @@ func send_drop_item(item_id: int, seq_id: int, count: int) -> Error:
 	return _send_fixed_message(CM_DROPITEM, payload)
 
 
-func send_consume_item(item_id: int, seq_id: int, count: int = 1) -> Error:
+func send_consume_item(item_id: int, seq_id: int, count: int = 1, callback := Callable()) -> Error:
 	var payload := PackedByteArray()
 	payload.resize(10)
 	payload.encode_u32(0, item_id)
 	payload.encode_u32(4, seq_id)
 	payload.encode_u16(8, clampi(count, 0, 0xFFFF))
-	return _send_fixed_message(CM_CONSUMEITEM, payload)
+	return _send_item_use_request(CM_CONSUMEITEM, payload, callback)
 
 
-func send_consume_belt_item(slot: int) -> Error:
-	return _send_u16(CM_CONSUMEBELTITEM, slot)
+func send_consume_belt_item(slot: int, callback := Callable()) -> Error:
+	var payload := PackedByteArray()
+	payload.resize(2)
+	payload.encode_u16(0, slot)
+	return _send_item_use_request(CM_CONSUMEBELTITEM, payload, callback)
+
+
+func _send_item_use_request(head: int, payload: PackedByteArray, callback: Callable) -> Error:
+	_expire_responses()
+	if _item_use_pending_token != 0:
+		return ERR_BUSY
+	_item_use_serial += 1
+	var token := _item_use_serial
+	_item_use_pending_token = token
+	var complete := func(reply_head: int, reply_payload: PackedByteArray):
+		if _item_use_pending_token == token:
+			_item_use_pending_token = 0
+		if callback.is_valid():
+			callback.call(reply_head, reply_payload)
+	# Original manual slots enter690494's shared3000ms pending check.
+	# Inventory remains authoritative here, so failure/timeout requires no
+	# optimistic quantity rollback. A stale callback cannot release a newer use.
+	var error := _send_request(head, payload, false, complete, 3000)
+	if error != OK and _item_use_pending_token == token:
+		_item_use_pending_token = 0
+	return error
 
 
 func send_make_item(item_id: int, count: int = 1) -> Error:

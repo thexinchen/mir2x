@@ -76,6 +76,11 @@ func _ready() -> void:
 		_fail("original slot hover overlay mismatch")
 		return
 	AudioService.last_seff_id = AudioService.INVALID_SEFF_ID
+	NetworkClient.set("_item_use_pending_token", 707)
+	if quick_bar.call("activate_slot", 0, MOUSE_BUTTON_RIGHT) != QuickBarScript.ACTION_NONE or AudioService.last_seff_id != AudioService.INVALID_SEFF_ID:
+		_fail("pending item use replayed quick-slot sound or accepted another use")
+		return
+	NetworkClient.set("_item_use_pending_token", 0)
 	if quick_bar.call("activate_slot", 0, MOUSE_BUTTON_RIGHT) != QuickBarScript.ACTION_CONSUME or AudioService.last_seff_id != resources.item_sound_effect(potion_id):
 		_fail("right-click consume route mismatch")
 		return
