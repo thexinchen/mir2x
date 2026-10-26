@@ -2131,3 +2131,38 @@ MIR3_REMOTE_MOVE_SCREENSHOT=/tmp/mir3-remote115.png xvfb-run -a /home/czx/godot 
 ```
 
 证据→结论→后续路径：E115-1定位远端移动顺序缺口，E115-2先复现F115-1再核对两段真实渲染帧和纠正尾部保留，E115-3检查打断及死亡复活边界，E115-4提供双客户端活动回归，E115-5保持证据快照一致。冲撞结算、原状态语义、逐物品延迟及其他剩余逻辑继续推进，整体对齐目标未完成。
+
+## 批次 116：真实双角色移动报文的集中调度验证（2026-10-26）
+
+本批补齐批次115明确保留的验证缺口：新建network_remote_move_batch_smoke.gd/.tscn，用两名真实联网角色产生并集中处理实际SM_ACTION，不再仅用本地编码报文检查队列。原6DB054追加语义仍为参考，测试承载的是当前mir2x协议；不把当前ACTION_MOVE3称作原消息6/7/9/37。范围沿用原case授权，flavor=null；未改生产逻辑或服务器规则。
+
+E116-1：actor使用id_4，observer使用id_3，各自独立保护配置。两者先真实登录并等待地图、库存、腰带及健康初始化完成。actor通过实际地图可走性/占位选择相邻格，本轮选中407,126↔407,125，随后四次调用生产走路入口，逐段等待移动结束并用只读SQLite连接核对服务端端点。每段的x/y来自实际服务端数据库，不只是本地预测值；不写数据库、不造物、不消费。UID在共享JSON中使用十进制字符串，避免Godot JSON浮点数丢失64位UID低位。
+
+E116-2：观察端HoldMain只暂存选定peer的实际SM_ACTION中2/3/5类型载荷，其他报文照常交给生产入口。actor四段均已完成后，observer核对恰有四个真实MOVE及其起终点交替顺序，再将原PackedByteArray逐一、不改字段地交给生产_on_server_message，在一个调度批次中释放。actor保持在线等待观察端完成，避免提前离线删除演员使验证失效。这模拟的是客户端调度延迟后集中处理，不是网络层丢包、TCP重排或原服务器抓包。
+
+F116-1（severity=n/a_re，confidence=high，status=verified，evidence=E116-1/E116-2/E116-3，location=批次114/115的移动去重及远端队列适配）：集中释放四个真实报文后，首段起点/终点仍保留，后续至少三段排队，往返后的重复边未丢失。实际_process帧0.2秒后用渲染器移动时钟计算首段进度，本轮为0.349998，严格处于0与1之间。随后按三个交替端点观察第二至第四段，最终idle且队列清空，远端显示位置与服务端原位一致。
+
+E116-3：两轮当前版本验证通过：首轮双方无窗口，日志/tmp/mir3-remote116-actor.log、/tmp/mir3-remote116-observer.log；加入实际帧中点和报文留存后，actor无窗口、observer以Xvfb运行，日志/tmp/mir3-remote116-actor-final.log、/tmp/mir3-remote116-observer-final.log均PASS且无SCRIPT ERROR/ERROR。最终共享目录/tmp/mir3-remote116-final.GcQbUw含actor.json、wire-moves.json及双方完成标志。原始载荷hex取回G:/mir3/work/mir3-movement/remote-batch-116-wire.json，SHA256=58337a6f5ceddf463b9e81312ba6d6ac9a04e3086d738e865e8c4777ed97147c；此为当前协议实际载荷，不含原外层传输帧，不提交到源码库。
+
+截图/tmp/mir3-remote116.png取回G:/mir3/work/mir3-movement/remote-batch-116.png并核看。为让远端演员处于可见区域，截图时观察端短暂暂停_process并将摄像机中心对准该演员的绘制位置，截图后恢复；没有修改观察端人物坐标或发送移动请求。最终双方分别核对原库存实例数量、腰带、穿戴、地图及自身数据库坐标，id_4回407,126，id_3保持405,118。截图操作不作为摄像机自动跟随玩法的验收。
+
+E116-4：为确认夹具确实能检出问题，单独从Git 06263cc导出修复前main到临时测试脚本，只有observer的HoldMain继承该旧脚本；actor与所有生产文件仍使用当前版本。再次真实生成同样四段移动，observer明确失败于“batch overwrote first leg or lost repeated return edges”，日志/tmp/mir3-remote116-observer-before.log；actor四段数据库检查均成功，随后因等待observer完成超时退出，日志/tmp/mir3-remote116-actor-before.log。此为预期负例，不能算当前版本失败或成功。actor已在等待前归位，失败清理仍保留条件性空间移动归位；三个临时对照脚本/场景运行结束后已删除，未覆盖生产文件、未重启服务器。
+
+沿用批次104资源环境，两个进程必须使用同一个新建空共享目录，并设置只读探测路径：
+
+```sh
+export MIR3_TEST_SERVER_DB=$PWD/build/Release/mir2x.db3
+export MIR3_REMOTE_BATCH_EXCHANGE=$(mktemp -d /tmp/mir3-remote-batch.XXXXXX)
+MIR3_REMOTE_BATCH_ROLE=actor /home/czx/godot --headless --path client_godot res://tests/network_remote_move_batch_smoke.tscn & actor=$!
+MIR3_REMOTE_BATCH_ROLE=observer /home/czx/godot --headless --path client_godot res://tests/network_remote_move_batch_smoke.tscn & observer=$!
+result=0
+wait "$actor" || result=$?
+wait "$observer" || result=$?
+test "$result" -eq 0
+```
+
+需分别检查两个退出状态及PASS；不能只看actor的日志。观察端另可设置MIR3_REMOTE_BATCH_SCREENSHOT并用Xvfb保存图像。输入前提是两个标准测试角色处于同一地图、附近可互见且有相邻可走格。本批未声称跨地图、严重拥塞、断线中途恢复或所有动作类型都已覆盖。
+
+服务器PID3708547持续运行。本批只新增联网夹具与报告，不修改生产来源，因此不重新生成已有规则/来源快照，也不重复编译C++。测试代码/场景与报告分两笔线性提交同步104，新增文件纳入，旧.uid、日志、截图、采样载荷、临时基线脚本、二进制及已有build_signature修改排除。
+
+证据→结论→后续路径：E116-1证明真实移动端点，E116-2证明集中输入来自实际服务端，F116-1/E116-3核对原报文顺序、动画中点、最终权威位置和物品不变，E116-4验证旧实现会被同一夹具拒绝。此轮补强连续移动适配的联网证据；冲撞结算、原状态语义、逐物品延迟及其他剩余逻辑仍需继续，整体目标未完成。
