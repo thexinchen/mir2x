@@ -1,5 +1,32 @@
 extends "res://tests/network_item_use_receipt_smoke.gd"
 
+var _reconnecting := false
+var _reconnected := false
+var _same_uid_reset := false
+var _expected_uid := 0
+
+
+func _message(head: int, payload: PackedByteArray) -> void:
+	if _reconnecting and head == NetworkClient.SM_ONLINEOK:
+		var online := Protocol.decode_sm_online_ok(payload)
+		if int(online.uid) != _expected_uid:
+			_fail("reconnected to another character")
+			return
+		_inventory_received = false
+		_belt_received = false
+		var action: Dictionary = online.action
+		GameState.set_player_online({"uid": online.uid, "name": online.name, "gender": online.gender, "job": online.job, "map_uid": online.mapUID, "x": action.x, "y": action.y, "direction": action.direction})
+		_same_uid_reset = _all_shortcuts_clear() and GameState.grabbed_shortcut.is_empty()
+		_reconnected = true
+		return
+	super._message(head, payload)
+
+
+func _all_shortcuts_clear() -> bool:
+	for binding in GameState.item_shortcuts.bindings:
+		if not binding.is_empty(): return false
+	return true
+
 
 func _run() -> void:
 	if not await _wait(func(): return _inventory_received and _belt_received and GameState.player_health_initialized and not _main.get_node("MapLoadingOverlay").visible, "initial shortcut map/inventory"): return
@@ -69,6 +96,35 @@ func _run() -> void:
 	if GameState.belt != belt_before:
 		_fail("inventory shortcuts altered belt storage")
 		return
+	if OS.has_environment("MIR3_SHORTCUTS_RECONNECT"):
+		_expected_uid = GameState.player_uid
+		_reconnecting = true
+		NetworkClient.disconnect_from_server()
+		await get_tree().process_frame
+		NetworkClient.connect_to_server()
+		if not await _wait(func(): return _reconnected and _inventory_received and _belt_received and GameState.inventory_initialized and not _main.get_node("MapLoadingOverlay").visible, "same-character re-login"): return
+		if not _same_uid_reset or not _all_shortcuts_clear():
+			_fail("same-character new session inherited old shortcut references")
+			return
+		await get_tree().process_frame
+		for slot in 10:
+			if not bar.get_node("Slot%d" % slot).tooltip_text.is_empty() or bar.get_node("Slot%d" % slot).get_child_count() != 1:
+				_fail("old shortcut icon survived new-session inventory refresh")
+				return
+		var before_key := int(NetworkClient.get("_next_response_id"))
+		var empty_key := InputEventKey.new()
+		empty_key.keycode = KEY_0
+		empty_key.pressed = true
+		_main.call("_unhandled_input", empty_key)
+		if int(NetworkClient.get("_next_response_id")) != before_key or _count() != initial:
+			_fail("cleared shortcut consumed inventory after re-login")
+			return
+		var current := _item()
+		inventory.call("_grab_item", "%d:%d" % [ITEM_ID, current.seqID])
+		if int(bar.call("activate_slot", 9, MOUSE_BUTTON_LEFT)) != 1 or _count() != initial:
+			_fail("new session could not bind an inventory reference again")
+			return
+		print("NETWORK SHORTCUT SESSION RESET PASS: same UID new login clears ten references, late inventory cannot restore them, old zero key sends nothing, new binding works")
 	print("NETWORK ITEM SHORTCUTS PASS: ten real inventory bindings, digits1-0 each consume one with matching wire receipt, duplicate suppression, all references refresh, belt untouched, fixture quantity restored, dead_zero=%s" % dead_key)
 	_finished = true
 	NetworkClient.disconnect_from_server()
