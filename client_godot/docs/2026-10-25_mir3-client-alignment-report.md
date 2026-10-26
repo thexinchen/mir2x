@@ -1989,3 +1989,33 @@ cmp /tmp/mir3-actor-description110.json client_godot/docs/reverse/mir3-actor-des
 ```
 
 证据→结论→后续路径：E110-1确定写入归属，E110-2把标志关联到三个原网络字段，E110-3/E110-4提供可用于后续原始payload对照的解码与完整性验证。当前SM_PLAYERWLDESP结构不同，尚未建立对应字段；不能仅凭服务端描述来源就给Godot加一个自拟的禁止状态。该状态的业务解释、位移动作对应、传送目的地结算、逐物品延迟和冲撞等仍需继续推进，整体目标未完成。
+
+## 批次 111：真实物品拖动的右键取消与采集规则复核（2026-10-26）
+
+E111-1：继续使用IDA核对原输入65F4C4。65F526分支在GUI/世界路由之前检查右键及696D20，后者通过4F3F84取得全局734950，判断helper+12接口非空或helper+25元数据非零，没有只允许source kind7的条件。663428调用6FD7A4，先由6FE2AC复制持久游标到操作上下文，再经6FD998执行条件性来源释放6FD96C和游标清理6FDA2C→6FD7CC。来源释放仍受property bit0控制，不能将它解释为无条件删除真实库存、丢地或消费。其他来源的属性及回调未全部恢复，取消音效与格子恢复算法未宣称为原版已证实规则。
+
+mir3-item-use.json升至schema10，增加global_drag_cancel及6处指令校验，累计112处。新增全局谓词/清理链负例，连同既有检查本机和104均17项通过。104独立提取四份JSON（物品使用、请求门、技能对应、位移动画）与仓库逐份cmp一致；后三份仅更新被修改生产文件的来源哈希。样本SHA256仍为eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021，flavor=null。
+
+F111-1：现有main._input只对grabbed_shortcut处理全局右键取消，真实grabbed_item会继续进入GUI或世界处理。离线inventory_cancel_smoke在修复前确实失败，日志/tmp/mir3-cancel111-before.log。修复扩展相同入口，真实物品通过InventoryPanel.cancel_grabbed_item复用当前放回路径，优先原格子，被占用则寻找空位；同时清除未发送的地面输入并消费该事件，不截断已提交的动作计时。当前后端的腰带/穿戴抓取已先将物品放入库存，因此取消这些游标适配为放回背包，不私自重新装备。此处没有新增服务器协议或奖励逻辑。
+
+E111-2：新增离线fixture覆盖药品原格子/数量恢复、多格武器原格子被占后的无重叠回退、两个动作计时器保留、快捷引用取消与真实所有权隔离、空游标不操作。在104通过，日志/tmp/mir3-cancel111-inventory_cancel_smoke.log。既有inventory_interaction_smoke、mir3_item_shortcuts_smoke、inventory_refresh_smoke及world_action_smoke通过，涵盖背包放置、快捷引用、控件保留及走路/攻击/拾取等动作检查。退出ObjectDB警告仍保留，未当作已修复问题。
+
+E111-3：新增network_inventory_cancel_smoke，使用角色已有药品及多格物品，通过Input.parse_input_event生成GUI右键按下/释放，分别覆盖拖着药品时点击另一物品、隐藏背包时在世界点击、真实腰带抓取后在空腰带格点击。前两者无服务器状态准备操作；腰带用例先真实装备再真实抓取，取消阶段才要求不产生额外请求。逐次核对游标清空、实例数量映射、请求序号不变，世界用例另检查坐标/路径/地面输入。随后同UID重新登录，检查服务器库存实例、总数量、腰带、穿戴、地图和位置。腰带往返允许服务器分配新的seqID，比较基线采用真实抓取结果，不伪造原实例编号。
+
+无窗口/tmp/mir3-cancel111-network.log与Xvfb/tmp/mir3-cancel111-window.log均通过。截图/tmp/mir3-cancel111.png取回G:/mir3/work/mir3-movement/inventory-cancel-111.png并查看，背包内物品归位、鼠标无持有物、角色位于407,126。截图不是原版客户端截图，生成输入也不等于物理鼠标操作。network_shortcut_drag_smoke及network_item_shortcuts_smoke联网回归通过，十键和真实GUI双击消费仍正常，夹具恢复原数量。已知角色分离03短重试后成功，未重启服务器绕过。
+
+E111-4：用户再次确认“沿用现有掉落表，将肉类延后到采集时发放”。核对monster.cpp已有死亡只抽一次、肉类留尸体、采集领取不重抽的实现，无需重复修改规则。本轮104顺序复跑network_corpse_harvest_smoke通过：正常击杀、活体拒绝、死亡不落肉/不入包、尸体保留、采集获得1份、重复领取无增量，归位407,126，日志/tmp/mir3-cancel111-network_corpse_harvest_smoke.log。本次1份是实际抽取结果，不是固定奖励承诺；奖励保留于测试角色。双人争抢沿用批次105已有验证，本批没有把单人复跑表述为新双人测试。缺失音效02000140警告仍存在。
+
+服务器PID3708547保持运行。本批没有C++修改、重新编译或重启，实际运行了104的Godot客户端及现有服务器。按原版证据、生产修复及来源指纹、离线测试、联网测试、报告分五笔线性提交；新增gd/tscn均纳入，旧.uid、日志、截图、样本和104已有build_signature修改排除。
+
+资源环境沿用批次104，复跑入口：
+
+```sh
+python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+/home/czx/godot --headless --path client_godot res://tests/inventory_cancel_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_inventory_cancel_smoke.tscn
+MIR3_INVENTORY_CANCEL_SCREENSHOT=/tmp/mir3-cancel111.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_inventory_cancel_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_corpse_harvest_smoke.tscn
+```
+
+证据→结论→后续路径：E111-1证明取消入口不限于快捷引用，F111-1据此修复真实物品路由遗漏，E111-2/E111-3覆盖界面回退及服务器所有权一致，E111-4复核用户指定采集规则。其他原版状态语义、逐物品延迟、冲撞及传送结算缺口仍需继续取证，整体对齐目标保持进行。
