@@ -648,6 +648,7 @@ func _on_action_connection_changed(connected: bool, _message: String) -> void:
 func _on_creature_removed(uid: int) -> void:
 	if uid == 0:
 		return
+	world_renderer.forget_actor_target(uid)
 	if uid == _inspection_uid:
 		_clear_player_inspection()
 	# 6799BE–679A5B clears matching target pointers when an actor leaves.

@@ -2116,9 +2116,31 @@ func _record_actor_target(uid: int, creature_type: int, map_y: int, action_type:
 	}
 
 
+func forget_actor_target(uid: int) -> void:
+	_actor_target_rects.erase(uid)
+	_corpse_target_rects.erase(uid)
+	if _mouse_focus_uid == uid:
+		_mouse_focus_uid = 0
+	if _magic_focus_uid == uid:
+		_magic_focus_uid = 0
+	if _follow_focus_uid == uid:
+		_follow_focus_uid = 0
+	if _attack_focus_uid == uid:
+		_attack_focus_uid = 0
+
+
+func _target_actor_selectable(uid: int, include_dead: bool) -> bool:
+	if game_state == null:
+		return false
+	if uid == game_state.player_uid:
+		return include_dead or game_state.player_action_type != DEAD_ACTION
+	var actor: Dictionary = game_state.get_creature(uid)
+	return not actor.is_empty() and (include_dead or int(actor.get("action_type", 0)) != DEAD_ACTION)
+
+
 func focus_uid_at_screen(screen_position: Vector2, allow_player := false, include_dead := false) -> int:
 	if _mouse_focus_uid != 0 and _actor_target_rects.has(_mouse_focus_uid) \
-			and (allow_player or _mouse_focus_uid != game_state.player_uid):
+			and (allow_player or _mouse_focus_uid != game_state.player_uid) and _target_actor_selectable(_mouse_focus_uid, include_dead):
 		var retained: Dictionary = _actor_target_rects[_mouse_focus_uid]
 		if retained.rect.has_point(screen_position):
 			return _mouse_focus_uid
@@ -2131,6 +2153,8 @@ func focus_uid_at_screen(screen_position: Vector2, allow_player := false, includ
 		for uid_value in targets:
 			var uid: int = uid_value
 			if not allow_player and uid == game_state.player_uid:
+				continue
+			if not _target_actor_selectable(uid, include_dead):
 				continue
 			var target: Dictionary = targets[uid]
 			if target.rect.has_point(screen_position) and int(target.map_y) >= best_y:
