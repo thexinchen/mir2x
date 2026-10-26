@@ -207,14 +207,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	if _hovered_magic_id == 0:
 		return
-	# ImMainUI::processHUDEvent() claims visible quick-bar slots before the skill
-	# board can bind a hovered magic to the same numeric key.
+	# Original67E2D8 claims digit item keys without checking slot visibility.
+	# Current six belt keys keep that priority while the floating bar is closed.
 	if event.keycode >= KEY_1 and event.keycode <= KEY_6:
 		var main := get_parent()
 		var quick_bar: Control = null
 		if main != null:
 			quick_bar = main.get_node_or_null("%QuickBar") as Control
-		if quick_bar != null and quick_bar.visible:
+		if quick_bar != null:
 			return
 	var key: int = Shortcuts.event_key(event)
 	if key == 0:

@@ -97,7 +97,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		var quick_bar: Control = null
 		if main != null:
 			quick_bar = main.get_node_or_null("%QuickBar") as Control
-		if quick_bar != null and quick_bar.visible:
+		if quick_bar != null:
 			return
 	get_viewport().set_input_as_handled()
 

@@ -300,7 +300,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not event.is_pressed() or event.is_echo():
 		return
-	if event is InputEventKey and quick_bar.visible:
+	if event is InputEventKey:
 		var quick_slot: int = event.keycode - KEY_1
 		if quick_slot >= 0 and quick_slot < 6:
 			quick_bar.call("activate_slot", quick_slot, MOUSE_BUTTON_RIGHT)
