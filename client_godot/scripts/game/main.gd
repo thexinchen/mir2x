@@ -255,8 +255,9 @@ func get_mir3_protection() -> RefCounted:
 
 
 func _process_mir3_protection() -> void:
-	if not NetworkClient.is_connected_to_server() or not game_state.inventory_initialized or not game_state.player_health_initialized or map_loading_overlay.visible: return
+	if not NetworkClient.is_connected_to_server() or not game_state.player_health_initialized: return
 	get_mir3_protection()
+	if not game_state.inventory_initialized or map_loading_overlay.visible: return
 	var selected: Dictionary = mir3_protection.poll(Time.get_ticks_msec(), game_state.player_hp, game_state.player_mp, game_state.inventory, game_state.belt, _resources)
 	if selected.is_empty(): return
 	var request_id: int = NetworkClient.get("_next_response_id")
