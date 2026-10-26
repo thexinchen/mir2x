@@ -65,8 +65,19 @@ func _ready() -> void:
 			click_slot.position = bar.get_node("Slot0").get_global_rect().get_center()
 			Input.parse_input_event(click_slot)
 			await get_tree().process_frame
+			_expect(GameState.item_shortcuts.bindings[0].is_empty(), "shortcut press alone does not complete a reference transfer")
+			click_slot.pressed = false
+			click_slot.position -= Vector2(40, 0)
+			Input.parse_input_event(click_slot)
+			await get_tree().process_frame
+			_expect(GameState.item_shortcuts.bindings[0].is_empty() and not GameState.grabbed_item.is_empty(), "release outside the pressed shortcut does not transfer the reference")
+			click_slot.position += Vector2(40, 0)
+			click_slot.pressed = true
+			Input.parse_input_event(click_slot)
+			await get_tree().process_frame
 			click_slot.pressed = false
 			Input.parse_input_event(click_slot)
+			await get_tree().process_frame
 			await get_tree().process_frame
 			_expect(not GameState.item_shortcuts.bindings[0].is_empty(), "real GUI click binds the inventory reference")
 			_expect(not bar.get_node("Slot0").tooltip_text.is_empty() and bar.get_node("Slot0").get_child_count() >= 2, "real GUI click finishes refreshing its icon and tooltip")
@@ -82,6 +93,7 @@ func _ready() -> void:
 	var used: Array = []
 	bar.slot_action_requested.connect(func(action, slot):
 		if action == 3: used.append(slot))
+	_expect(bar.call("activate_slot", 0, MOUSE_BUTTON_RIGHT) == 0 and used.is_empty(), "right click does not invoke shortcut use")
 	for slot in 10:
 		var key := InputEventKey.new()
 		key.keycode = KEY_1 + slot if slot < 9 else KEY_0

@@ -270,6 +270,13 @@ func _refresh_grabbed_item_icon() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# Original mouse press dispatch cancels a held reference before GUI routing.
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and not game_state.grabbed_shortcut.is_empty():
+		game_state.cancel_shortcut_drag()
+		game_state.state_changed.emit()
+		_release_ground_input()
+		get_viewport().set_input_as_handled()
+		return
 	# Releases must reach us even when a panel consumes the GUI event.
 	if event is InputEventKey and event.keycode == KEY_SHIFT and not event.pressed:
 		_cancel_shift_chase()
@@ -311,7 +318,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var quick_slot := ItemShortcutModel.key_slot(event.keycode)
 		if quick_slot >= 0:
-			item_shortcut_bar.call("activate_slot", quick_slot, MOUSE_BUTTON_RIGHT)
+			item_shortcut_bar.call("use_slot", quick_slot)
 			get_viewport().set_input_as_handled()
 			return
 	if event is InputEventKey and event.keycode == KEY_QUOTELEFT and _magic_target_lock_enabled():

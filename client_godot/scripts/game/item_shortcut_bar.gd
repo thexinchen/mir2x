@@ -9,6 +9,7 @@ var _resources := ActorResource.new()
 var _state: Node
 var _refresh_queued := false
 var _display_items: Array = []
+var _pressed_slot := -1
 
 
 func _ready() -> void:
@@ -99,7 +100,11 @@ func activate_slot(slot: int, button: int) -> int:
 		_state.state_changed.emit()
 		slot_action_requested.emit(1, slot)
 		return 1
-	if button != MOUSE_BUTTON_RIGHT or inventory_panel == null: return 0
+	return 0
+
+
+func use_slot(slot: int) -> int:
+	if slot < 0 or slot >= Model.SLOT_COUNT or inventory_panel == null: return 0
 	var resolved: Dictionary = _state.item_shortcuts.resolve(slot, _state.inventory, _state.grabbed_item, NetworkClient.pending_item_use)
 	if resolved.is_empty() or int(resolved.get("count", 0)) <= 0 or int(NetworkClient.get("_item_use_pending_token")) != 0: return 0
 	var error: int = inventory_panel.call("_use_inventory_item", resolved)
@@ -109,6 +114,14 @@ func activate_slot(slot: int, button: int) -> int:
 
 
 func _slot_input(event: InputEvent, slot: int) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
-		activate_slot(slot, event.button_index)
-		get_viewport().set_input_as_handled()
+	if not event is InputEventMouseButton or event.button_index not in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]: return
+	if event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_pressed_slot = slot
+			if event.double_click: use_slot(slot)
+		else:
+			var source := _pressed_slot
+			_pressed_slot = -1
+			if source == slot and Rect2(Vector2.ZERO, Vector2(29, 32)).has_point(event.position):
+				activate_slot(slot, MOUSE_BUTTON_LEFT)
+	get_viewport().set_input_as_handled()

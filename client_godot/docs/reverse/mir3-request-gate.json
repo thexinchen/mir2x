@@ -500,7 +500,7 @@
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "0ede1ab78d08cfea5792df0d03b981ac721cb557b0de0e19b38731e9204bcd1c"
+        "sha256_lf": "19dc399e325cbc525bc0c0e8811e7d3af546b9657bf15d1d31aa6f0ec236a6a2"
       },
       "godot_game_state": {
         "file": "game_state.gd",
@@ -516,7 +516,7 @@
       },
       "godot_item_shortcut_bar": {
         "file": "item_shortcut_bar.gd",
-        "sha256_lf": "d4d760eb1a64e9649a43a8959b0634d2e4cbeda5573caae7f9188b15d2a78ac6"
+        "sha256_lf": "889d13054f3147201e981519d763704b8da942c56b41dbb325b0c1f574cd5105"
       },
       "godot_inventory_panel": {
         "file": "inventory_panel.gd",
