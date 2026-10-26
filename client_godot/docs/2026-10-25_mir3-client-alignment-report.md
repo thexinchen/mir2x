@@ -1932,3 +1932,30 @@ MIR3_SHORTCUT_RETRY_SCREENSHOT=/tmp/mir3-shortcut108.png xvfb-run -a /home/czx/g
 ```
 
 证据→结论→后续路径：E108-1限定原人工入口规则，E108-2先复现并消除快捷槽的额外拦截，E108-3验证时间/共享待确认状态，E108-4证明两次真实消费和迟到回执隔离，E108-5覆盖相邻入口及自动逃脱。网络/UI修复、离线测试、联网测试和报告分笔线性提交同步104；新增源文件/场景纳入，旧.uid、截图、日志、二进制及104已有build_signature修改排除。其他原版逻辑缺口仍继续推进，整体目标未完成。
+
+## 批次 109：人工使用状态检查取证及手持堆叠增量修复（2026-10-26）
+
+E109-1：使用IDA复核690494在共享待确认窗口之前的条件：6904D0调用6946A4，非零转退出；6946A4经6946AF调用6DF7F4，后者完整函数为test byte [eax+0x35],8 / setnz al / ret。能证明的是actor byte53 mask8，不能仅凭“禁止使用”将它命名为死亡或HP0，更不能把当前Buff编号或死亡动作枚举直接填入。mir3-item-use.json升至schema9，增加manual_actor_guard字段并保持semantic_name=null，新增3处指令校验，累计106处；增加字段解释及偏移/掩码篡改负例，两端15项测试通过。没有新增未经证明的客户端死亡拦截，也未据当前服务器的死亡用药行为断言原服务器规则相同。
+
+E109-2：核对拖起物品时的权威更新发现当前适配层缺陷：GameState.update_item在匹配grabbed_item时替换为新数据，但若该物品不在inventory数组（正常本地拖起状态），固定返回0。main._handle_update_item据此跳过原有获得/失去提示、背包闪烁及正增量物品音效；数量本身已更新。新增 held_item_update_smoke.gd/.tscn，原代码确实失败于手持3→5未返回+2，日志 /tmp/mir3-held109-before.log。
+
+生产修复只在替换手持数据前保留实际数量差值，并在原手持分支返回该差值。未将手持物品插回inventory，也未预增或预扣数量；普通包内更新的原返回路径不变。对应测试覆盖正/负差值、同数量属性更新为0、其他物品独立更新及手持数量归零清理。归零用例是GameState方法契约检查，不表示生产SM_UPDATEITEM接受零数量，主场景原有报文验证仍保留。该修复恢复当前主场景已有反馈契约，不是推导了新的原版奖励或药效公式。
+
+E109-3：新增 network_held_item_gain_smoke.gd/.tscn，104标准id_4角色需有一堆未满99的现有6号药。通过生产背包方法拖起该堆，再由现有GM造物接口增加一件，接收真实同实例SM_UPDATEITEM。要求数量按权威值增加且手持实例不被复制进inventory，恰增加一条按实际物品名构造的获得1件提示、启动Inventory闪烁并播放该物品音效。将实际收到的同一payload再次交给生产解码入口，要求数量不变、不重复提示、不刷新闪烁截止时间、不重播声音；这是本地回包重放检查，不是第二次服务端发奖。
+
+随后经真实消费请求使用新增一件，要求匹配SM_OK及总数量回到本轮基线，再放回背包，核对腰带、地图、位置及总数量。夹具使用独立保护配置路径，含失败时的条件性清理；不会为没有确认的新增数量消耗既有物品。无窗口 /tmp/mir3-held109-network.log 与Xvfb /tmp/mir3-held109-window.log 均通过。截图 /tmp/mir3-held109.png 已取回查看 G:/mir3/work/mir3-movement/held-item-gain-109.png，背包、数量及起点正常；测试调用生产GUI方法，未声称物理鼠标操作。实际药效可能改变HP，不承诺恢复原HP。
+
+E109-4：held_item_update_smoke、inventory_interaction_smoke、inventory_refresh_smoke、mir3_item_shortcuts_smoke及完整world_action_smoke在104通过。network_item_shortcuts_smoke同时设置MIR3_SHORTCUTS_DEAD_KEY=1和MIR3_SHORTCUTS_RECONNECT=1通过，覆盖十键、双击、死亡0键、同UID新会话清引用及重新绑定；经历三次已知03角色分离短重试后成功进入，没有重启服务器规避。日志 /tmp/mir3-held109-shortcuts.log。原物品证据JSON及请求门JSON在104独立提取并cmp一致；请求门仅更新game_state来源哈希，main未变，不重复生成技能对应JSON。
+
+服务器PID3708547持续运行，本批无C++修改、编译或重启。Xvfb VSync提示保留。原版取证、状态修复、离线测试、联网测试、报告分笔线性提交同步104；旧.uid、样本、截图、日志、二进制及已有build_signature修改排除。报告flavor=null，样本SHA256仍为eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021。
+
+复跑资源环境沿用批次104：
+
+```sh
+python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+/home/czx/godot --headless --path client_godot res://tests/held_item_update_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_held_item_gain_smoke.tscn
+MIR3_HELD_GAIN_SCREENSHOT=/tmp/mir3-held109.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_held_item_gain_smoke.tscn
+```
+
+证据→结论→后续路径：E109-1将人工入口条件限定为真实字段及掩码，防止未经证明地改变死亡用药；E109-2先复现并修复手持物品的数量增量返回，E109-3核对真实回包反馈及重复回报幂等，E109-4覆盖相邻界面、快捷槽和完整动作回归。该标志位的业务含义、原位移动作对应、其他传送结算、GUI逐物品延迟及冲撞仍需继续取证和实现，整体对齐目标保持进行。
