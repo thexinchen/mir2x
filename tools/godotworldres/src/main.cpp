@@ -163,6 +163,17 @@ struct ItemDetailRecord
     int32_t req[4] {};
 };
 
+struct PotionEffectRecord
+{
+    uint32_t itemID = 0;
+    uint32_t buffID = 0;
+    uint32_t flags = 0; // bit0 stackReplace, bit1 unsupported acts, bit2 missing buff
+    int32_t hp[2] {}; // flat value, percentage of maximum
+    int32_t mp[2] {};
+    int32_t hpPulse[4] {}; // flat, percentage, duration(ms), triggers per second
+    int32_t mpPulse[4] {};
+};
+
 struct SkillMetaRecord
 {
     uint32_t magicID = 0;
@@ -208,6 +219,7 @@ static_assert(sizeof(SpriteRecord) == 8);
 static_assert(sizeof(MonsterMetaRecord) == 68);
 static_assert(sizeof(ItemMetaRecord) == 156);
 static_assert(sizeof(ItemDetailRecord) == 48);
+static_assert(sizeof(PotionEffectRecord) == 60);
 static_assert(sizeof(SkillMetaRecord) == 16);
 static_assert(sizeof(BuffMetaRecord) == 12);
 static_assert(sizeof(MagicEffectMetaRecord) == 91);
@@ -640,6 +652,56 @@ static size_t convertSprites(const char *family, const char *dbPath, const fs::p
             typeFile.write(reinterpret_cast<const char *>(&meta.itemID), sizeof(meta.itemID));
             typeFile.write(reinterpret_cast<const char *>(&typeLength), sizeof(typeLength));
             typeFile.write(type.data(), typeLength);
+        }
+
+        // Player::consumePotion uses the same-name BuffRecord, not ir.potion.
+        // Keep actual backend effects separate from nominal item attributes.
+        std::vector<PotionEffectRecord> potionEffects;
+        for(const auto &meta: metaList){
+            const auto &ir = DBCOM_ITEMRECORD(meta.itemID);
+            if(!ir.isPotion()){
+                continue;
+            }
+            PotionEffectRecord effect;
+            effect.itemID = meta.itemID;
+            effect.buffID = DBCOM_BUFFID(ir.name);
+            const auto &buff = DBCOM_BUFFRECORD(effect.buffID);
+            if(!buff){
+                effect.flags |= 4;
+            }
+            else{
+                effect.flags |= buff.stackReplace ? 1 : 0;
+                uint32_t seen = 0;
+                for(const auto &act: buff.actList){
+                    const bool hp = act.isBuffActRef(u8"HP");
+                    const bool mp = act.isBuffActRef(u8"MP");
+                    const bool hpPulse = act.isBuffActRef(u8"HP持续");
+                    const bool mpPulse = act.isBuffActRef(u8"MP持续");
+                    const uint32_t bit = hp ? 1 : mp ? 2 : hpPulse ? 4 : mpPulse ? 8 : 0;
+                    const auto &arg = (hp || mp) ? act.attributeModifier.arg : act.trigger.arg;
+                    const auto value = std::get_if<BuffValuePercentage>(&arg);
+                    if(!bit || (seen & bit) || !value || ((hpPulse || mpPulse) && (!(act.trigger.on & BATGR_TIME) || act.trigger.tps <= 0))){
+                        effect.flags |= 2;
+                        continue;
+                    }
+                    seen |= bit;
+                    auto out = hp ? effect.hp : mp ? effect.mp : hpPulse ? effect.hpPulse : effect.mpPulse;
+                    out[0] = value->value;
+                    out[1] = value->percentage;
+                    if(hpPulse || mpPulse){
+                        out[2] = act.duration;
+                        out[3] = act.trigger.tps;
+                    }
+                }
+            }
+            potionEffects.push_back(effect);
+        }
+        std::ofstream potionFile(outputDir / "sprites" / "potion_effect.m2xmeta", std::ios::binary);
+        const SpriteHeader potionHeader {{'M', '2', 'S', 'P'}, 1, check_cast<uint32_t>(potionEffects.size())};
+        potionFile.write(reinterpret_cast<const char *>(&potionHeader), sizeof(potionHeader));
+        potionFile.write(reinterpret_cast<const char *>(potionEffects.data()), potionEffects.size() * sizeof(PotionEffectRecord));
+        if(!potionFile){
+            throw fflpanic("failed to write potion effect metadata");
         }
 
         std::ofstream detailFile(outputDir / "sprites" / "item_detail.m2xmeta", std::ios::binary);

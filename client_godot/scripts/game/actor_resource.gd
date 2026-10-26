@@ -13,6 +13,7 @@ var item_attributes: Dictionary = {}
 var item_details: Dictionary = {}
 var item_names: Dictionary = {}
 var item_types: Dictionary = {}
+var potion_effects: Dictionary = {}
 var skill_meta: Dictionary = {}
 var buff_meta: Dictionary = {}
 var buff_names: Dictionary = {}
@@ -46,6 +47,7 @@ func configure(path: String) -> bool:
 	_load_item_details()
 	_load_item_names()
 	_load_item_types()
+	_load_potion_effects()
 	_load_skill_meta()
 	_load_buff_meta()
 	_load_buff_names()
@@ -247,6 +249,10 @@ func item_detail(item_id: int) -> Dictionary:
 
 func item_name(item_id: int) -> String:
 	return item_names.get(item_id, "物品 %d" % item_id)
+
+
+func item_potion_effect(item_id: int) -> Dictionary:
+	return potion_effects.get(item_id, {})
 
 
 func item_type(item_id: int) -> String:
@@ -553,6 +559,22 @@ func _load_item_types() -> void:
 		var item_id := file.get_32()
 		var length := file.get_16()
 		item_types[item_id] = file.get_buffer(length).get_string_from_utf8()
+
+
+func _load_potion_effects() -> void:
+	potion_effects.clear()
+	var file := FileAccess.open("%s/sprites/potion_effect.m2xmeta" % base_path, FileAccess.READ)
+	if file == null or file.get_length() < 12 or file.get_buffer(4).get_string_from_ascii() != MAGIC or file.get_32() != 1:
+		return
+	var count := file.get_32()
+	if file.get_length() != 12 + count * 60: return
+	var loaded := {}
+	for _index in count:
+		var item_id := file.get_32()
+		var effect := {"buff_id": file.get_32(), "flags": file.get_32(), "hp": _read_values(file, 2), "mp": _read_values(file, 2), "hp_pulse": _read_values(file, 4), "mp_pulse": _read_values(file, 4)}
+		if item_id == 0 or loaded.has(item_id): return
+		loaded[item_id] = effect
+	potion_effects = loaded
 
 
 func _load_skill_meta() -> void:
