@@ -1,5 +1,5 @@
 {
-  "schema_version": 7,
+  "schema_version": 8,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -466,6 +466,56 @@
       "va": "0x6ea922",
       "hex": "ff93a0000000",
       "role": "ordinary click invokes field160 bound to shortcut transfer"
+    },
+    {
+      "va": "0x64f598",
+      "hex": "80781807751ce8e149eaff3b58107512",
+      "role": "held shortcut kind7 and matching source slot take priority"
+    },
+    {
+      "va": "0x64f5a8",
+      "hex": "e8d749eaff8b500c8d45fce8b07cdbffeb0f",
+      "role": "use selects held proxy instead of slot reference"
+    },
+    {
+      "va": "0x6d93e9",
+      "hex": "ff51188b55f48d4dfc8bc7e8ef0e0000",
+      "role": "non-grouped refresh passes item name to first-match lookup"
+    },
+    {
+      "va": "0x6d93fd",
+      "hex": "8bd68b45fc8b008b08ff5158",
+      "role": "non-grouped refresh clones the matched inventory item"
+    },
+    {
+      "va": "0x6da32f",
+      "hex": "ff51188b45f08b55fce847b3d2ff7511",
+      "role": "first-match lookup compares item name strings"
+    },
+    {
+      "va": "0x6da33f",
+      "hex": "8b46088d04988b55f88902c645f701eb04",
+      "role": "first matching name returns its slot without scanning later matches"
+    },
+    {
+      "va": "0x6526fb",
+      "hex": "ba9c2765008b06e8f912dcff84c0744c8b55fc8b45f88b08ff5118",
+      "role": "refresh replaces the item through shared proxy interface method24"
+    },
+    {
+      "va": "0x4f28d7",
+      "hex": "83c0e8508b008b400c870424c3",
+      "role": "proxy interface setter adjusts object24 and dispatches virtual method12"
+    },
+    {
+      "va": "0x4f3065",
+      "hex": "8bd68bc3e87afeffff",
+      "role": "shortcut proxy setter replaces underlying item through4F2EE8"
+    },
+    {
+      "va": "0x4f2f01",
+      "hex": "8d43148bd6e85d43f1ff",
+      "role": "proxy replacement copies new item into object20 without replacing shared wrapper"
     }
   ],
   "reply_registrations": [
@@ -703,6 +753,23 @@
     "right_press": "held cursor cancellation precedes GUI routing; ordinary shortcut right click does not use an item",
     "digit_keys": "invoke64F560 directly, independently of mouse event dispatch",
     "limits": "Established current rendering backends and ordinary shortcut controls; special merging and other GUI owners remain separate."
+  },
+  "shortcut_reference_refresh": {
+    "proxy_interface": {
+      "entry": "0x4f2acd",
+      "object_offset": 24,
+      "vtable": "0x4f2a21",
+      "setter_wrapper": "0x4f28d7",
+      "shortcut_setter": "0x4f3048",
+      "item_field": 20
+    },
+    "non_grouped": "lookup first inventory item by name, clone it, replace the underlying item of the existing shortcut proxy",
+    "grouped": "clone and set current inventory name total, including zero",
+    "held_cursor": "shares the same shortcut proxy; replacing underlying item is visible through source and cursor references",
+    "source_key": "matching kind7 cursor source slot selects the held proxy before the slot's current reference",
+    "pending_missing": "matching pending item name preserves the existing proxy without replacing its cached contents",
+    "missing_non_grouped": "clear the slot reference; a separately held interface remains alive",
+    "identity_limit": "Original string names, flag bits and opaque64-bit IDs remain distinct from mir2x itemID/seqID and packable metadata."
   },
   "shortcut_session_cleanup": {
     "explicit_exit": "0x66d4f0",

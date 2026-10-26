@@ -106,6 +106,16 @@ CHECKS = [
     (0x6EAF09, "807e0101757cc6474000", "GUI release requires left button and resets pressed flag"),
     (0x6EAF59, "8b4e088b56048bc7e88af9ffff", "release inside control invokes ordinary click"),
     (0x6EA922, "ff93a0000000", "ordinary click invokes field160 bound to shortcut transfer"),
+    (0x64F598, "80781807751ce8e149eaff3b58107512", "held shortcut kind7 and matching source slot take priority"),
+    (0x64F5A8, "e8d749eaff8b500c8d45fce8b07cdbffeb0f", "use selects held proxy instead of slot reference"),
+    (0x6D93E9, "ff51188b55f48d4dfc8bc7e8ef0e0000", "non-grouped refresh passes item name to first-match lookup"),
+    (0x6D93FD, "8bd68b45fc8b008b08ff5158", "non-grouped refresh clones the matched inventory item"),
+    (0x6DA32F, "ff51188b45f08b55fce847b3d2ff7511", "first-match lookup compares item name strings"),
+    (0x6DA33F, "8b46088d04988b55f88902c645f701eb04", "first matching name returns its slot without scanning later matches"),
+    (0x6526FB, "ba9c2765008b06e8f912dcff84c0744c8b55fc8b45f88b08ff5118", "refresh replaces the item through shared proxy interface method24"),
+    (0x4F28D7, "83c0e8508b008b400c870424c3", "proxy interface setter adjusts object24 and dispatches virtual method12"),
+    (0x4F3065, "8bd68bc3e87afeffff", "shortcut proxy setter replaces underlying item through4F2EE8"),
+    (0x4F2F01, "8d43148bd6e85d43f1ff", "proxy replacement copies new item into object20 without replacing shared wrapper"),
 ]
 
 
@@ -217,6 +227,31 @@ def shortcut_mouse_rules(sample):
     }
 
 
+def shortcut_reference_refresh(sample):
+    entry = read_va(sample, 0x4F2ACD, 28)
+    if entry[:16] != read_va(sample, 0x65279C, 16):
+        raise ValueError("shortcut refresh proxy GUID disagrees")
+    vtable, offset = struct.unpack_from("<II", entry, 16)
+    if vtable != 0x4F2A21 or offset != 24:
+        raise ValueError("unexpected shortcut proxy interface layout")
+    setter = struct.unpack("<I", read_va(sample, vtable + 24, 4))[0]
+    target = struct.unpack("<I", read_va(sample, 0x4F2C50 + 12, 4))[0]
+    if setter != 0x4F28D7 or target != 0x4F3048:
+        raise ValueError("unexpected shortcut proxy setter")
+    return {
+        "proxy_interface": {"entry": "0x4f2acd", "object_offset": offset,
+                            "vtable": hex(vtable), "setter_wrapper": hex(setter),
+                            "shortcut_setter": hex(target), "item_field": 20},
+        "non_grouped": "lookup first inventory item by name, clone it, replace the underlying item of the existing shortcut proxy",
+        "grouped": "clone and set current inventory name total, including zero",
+        "held_cursor": "shares the same shortcut proxy; replacing underlying item is visible through source and cursor references",
+        "source_key": "matching kind7 cursor source slot selects the held proxy before the slot's current reference",
+        "pending_missing": "matching pending item name preserves the existing proxy without replacing its cached contents",
+        "missing_non_grouped": "clear the slot reference; a separately held interface remains alive",
+        "identity_limit": "Original string names, flag bits and opaque64-bit IDs remain distinct from mir2x itemID/seqID and packable metadata.",
+    }
+
+
 def extract(sample_path, registry_path):
     sample = sample_path.read_bytes()
     if hashlib.sha256(sample).hexdigest() != EXPECTED_SAMPLE:
@@ -240,12 +275,13 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 7, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 8, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "reply_registrations": registrations,
         "shortcut_rectangles": shortcut_rectangles(sample),
         "shortcut_drag_interface": shortcut_interface(sample),
         "shortcut_drag_rules": shortcut_drag_rules(sample),
         "shortcut_mouse_rules": shortcut_mouse_rules(sample),
+        "shortcut_reference_refresh": shortcut_reference_refresh(sample),
         "shortcut_session_cleanup": {
             "explicit_exit": "0x66d4f0", "request_command": 1009,
             "role_endpoint_transition": ["0x6cc7ac", "0x6cc8c8"],

@@ -26,13 +26,24 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 93)
+        self.assertEqual(len(result["instruction_checks"]), 103)
         self.assertEqual(len(result["shortcut_rectangles"]), 10)
         self.assertEqual(len(result["special_shortcut_actions"]["records"]), 30)
         self.assertEqual(len(result["shortcut_drag_interface"]["methods"]), 5)
         self.assertEqual(result["shortcut_session_cleanup"]["count"], 10)
         self.assertEqual(result["shortcut_drag_rules"]["properties"]["flags"], 3)
         self.assertEqual(result["shortcut_mouse_rules"]["left_double_click"]["gui_event"], 4)
+        self.assertEqual(result["shortcut_reference_refresh"]["proxy_interface"]["item_field"], 20)
+
+    def test_proxy_setter_cannot_silently_use_noop_method(self):
+        original = exporter.read_va
+        def altered(image, address, length):
+            if address == 0x4F2C50 + 12:
+                return (0x4F2DA4).to_bytes(4, "little")
+            return original(image, address, length)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "proxy setter"):
+                self.extract()
 
     def test_double_click_cannot_silently_bind_right_button_handler(self):
         original = exporter.read_va
