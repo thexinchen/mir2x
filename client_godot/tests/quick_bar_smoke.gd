@@ -103,6 +103,14 @@ func _ready() -> void:
 		_fail("runtime config swallowed the HUD-first quick-slot key: %s" % [key_actions])
 		return
 	key_actions.clear()
+	quick_bar.hide()
+	Input.parse_input_event(key_event)
+	await get_tree().process_frame
+	if key_actions != [[QuickBarScript.ACTION_CONSUME, 0]]:
+		_fail("runtime config swallowed the hidden quick-slot key: %s" % [key_actions])
+		return
+	quick_bar.show()
+	key_actions.clear()
 	var shifted_key_event := InputEventKey.new()
 	shifted_key_event.keycode = KEY_1
 	shifted_key_event.unicode = 33
@@ -167,13 +175,31 @@ func _ready() -> void:
 	quick_bar.hide()
 	Input.parse_input_event(key_event)
 	await get_tree().process_frame
-	if not key_actions.is_empty() or GameState.magic_keys.get(active_magic_id, 0) != 49:
-		_fail("hidden quick bar still blocked the original skill key binding: actions=%s keys=%s" % [key_actions, GameState.magic_keys])
+	if key_actions != [[QuickBarScript.ACTION_CONSUME, 0]] or GameState.magic_keys.has(active_magic_id):
+		_fail("hidden quick bar disabled the item key or let the skill panel bind it: actions=%s keys=%s" % [key_actions, GameState.magic_keys])
 		return
+	key_actions.clear()
+	NetworkClient.set("_item_use_pending_token", 707)
+	AudioService.last_seff_id = AudioService.INVALID_SEFF_ID
+	Input.parse_input_event(key_event)
+	await get_tree().process_frame
+	if not key_actions.is_empty() or AudioService.last_seff_id != AudioService.INVALID_SEFF_ID or GameState.magic_keys.has(active_magic_id):
+		_fail("pending hidden item key replayed use feedback or rebound a skill")
+		return
+	NetworkClient.set("_item_use_pending_token", 0)
+	var saved_belt = GameState.belt[0]
+	GameState.belt[0] = null
+	Input.parse_input_event(key_event)
+	await get_tree().process_frame
+	if not key_actions.is_empty() or GameState.magic_keys.has(active_magic_id):
+		_fail("empty hidden item slot fell through to skill binding")
+		return
+	GameState.belt[0] = saved_belt
 	quick_bar.show()
 	skill_panel.call("_hide_magic", active_magic_id)
 	skill_panel.hide()
 	GameState.magic_keys = {}
+	key_actions.clear()
 	GameState.player_action_type = 13
 	main.call("_unhandled_input", key_event)
 	if key_actions != [[QuickBarScript.ACTION_CONSUME, 0]]:
@@ -225,6 +251,12 @@ func _ready() -> void:
 	close_button.pressed.emit()
 	if quick_bar.visible or AudioService.last_seff_id != AudioService.UI_CLICK_SEFF_ID:
 		_fail("quick-bar close did not hide with original button feedback")
+		return
+	key_actions.clear()
+	Input.parse_input_event(key_event)
+	await get_tree().process_frame
+	if key_actions != [[QuickBarScript.ACTION_CONSUME, 0]]:
+		_fail("closing the floating bar disabled the existing item shortcut")
 		return
 	quick_bar.show()
 

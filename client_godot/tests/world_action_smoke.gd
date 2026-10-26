@@ -1540,8 +1540,8 @@ func _test_magic_panel_hotkey_precedence(main: Control, resources: RefCounted) -
 	quick_bar.hide()
 	main.call("_process_player_action", 10.0)
 	main.call("_unhandled_input", shifted_digit)
-	if GameState.magic_effects.size() != effect_count + 1:
-		_fail("hidden quick bar did not restore the original getKeyChar(false) shifted-digit magic route")
+	if GameState.magic_effects.size() != effect_count:
+		_fail("hidden quick bar let an existing digit magic binding bypass the original item-key priority")
 		return false
 	GameState.learned_magic = previous_learned
 	GameState.magic_keys = previous_keys

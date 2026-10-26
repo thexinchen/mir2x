@@ -77,14 +77,15 @@ func _run() -> void:
 	NetworkClient.send_request_equip_belt(ITEM_ID, int(item.seqID), empty_slot)
 	if not await _wait(func(): return int(_belt_item(empty_slot).get("count", 0)) == belt_before, "equip potion"): return
 	var quick_bar: Control = _main.get_node("QuickBar")
-	quick_bar.show()
 	var dead_key := OS.has_environment("MIR3_ITEM_USE_DEAD_KEY")
+	var hidden_bar := OS.has_environment("MIR3_ITEM_USE_HIDDEN_BAR")
+	quick_bar.visible = not hidden_bar
 	if dead_key:
 		_submit_command("@die")
 		if not await _wait(func(): return GameState.player_hp == 0, "actual death before number key"): return
 	var belt_response := int(NetworkClient.get("_next_response_id"))
 	# Exercise the production GUI entry without supplying a test-only callback.
-	if dead_key:
+	if dead_key or hidden_bar:
 		var key := InputEventKey.new()
 		key.keycode = KEY_1 + empty_slot
 		key.pressed = true
@@ -123,7 +124,7 @@ func _run() -> void:
 	if _wire_receipts.size() != wire_before:
 		_fail("legacy use unexpectedly generated a correlated reply")
 		return
-	print("NETWORK ITEM USE RECEIPT PASS: dead_key=%s; seven explicit failures, inventory/belt success, shared pending suppression, one unit per use, unchanged rejected quantities, legacy no-reply use, restored belt" % dead_key)
+	print("NETWORK ITEM USE RECEIPT PASS: dead_key=%s hidden_bar=%s; seven explicit failures, inventory/belt success, shared pending suppression, one unit per use, unchanged rejected quantities, legacy no-reply use, restored belt" % [dead_key, hidden_bar])
 	_finished = true
 	NetworkClient.disconnect_from_server()
 	get_tree().quit()
