@@ -23,6 +23,18 @@ func _run() -> void:
 			return
 	await get_tree().process_frame
 	var request_before := int(NetworkClient.get("_next_response_id"))
+	await _click_shortcut(bar, 1, MOUSE_BUTTON_RIGHT)
+	if int(NetworkClient.get("_next_response_id")) != request_before or not GameState.grabbed_shortcut.is_empty():
+		_fail("right click used an item without a drag")
+		return
+	await _click_shortcut(bar, 0)
+	await _click_shortcut(bar, 1, MOUSE_BUTTON_RIGHT)
+	if not GameState.grabbed_shortcut.is_empty() or not GameState.item_shortcuts.bindings[0].is_empty() or GameState.item_shortcuts.bindings[1].is_empty() or int(NetworkClient.get("_next_response_id")) != request_before:
+		_fail("right click over another shortcut failed to cancel the active source before GUI use")
+		return
+	inventory.call("_grab_item", "%d:%d" % [chosen[0].itemID, chosen[0].seqID])
+	bar.call("activate_slot", 0, MOUSE_BUTTON_LEFT)
+	await get_tree().process_frame
 	await _click_shortcut(bar, 0)
 	if GameState.item_shortcuts.bindings[0].is_empty() or GameState.grabbed_shortcut.get("source_slot", -1) != 0:
 		_fail("pickup removed source before transfer")
@@ -93,13 +105,14 @@ func _inventory_signature() -> Dictionary:
 	return result
 
 
-func _click_shortcut(bar: Control, slot: int) -> void:
+func _click_shortcut(bar: Control, slot: int, button: int = MOUSE_BUTTON_LEFT) -> void:
 	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
+	press.button_index = button
 	press.position = bar.get_node("Slot%d" % slot).get_global_rect().get_center()
 	press.pressed = true
 	Input.parse_input_event(press)
 	await get_tree().process_frame
 	press.pressed = false
 	Input.parse_input_event(press)
+	await get_tree().process_frame
 	await get_tree().process_frame

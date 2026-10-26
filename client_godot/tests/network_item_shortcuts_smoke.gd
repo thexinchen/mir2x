@@ -87,10 +87,14 @@ func _run() -> void:
 		if not await _wait(func(): return GameState.player_hp > 0, "restore shortcut actor"): return
 	for extra in 2:
 		var id := int(NetworkClient.get("_next_response_id"))
-		bar.call("activate_slot", 9, MOUSE_BUTTON_RIGHT)
+		await _double_click_shortcut(bar, 9)
 		if not await _wait(func(): return _wire_receipts.has(id), "remaining fixture potion"): return
 		if int(_wire_receipts[id]) != NetworkClient.SM_OK:
 			_fail("remaining potion use rejected")
+			return
+		if not await _wait(func(): return _count() == initial + 1 - extra, "one potion per actual double click"): return
+		if not GameState.grabbed_shortcut.is_empty() or GameState.item_shortcuts.bindings[9].is_empty():
+			_fail("double click did not finish the same-source cursor without deleting its reference")
 			return
 	if not await _wait(func(): return _count() == initial, "restore initial inventory quantity"): return
 	if GameState.belt != belt_before:
@@ -125,7 +129,20 @@ func _run() -> void:
 			_fail("new session could not bind an inventory reference again")
 			return
 		print("NETWORK SHORTCUT SESSION RESET PASS: same UID new login clears ten references, late inventory cannot restore them, old zero key sends nothing, new binding works")
-	print("NETWORK ITEM SHORTCUTS PASS: ten real inventory bindings, digits1-0 each consume one with matching wire receipt, duplicate suppression, all references refresh, belt untouched, fixture quantity restored, dead_zero=%s" % dead_key)
+	print("NETWORK ITEM SHORTCUTS PASS: ten real inventory bindings, digits1-0 and two real GUI double clicks consume one each with matching wire receipt, duplicate suppression, all references refresh, belt untouched, fixture quantity restored, dead_zero=%s" % dead_key)
 	_finished = true
 	NetworkClient.disconnect_from_server()
 	get_tree().quit()
+
+
+func _double_click_shortcut(bar: Control, slot: int) -> void:
+	var at: Vector2 = bar.get_node("Slot%d" % slot).get_global_rect().get_center()
+	for step in 4:
+		var click := InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.position = at
+		click.pressed = step % 2 == 0
+		click.double_click = step == 2
+		Input.parse_input_event(click)
+		await get_tree().process_frame
+	await get_tree().process_frame
