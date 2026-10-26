@@ -257,13 +257,21 @@ func get_mir3_protection() -> RefCounted:
 func _process_mir3_protection() -> void:
 	if not NetworkClient.is_connected_to_server() or not game_state.player_health_initialized: return
 	get_mir3_protection()
+	mir3_protection.book_dispatch_tick = NetworkClient.protection_book_sent_ms
 	if not game_state.inventory_initialized or map_loading_overlay.visible: return
-	var selected: Dictionary = mir3_protection.poll(Time.get_ticks_msec(), game_state.player_hp, game_state.player_mp, game_state.inventory, game_state.belt, _resources)
-	if selected.is_empty(): return
+	mir3_protection.poll(Time.get_ticks_msec(), game_state.player_hp, game_state.player_mp, game_state.inventory, game_state.belt, _resources, _send_mir3_protection, NetworkClient.is_item_use_pending)
+
+
+func _send_mir3_protection(selected: Dictionary) -> Dictionary:
 	var request_id: int = NetworkClient.get("_next_response_id")
-	var error: int = NetworkClient.send_consume_belt_item(int(selected.belt_slot), Callable(), true) if selected.belt_slot >= 0 else NetworkClient.send_consume_item(int(selected.item.itemID), int(selected.item.seqID), 1, Callable(), true)
+	var error: int
+	if selected.channel == 3:
+		error = NetworkClient.send_protection_book(int(selected.item.itemID), int(selected.item.seqID))
+	else:
+		error = NetworkClient.send_consume_belt_item(int(selected.belt_slot), Callable(), true) if selected.belt_slot >= 0 else NetworkClient.send_consume_item(int(selected.item.itemID), int(selected.item.seqID), 1, Callable(), true)
 	mir3_protection.last_request = {"id": request_id if error == OK else 0, "error": error, "item": selected.item, "channel": selected.channel}
 	if error == OK: inventory_panel.call("_play_item_sound", int(selected.item.itemID))
+	return {"error": error, "sent_ms": NetworkClient.protection_book_sent_ms}
 
 
 func _exit_tree() -> void:

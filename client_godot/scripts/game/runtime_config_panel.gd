@@ -75,6 +75,7 @@ var _preview_lines: Array[LineEdit] = []
 var _preview_fonts: Array[Font] = []
 var _protection: RefCounted
 var _protection_controls: Array[Dictionary] = []
+var _book_choice: OptionButton
 
 
 # C++ closes this board on Escape but returns false, so later boards and the
@@ -136,6 +137,7 @@ func _rebuild_page() -> void:
 		child.queue_free()
 	_controls.clear()
 	_protection_controls.clear()
+	_book_choice = null
 	_sliders.clear()
 	_friend_radios.clear()
 	_preview_lines.clear()
@@ -272,12 +274,12 @@ func _build_game_page() -> void:
 
 
 func _build_protection_controls() -> void:
-	_add_label("TimedProtection", "定时保护（低于数值时用药，间隔单位：毫秒）", Vector2(0, 150), Vector2(400, 20))
+	_add_label("TimedProtection", "定时保护（低于数值时触发，间隔单位：毫秒）", Vector2(0, 150), Vector2(400, 20))
 	_add_label("ProtectionThreshold", "低于", Vector2(95, 175), Vector2(110, 20))
 	_add_label("ProtectionInterval", "间隔（毫秒）", Vector2(245, 175), Vector2(120, 20))
-	for index in 3:
+	for index in 4:
 		var y := 200 + index * 40
-		var enabled := _make_check_button("Protection%d" % index, ["体力", "魔法", "特殊药"][index], Vector2(0, y + 4))
+		var enabled := _make_check_button("Protection%d" % index, ["体力", "魔法", "特殊药", "传送"][index], Vector2(0, y + 4))
 		enabled.size.x = 90
 		enabled.toggled.connect(_on_protection_changed.bind(index, "enabled"))
 		$SystemPage.add_child(enabled)
@@ -291,10 +293,30 @@ func _build_protection_controls() -> void:
 			spin.max_value = 2147483647
 			spin.step = 1
 			spin.tooltip_text = "低于此体力/魔法数值时尝试用药" if field == "threshold" else "用药检查间隔（毫秒），0为停用"
+			if index == 3:
+				spin.tooltip_text = "低于此体力数值时尝试传送" if field == "threshold" else "检查间隔（毫秒），0为停用；传送请求间隔至少20秒"
 			spin.value_changed.connect(_on_protection_changed.bind(index, field))
 			$SystemPage.add_child(spin)
 			controls[field] = spin
 		_protection_controls.append(controls)
+	_add_label("BookChoiceLabel", "传送方式", Vector2(0, 358), Vector2(90, 20))
+	_book_choice = OptionButton.new()
+	_book_choice.name = "BookChoice"
+	_book_choice.position = Vector2(95, 352)
+	_book_choice.size = Vector2(265, 28)
+	_book_choice.add_item("未选择")
+	_book_choice.set_item_metadata(0, -1)
+	_book_choice.add_item("随机传送卷")
+	_book_choice.set_item_metadata(1, 1)
+	_book_choice.item_selected.connect(_on_book_selected)
+	$SystemPage.add_child(_book_choice)
+
+
+func _on_book_selected(index: int) -> void:
+	if _updating: return
+	_protection.book_selection = int(_book_choice.get_item_metadata(index))
+	var error: int = _protection.save()
+	if error != OK: push_warning("无法保存传送保护配置：%s" % error_string(error))
 
 
 func _on_protection_changed(value: Variant, channel: int, field: String) -> void:
@@ -537,6 +559,7 @@ func _refresh_controls() -> void:
 	if _state == null:
 		return
 	_updating = true
+	if _book_choice != null: _book_choice.select(1 if _protection.book_selection == 1 else 0)
 	for index in _protection_controls.size():
 		var controls: Dictionary = _protection_controls[index]
 		controls.enabled.set_pressed_no_signal(_protection.channels[index].enabled)
