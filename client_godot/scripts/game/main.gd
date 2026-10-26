@@ -1509,7 +1509,13 @@ func _process_player_action(delta: float) -> void:
 			_player_server_move_active = false
 			_handle_action_data(_player_server_action_queue.pop_front(), true)
 		return
-	_player_action_timer -= delta
+	if game_state.player_action_type == 11:
+		# Hit frames use wall time, unlike the capped walking interpolation clock.
+		# Recover when the displayed animation ends, including after a slow frame.
+		var elapsed := maxf(0.0, float(Time.get_ticks_msec() - game_state.player_action_started_ms) / 1000.0)
+		_player_action_timer = _action_duration(11, game_state.player_action_speed, 2) - elapsed
+	else:
+		_player_action_timer -= delta
 	if _player_action_timer <= 0.0:
 		_player_action_timer = -1.0
 		_player_server_move_active = false
