@@ -60,6 +60,11 @@ func _run() -> void:
 			return
 	var dead_key := OS.has_environment("MIR3_SHORTCUTS_DEAD_KEY")
 	for slot in 10:
+		if slot == 0:
+			bar.call("activate_slot", 0, MOUSE_BUTTON_LEFT)
+			if GameState.grabbed_shortcut.is_empty():
+				_fail("could not hold source reference before live use")
+				return
 		if dead_key and slot == 9:
 			_submit_command("@die")
 			if not await _wait(func(): return GameState.player_hp == 0, "death before zero key"): return
@@ -78,6 +83,14 @@ func _run() -> void:
 			_fail("inventory digit%d was rejected" % slot)
 			return
 		if not await _wait(func(): return _count() == initial + 11 - slot, "one inventory potion per digit"): return
+		if slot == 0:
+			# Let the regular state-driven shortcut refresh process the server update.
+			await get_tree().process_frame
+			await get_tree().process_frame
+			if int(GameState.grabbed_shortcut.get("item", {}).get("count", -1)) != _count():
+				_fail("held source retained stale quantity after authoritative consumption")
+				return
+			bar.call("activate_slot", 0, MOUSE_BUTTON_LEFT)
 		for other in 10:
 			if int(GameState.item_shortcuts.resolve(other, GameState.inventory).get("count", -1)) != _count():
 				_fail("shared shortcut references missed authoritative quantity update")
