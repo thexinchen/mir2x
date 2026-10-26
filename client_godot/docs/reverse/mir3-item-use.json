@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -281,6 +281,41 @@
       "va": "0x64db24",
       "hex": "b007c3",
       "role": "shortcut drag interface kind is7"
+    },
+    {
+      "va": "0x66d631",
+      "hex": "baf1030000e8c9ee0500",
+      "role": "explicit exit path sends original command1009"
+    },
+    {
+      "va": "0x66d680",
+      "hex": "e84ba60500",
+      "role": "explicit exit calls common session cleanup6C7CD0"
+    },
+    {
+      "va": "0x6cc89c",
+      "hex": "e827000000",
+      "role": "endpoint/role transition handler calls6CC8C8"
+    },
+    {
+      "va": "0x6cc9a0",
+      "hex": "e82bb3ffff",
+      "role": "transition cleanup joins6C7CD0"
+    },
+    {
+      "va": "0x6c7d18",
+      "hex": "a1749b72008b00e83c7cf8ff",
+      "role": "common cleanup resets current operate-board shortcuts"
+    },
+    {
+      "va": "0x64f9a8",
+      "hex": "33db8d849e50010000e8f26f04004383fb0a75ee",
+      "role": "clear all ten references at object336 with four-byte stride"
+    },
+    {
+      "va": "0x6969ae",
+      "hex": "8bc3e89b08d7ff5b5dc3",
+      "role": "cleanup wrapper invokes System.IntfClear"
     }
   ],
   "reply_registrations": [
@@ -448,6 +483,23 @@
       7
     ]
   },
+  "shortcut_session_cleanup": {
+    "explicit_exit": "0x66d4f0",
+    "request_command": 1009,
+    "role_endpoint_transition": [
+      "0x6cc7ac",
+      "0x6cc8c8"
+    ],
+    "shared_cleanup": "0x6c7cd0",
+    "shortcut_reset": "0x64f960",
+    "reference_offset": 336,
+    "stride": 4,
+    "count": 10,
+    "clear_wrapper": "0x6969a8",
+    "operation": "System.IntfClear",
+    "scope": "Established exit/role-transition cleanup; not a claim that every TCP event or ordinary map update uses this path.",
+    "persistence": "No paired shortcut save/restore established; do not infer persistent bindings from generic character.Set configuration."
+  },
   "special_shortcut_actions": {
     "pointer_cell": "0x7292ac",
     "table_va": "0x71ecd0",
@@ -601,6 +653,7 @@
     },
     "shortcut_refresh": "object336 stores ten references;6526A0 refreshes them through actor892 inventory, preserves matching pending name, otherwise clears missing entries",
     "shortcut_quantities": "6D9384 flag-bit2 branch clones the item and sets its count from inventory name total; other branch resolves a matching name and clones it",
+    "shortcut_session_boundary": "explicit exit and role endpoint transition clear all ten references through the same reset routine",
     "pending_window": "unsigned elapsed; equality permits dispatch; null pending bypasses elapsed check",
     "retry": "restore previous pending item before selecting another; timeout is not success",
     "failure": "restore pending item to source index and clear pending interface",

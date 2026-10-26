@@ -69,6 +69,13 @@ CHECKS = [
     (0x64A455, "8d84b350010000e8efcddbff", "clear shortcut reference without inventory removal"),
     (0x64D946, "8b94bb50010000e81699dbff", "shortcut getter copies indexed interface"),
     (0x64DB24, "b007c3", "shortcut drag interface kind is7"),
+    (0x66D631, "baf1030000e8c9ee0500", "explicit exit path sends original command1009"),
+    (0x66D680, "e84ba60500", "explicit exit calls common session cleanup6C7CD0"),
+    (0x6CC89C, "e827000000", "endpoint/role transition handler calls6CC8C8"),
+    (0x6CC9A0, "e82bb3ffff", "transition cleanup joins6C7CD0"),
+    (0x6C7D18, "a1749b72008b00e83c7cf8ff", "common cleanup resets current operate-board shortcuts"),
+    (0x64F9A8, "33db8d849e50010000e8f26f04004383fb0a75ee", "clear all ten references at object336 with four-byte stride"),
+    (0x6969AE, "8bc3e89b08d7ff5b5dc3", "cleanup wrapper invokes System.IntfClear"),
 ]
 
 
@@ -145,10 +152,19 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 4, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 5, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "reply_registrations": registrations,
         "shortcut_rectangles": shortcut_rectangles(sample),
         "shortcut_drag_interface": shortcut_interface(sample),
+        "shortcut_session_cleanup": {
+            "explicit_exit": "0x66d4f0", "request_command": 1009,
+            "role_endpoint_transition": ["0x6cc7ac", "0x6cc8c8"],
+            "shared_cleanup": "0x6c7cd0", "shortcut_reset": "0x64f960",
+            "reference_offset": 336, "stride": 4, "count": 10,
+            "clear_wrapper": "0x6969a8", "operation": "System.IntfClear",
+            "scope": "Established exit/role-transition cleanup; not a claim that every TCP event or ordinary map update uses this path.",
+            "persistence": "No paired shortcut save/restore established; do not infer persistent bindings from generic character.Set configuration.",
+        },
         "special_shortcut_actions": {
             "pointer_cell": "0x7292ac", "table_va": hex(struct.unpack("<I", read_va(sample, 0x7292AC, 4))[0]),
             "records": [{"original_item_code": item, "original_action_code": action}
@@ -167,6 +183,7 @@ def extract(sample_path, registry_path):
                                  "pending_window_ms": 3000},
             "shortcut_refresh": "object336 stores ten references;6526A0 refreshes them through actor892 inventory, preserves matching pending name, otherwise clears missing entries",
             "shortcut_quantities": "6D9384 flag-bit2 branch clones the item and sets its count from inventory name total; other branch resolves a matching name and clones it",
+            "shortcut_session_boundary": "explicit exit and role endpoint transition clear all ten references through the same reset routine",
             "pending_window": "unsigned elapsed; equality permits dispatch; null pending bypasses elapsed check",
             "retry": "restore previous pending item before selecting another; timeout is not success",
             "failure": "restore pending item to source index and clear pending interface",

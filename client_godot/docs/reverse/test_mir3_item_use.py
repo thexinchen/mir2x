@@ -26,10 +26,22 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 56)
+        self.assertEqual(len(result["instruction_checks"]), 63)
         self.assertEqual(len(result["shortcut_rectangles"]), 10)
         self.assertEqual(len(result["special_shortcut_actions"]["records"]), 30)
         self.assertEqual(len(result["shortcut_drag_interface"]["methods"]), 5)
+        self.assertEqual(result["shortcut_session_cleanup"]["count"], 10)
+
+    def test_cleanup_cannot_silently_leave_the_tenth_reference(self):
+        original = exporter.read_va
+        def altered(image, address, length):
+            code = bytearray(original(image, address, length))
+            if address == 0x64F9A8:
+                code[17] = 9
+            return bytes(code)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "instruction at 0x64f9a8"):
+                self.extract()
 
     def test_interface_setter_cannot_alias_getter(self):
         original = exporter.read_va
