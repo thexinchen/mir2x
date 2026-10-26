@@ -1,0 +1,476 @@
+{
+  "schema_version": 1,
+  "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "instruction_checks": [
+    {
+      "va": "0x6c33d0",
+      "hex": "404a6c00",
+      "role": "helper virtual method4 is automatic protection timer"
+    },
+    {
+      "va": "0x6c3655",
+      "hex": "8b4004508b45f08b4008e8a092d7ff",
+      "role": "install virtual method4 on timer object8"
+    },
+    {
+      "va": "0x6c366a",
+      "hex": "ba32000000e88092d7ff",
+      "role": "automatic protection timer period50ms"
+    },
+    {
+      "va": "0x6c4a55",
+      "hex": "8b030fb650118b03e8fe010000",
+      "role": "dispatch current channel from helper byte17"
+    },
+    {
+      "va": "0x6c4a78",
+      "hex": "8078110374d7",
+      "role": "after unsuccessful channel2 immediately evaluate channel3"
+    },
+    {
+      "va": "0x6c4a21",
+      "hex": "80781103750c8b45088b40fcc6401100",
+      "role": "advance channel3 back to0"
+    },
+    {
+      "va": "0x6c4a39",
+      "hex": "fe4011",
+      "role": "advance other channels by1"
+    },
+    {
+      "va": "0x6c4cca",
+      "hex": "837804000f86ad010000",
+      "role": "disabled zero interval does not trigger"
+    },
+    {
+      "va": "0x6c4cd7",
+      "hex": "8bd62b500c8b45f83b50040f8299010000",
+      "role": "unsigned elapsed below interval skips; equality passes"
+    },
+    {
+      "va": "0x6c4ce8",
+      "hex": "8b47158b55f83b42080f8d8a010000",
+      "role": "HP scalar comparison is signed and strictly below threshold"
+    },
+    {
+      "va": "0x6c4cf7",
+      "hex": "6a0033c933d28bc3e8c4030000",
+      "role": "HP selects channel0 grade0 mode0"
+    },
+    {
+      "va": "0x6c4d0a",
+      "hex": "89700c",
+      "role": "HP attempt updates last tick regardless of selection success"
+    },
+    {
+      "va": "0x6c4d4c",
+      "hex": "8b47198b55f43b42080f8d26010000",
+      "role": "MP scalar comparison is strictly below threshold"
+    },
+    {
+      "va": "0x6c4d5b",
+      "hex": "6a00b10133d28bc3e860030000",
+      "role": "MP selects channel1 grade0 mode0"
+    },
+    {
+      "va": "0x6c4e65",
+      "hex": "837b64ff7416",
+      "role": "book protection additionally requires selection other than minus1"
+    },
+    {
+      "va": "0x6c4eea",
+      "hex": "bb06000000",
+      "role": "inventory search starts original slot6"
+    },
+    {
+      "va": "0x6c4f82",
+      "hex": "4383fb340f8563ffffff",
+      "role": "inventory search stops before original slot52"
+    },
+    {
+      "va": "0x6c4ff2",
+      "hex": "33ff",
+      "role": "belt search starts original slot0"
+    },
+    {
+      "va": "0x6c506a",
+      "hex": "4783ff067584",
+      "role": "belt search stops before original slot6"
+    },
+    {
+      "va": "0x6c52e0",
+      "hex": "e8d3fcffff",
+      "role": "same grade falls back to belt lookup"
+    },
+    {
+      "va": "0x6c52fe",
+      "hex": "6a008b55f8420fb64df78bc6e8b9fdffff",
+      "role": "missing grade increments index and recurses with mode0"
+    },
+    {
+      "va": "0x6c4a99",
+      "hex": "8b15689d72002b023d20030000720e",
+      "role": "automatic use shares pending item with800ms retry window"
+    },
+    {
+      "va": "0x683469",
+      "hex": "8983690100008b460489836d010000",
+      "role": "health notification copies raw HP and MP into actor361 and365"
+    },
+    {
+      "va": "0x5fd081",
+      "hex": "2b967403000081fae80300000f828e010000",
+      "role": "separate GUI protection controller has1000ms unsigned check"
+    },
+    {
+      "va": "0x5fd0a2",
+      "hex": "8bb869010000a1c09372008b003bb8710100007d69",
+      "role": "GUI controller distinguishes current HP361 from maximum HP369"
+    },
+    {
+      "va": "0x5fd13c",
+      "hex": "3bbe2c0300007d0d8d8628030000e8b50e0000",
+      "role": "GUI protection compares raw HP against its own threshold before action"
+    }
+  ],
+  "channels": [
+    {
+      "name": "HP",
+      "helper_offset": 104,
+      "fields": {
+        "enabled": 0,
+        "interval_ms": 4,
+        "threshold": 8,
+        "last_tick": 12
+      },
+      "settings": [
+        {
+          "key": "RenewHPIsAuto",
+          "section": "Protect",
+          "default": 0,
+          "va": "0x6c3a36",
+          "hex": "6a00b9743e6c00ba8c3e6c008bc38b38ff5710"
+        },
+        {
+          "key": "RenewHPTime",
+          "section": "Protect",
+          "default": 2500,
+          "va": "0x6c3a4e",
+          "hex": "68c4090000b99c3e6c00ba8c3e6c008bc38b38ff5708"
+        },
+        {
+          "key": "RenewHPPercent",
+          "section": "Protect",
+          "default": 10,
+          "va": "0x6c3a6a",
+          "hex": "6a0ab9b03e6c00ba8c3e6c008bc38b38ff5708"
+        }
+      ],
+      "actor_scalar_offset": 361
+    },
+    {
+      "name": "MP",
+      "helper_offset": 120,
+      "fields": {
+        "enabled": 0,
+        "interval_ms": 4,
+        "threshold": 8,
+        "last_tick": 12
+      },
+      "settings": [
+        {
+          "key": "RenewMPIsAuto",
+          "section": "Protect",
+          "default": 0,
+          "va": "0x6c3a92",
+          "hex": "6a00b9c83e6c00ba8c3e6c008bc38b38ff5710"
+        },
+        {
+          "key": "RenewMPTime",
+          "section": "Protect",
+          "default": 3500,
+          "va": "0x6c3aaa",
+          "hex": "68ac0d0000b9e03e6c00ba8c3e6c008bc38b38ff5708"
+        },
+        {
+          "key": "RenewMPPercent",
+          "section": "Protect",
+          "default": 10,
+          "va": "0x6c3ac6",
+          "hex": "6a0ab9f43e6c00ba8c3e6c008bc38b38ff5708"
+        }
+      ],
+      "actor_scalar_offset": 365
+    },
+    {
+      "name": "special",
+      "helper_offset": 136,
+      "fields": {
+        "enabled": 0,
+        "interval_ms": 4,
+        "threshold": 8,
+        "last_tick": 12
+      },
+      "settings": [
+        {
+          "key": "RenewSpecialIsAuto",
+          "section": "Protect",
+          "default": 0,
+          "va": "0x6c3af0",
+          "hex": "6a00b90c3f6c00ba8c3e6c008bc38b38ff5710"
+        },
+        {
+          "key": "RenewSpecialTime",
+          "section": "Protect",
+          "default": 300,
+          "va": "0x6c3b08",
+          "hex": "682c010000b9283f6c00ba8c3e6c008bc38b38ff5708"
+        },
+        {
+          "key": "RenewSpecialPercent",
+          "section": "Protect",
+          "default": 10,
+          "va": "0x6c3b24",
+          "hex": "6a0ab9443f6c00ba8c3e6c008bc38b38ff5708"
+        }
+      ],
+      "actor_scalar_offset": 361
+    },
+    {
+      "name": "book",
+      "helper_offset": 152,
+      "fields": {
+        "enabled": 0,
+        "interval_ms": 4,
+        "threshold": 8,
+        "last_tick": 12
+      },
+      "settings": [
+        {
+          "key": "RenewBookIsAuto",
+          "section": "Protect",
+          "default": 0,
+          "va": "0x6c3b4e",
+          "hex": "6a00b9603f6c00ba8c3e6c008bc38b38ff5710"
+        },
+        {
+          "key": "RenewBookTime",
+          "section": "Protect",
+          "default": 100,
+          "va": "0x6c3b66",
+          "hex": "6a64b9783f6c00ba8c3e6c008bc38b38ff5708"
+        },
+        {
+          "key": "RenewBookPercent",
+          "section": "Protect",
+          "default": 10,
+          "va": "0x6c3b7f",
+          "hex": "6a0ab9903f6c00ba8c3e6c008bc38b38ff5708"
+        }
+      ],
+      "actor_scalar_offset": 361
+    }
+  ],
+  "book_selection": {
+    "key": "RenewBookNowBookIndex",
+    "section": "Protect",
+    "default": -1,
+    "va": "0x6c3b98",
+    "hex": "6affb9ac3f6c00ba8c3e6c008bc38b18ff5308"
+  },
+  "initial_medicine_tables": [
+    {
+      "va": "0x727408",
+      "record_bytes": 31,
+      "names": [
+        "金创药(小)",
+        "金创药(中)",
+        "强效金创药",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "sha256": "3ec452af76c61d01dd1cb91cf8a2c7afe8c15065c71b7445ed54af10329f9b28"
+    },
+    {
+      "va": "0x727500",
+      "record_bytes": 31,
+      "names": [
+        "魔法药(小)",
+        "魔法药(中)",
+        "强效魔法药",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "sha256": "d93d9711c68b4b07be1e355a21228dc4ef056be45d635ba6a2d8b9cedd2edaed"
+    },
+    {
+      "va": "0x7275f8",
+      "record_bytes": 31,
+      "names": [
+        "太阳水",
+        "强效太阳水",
+        "万年雪霜",
+        "疗伤药",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "sha256": "70b671ecb8f6bba592bf41565fcd6ccfbb26d78d0eba1c2eafbaf72fafb0c157"
+    }
+  ],
+  "controller": {
+    "function": "0x6c4a40",
+    "timer_ms": 50,
+    "channel_field": 17,
+    "sequence": [
+      "HP",
+      "MP",
+      "special",
+      "book"
+    ],
+    "failure_rule": "advance once; only if new channel is3 evaluate it immediately; otherwise return",
+    "success_rule": "advance once and return",
+    "requires_actor": true
+  },
+  "trigger": {
+    "enabled": true,
+    "nonzero_interval": true,
+    "elapsed": "u32(now-last_tick) >= interval",
+    "health": "signed actor scalar < configured threshold",
+    "attempt_tick": "updated even if no medicine found or shared pending gate suppresses dispatch",
+    "threshold_units": "raw actor361/365 values; no maxHP/maxMP percentage calculation in this controller"
+  },
+  "selection_mode0": {
+    "inventory_slots": [
+      6,
+      51
+    ],
+    "belt_slots": [
+      0,
+      5
+    ],
+    "order": "for each grade: inventory first, then belt; then next grade",
+    "comparison": "CompareStringA locale0x400 with NORM_IGNORECASE",
+    "regular_initial_grade": 0,
+    "special": "try table2 grade0 inventory/belt, then mode0 table2 starting at grade1",
+    "pending_retry_ms": 800
+  },
+  "separate_gui_protection": {
+    "controller": "0x5fd040",
+    "check_ms": 1000,
+    "hp": 361,
+    "max_hp": 369,
+    "mp": 365,
+    "max_mp": 373,
+    "action_dispatch": "0x5fe004",
+    "item_use": [
+      "0x5f5140",
+      "0x690494"
+    ],
+    "selection6": "explicit exit via66D4F0, not a medicine",
+    "scope": "Separate GUI protection path uses manual inventory entry; do not assign the helper's800ms window to every automatic action. Configuration and activation require further analysis."
+  },
+  "limits": [
+    "Static initial medicine tables; runtime table editing has not been traced.",
+    "Stored Percent keys compare raw scalar values; user-facing editor conversion remains unaudited.",
+    "Timer activation, configuration UI, derived helpers, mode1 callers and full book/escape actions remain incomplete.",
+    "Original slots0-51 are not mir2x itemID/seqID or a reason to resize its belt protocol.",
+    "This evidence does not enable automatic use in Godot; original defaults are disabled, unlike current mir2x protection booleans."
+  ],
+  "current_item_name_comparison": {
+    "manifest_sha256": "5886087aade34b76b09bcd43cf41b22a11795bba79bdf3847b9c80275489e4bf",
+    "item_count": 1194,
+    "rows": [
+      {
+        "original_name": "金创药(小)",
+        "candidates": [
+          {
+            "item_id": 6,
+            "current_name": "金创药（小）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "金创药(中)",
+        "candidates": [
+          {
+            "item_id": 7,
+            "current_name": "金创药（中）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "强效金创药",
+        "candidates": []
+      },
+      {
+        "original_name": "魔法药(小)",
+        "candidates": [
+          {
+            "item_id": 10,
+            "current_name": "魔法药（小）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "魔法药(中)",
+        "candidates": [
+          {
+            "item_id": 11,
+            "current_name": "魔法药（中）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "强效魔法药",
+        "candidates": []
+      },
+      {
+        "original_name": "太阳水",
+        "candidates": [
+          {
+            "item_id": 14,
+            "current_name": "太阳水",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "强效太阳水",
+        "candidates": [
+          {
+            "item_id": 15,
+            "current_name": "强效太阳水",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "万年雪霜",
+        "candidates": [
+          {
+            "item_id": 38,
+            "current_name": "万年雪霜",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "疗伤药",
+        "candidates": []
+      }
+    ],
+    "limits": "Name correspondence only; punctuation normalization is an explicit catalog adapter. No strong-to-large medicine mapping or equal recovery values inferred."
+  }
+}
