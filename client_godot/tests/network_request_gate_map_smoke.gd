@@ -104,8 +104,12 @@ func _run() -> void:
 		_fail("origin pending request unavailable")
 		return
 	stage = "outbound map switch"
+	main.set("_magic_history_uid", 705)
 	if not await _relocate(target_map, target_position) or _pending() != 0:
 		_fail("real destination scene did not clear the old request")
+		return
+	if main.get("_magic_history_uid") != 0:
+		_fail("real destination scene retained the old magic history")
 		return
 	main.call("_send_player_action", _stand())
 	var target_token := _pending()
@@ -115,9 +119,13 @@ func _run() -> void:
 		_fail("old-map receipt interfered with destination request")
 		return
 	stage = "return map switch"
+	main.set("_magic_history_uid", 706)
 	# Keep the destination receipt pending while the actual return scene arrives.
 	if not await _relocate(origin_map, origin) or _pending() != 0:
 		_fail("real return scene did not clear the destination request")
+		return
+	if main.get("_magic_history_uid") != 0:
+		_fail("real return scene retained destination magic history")
 		return
 	main.call("_send_player_action", _stand())
 	var fresh_token := _pending()
