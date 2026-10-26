@@ -2,6 +2,8 @@
 
 本记录按可独立验证的行为分批维护。目标环境是 104 主机 Linux/Godot 4.7.1；Windows 开发副本同步实现。原样本是 `G:\游戏\Mir3\Mir3.dat`，不是资源目录 Data。
 
+后续证据可能修正此前适配选择；例如批次94替代批次93的“同UID重新登录保留快捷引用”策略。
+
 ## 证据范围
 
 - 原文件 SHA256：`7965910be6d980fea18dc73c9d4b366683f372cacdbfb5120e8008f4d3461c4d`。
@@ -1429,3 +1431,33 @@ MIR3_SHORTCUTS_DEAD_KEY=1 MIR3_ITEM_SHORTCUTS_SCREENSHOT=/tmp/mir3-item-shortcut
 请求门证据schema9将新增模型、视图和库存使用入口纳入源码指纹，既有main/GameState/网络指纹及技能对照均刷新，104独立提取cmp一致。原版证据、模型/会话状态、UI与既有回归适配、新专项、报告分批线性提交；新增源码/场景纳入提交，旧.uid、截图、日志、二进制、样本和104原有build_signature修改排除。退出ObjectDB及软件渲染VSync警告仍有保留。
 
 证据→结论→后续路径：E93-1支持复制/清理引用的数据模型；E93-2证明客户端绑定与游标生命周期、修复实际GUI刷新错误；E93-3/E93-4将十个数字键及旧腰带隔离接到真实库存与相关回报。F93-1/F93-2完成十格背包引用的运行期主链路，持久化、特殊动作、原始字段完整映射及其余玩法继续分析，整体目标未完成。
+
+## 批次 94：新登录会话清空十格引用（2026-10-26）
+
+本批追踪原版保存/恢复路径时发现反向约束：已确认的退出及角色连接转场会清空全部十个引用，尚未建立配对恢复逻辑。因此撤销批次93按UID保留引用的适配选择，GameState.set_player_online现在无条件清空十格及快捷游标，即便重新登录同一角色也不继承旧绑定。普通当前协议场景更新仍由start_game_scene处理，不因此清空引用。本批没有添加磁盘持久化，也不把“重启后保留绑定”当作未经原版证明的既定要求。
+
+范围、授权和原样本哈希沿用scope.md与E93，报告flavor=null。E94-1：显式退出66D4F0在66D631/66D636发送原命令1009，随后66D680调用6C7CD0。另一条6CC7AC读取地址、端口及角色相关字段的连接转场路径，在6CC89C调用6CC8C8，再经6CC9A0进入同一6C7CD0。后者于6C7D18/6C7D1F取得当前OperateBoard并调用64F960。64F9A8—64F9BA按对象+336、步长4、十次循环调用6969A8；6969B0最终调用System.IntfClear。这证明引用被清空，而不只是隐藏控件。
+
+该转场回调通过6CCF9C注册，不在既有6CD104消息注册表内，本批没有为它编造普通网络消息编号。也没有把它直接称为所有TCP断开事件，或据此断言每个普通地图更新都经过同一清理链。当前适配把成功新登录的set_player_online作为对应会话边界，未改写普通地图入口。
+
+配置检查定位到Config/<server>.<character>.Set及通用配置路径65FDA4，UseHotkey/Hotkey对应665968/665A54的另一组配置控件；尚未将这些通用配置与十格引用建立可靠保存/恢复配对。不能因为存在.Set文件就直接把当前引用写入自创持久化格式。用户配置只作局部只读核对，未复制到仓库或104，报告不包含原角色名及配置正文。后续仍可继续找恢复路径；本批只主张已经验证的清理边界。
+
+export_mir3_item_use.py/schema5新增七处退出、转场和清理指令及shortcut_session_cleanup结构，累计63处指令、2条回报注册通过。本机和104独立提取cmp一致。十项完整性测试通过，新增将十次清理改成九次时必须拒绝的负例，防止遗漏第十格；原样本文件未修改。
+
+E94-2：network_item_shortcuts_smoke增加可选MIR3_SHORTCUTS_RECONNECT=1，在真实十格绑定及十二次消费恢复原库存之后，实际断开再连接，以同一账号、同一角色UID重新进入。观察正常SM_ONLINEOK、库存及腰带回报并等待地图加载结束。旧4f0c63b实现配新夹具明确失败于“same-character new session inherited old shortcut references”，日志/tmp/mir3-shortcuts94-old.log；这不是直接调用状态重置函数伪造重新登录。
+
+新实现的/tmp/mir3-shortcuts94-new.log在Xvfb通过：相同UID新登录时十格和快捷游标清空，新的实际库存回报后仍为空，十个旧图标/tooltip均消失；按旧0键不会增加请求ID或消费库存，再从背包绑定第十格成功且数量不变。结合MIR3_SHORTCUTS_DEAD_KEY=1，前半段实际1—9/0各消费一件、重复请求拦截、死亡0键、复活及库存归位仍通过，腰带存储未变。
+
+这次断开后立即重新登录，旧、新运行均实际出现五次已知ONLINEERROR03短重试后成功进入，补充上一批没有明确观测到的夹具重试分支证据；没有重启服务器绕过角色分离过程，也没有放宽其他错误处理。真实重新登录证明当前会话入口，而不是证明所有原版断网、跨服或保存场景都已恢复。
+
+E94-3：mir3_item_shortcuts_smoke将同UID重连保留的旧断言改为新会话清空，并继续验证普通start_game_scene不清引用、换角色清引用。104该专项、quick_bar_smoke、item_use_pending_smoke及完整world_action_smoke最终通过，原来的引用分组、精确实例、待确认保留、鼠标绑定/取消、十键路由及动作检查均保留。变化集中在登录边界，没有改药品数量、伤害或移动策略。
+
+```sh
+MIR3_SHORTCUTS_RECONNECT=1 MIR3_SHORTCUTS_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_item_shortcuts_smoke.tscn
+python3 client_godot/docs/reverse/export_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json --output /tmp/mir3-item-use94.json
+python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+```
+
+GameState源码变化后的请求门指纹已刷新，104独立提取cmp一致；main及其技能对照指纹未改变，不重复生成。服务器PID3609924继续运行，本批无C++变更、重编译或重启；退出ObjectDB及Xvfb VSync警告保留。证据、会话修复/对应单元及指纹、实际重新登录验证、报告分笔线性提交，同步104；旧.uid、日志、样本、原配置和既有build_signature修改排除。
+
+证据→结论→后续路径：E94-1修正F93-1中未获原版支持的同UID继承策略，E94-2给出旧实现实际负例与新会话/显示/请求回归，E94-3保留普通场景及其他物品行为的边界。F94-1只确认会话清理，不以尚未证明的持久化代替原版目标；特殊动作、自动用药、其他保存/恢复路径及其余游戏逻辑继续分析，整体目标未完成。
