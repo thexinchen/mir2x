@@ -1937,7 +1937,7 @@ func _matches_active_move(uid: int, action: Dictionary, creature: Dictionary) ->
 			and creature.get("action_speed", 100) == speed
 
 
-func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
+func _handle_action_data(data: Dictionary, correction_applied := false, received_queued := false) -> void:
 	var uid: int = data.get("uid", 0)
 	var action: Dictionary = data.get("action", {})
 	var action_map_uid: int = data.get("mapUID", 0)
@@ -1960,7 +1960,15 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 	# arbitrary self movement as an acknowledgement of local prediction.
 	# After another self action queues, the same edge can be a later leg of a
 	# return path. Only adjacent copies may be suppressed at the queue tail.
-	if not correction_applied and (uid != game_state.player_uid or _player_server_action_queue.is_empty()) and _matches_active_move(uid, action, creature):
+	var pending_moves: Array = creature.get("motion_action_queue", [])
+	if not correction_applied and not received_queued and (uid != game_state.player_uid or _player_server_action_queue.is_empty()) and (creature.get("type", 0) != 2 or pending_moves.is_empty()) and _matches_active_move(uid, action, creature):
+		return
+	if not correction_applied and not received_queued and uid != game_state.player_uid and creature.get("type", 0) == 2 and creature.get("forced_action_queue", []).is_empty() and action_type in [2, 3, 5] and (creature.get("action_type", 0) in [3, 5] or not pending_moves.is_empty()):
+		var entry := {"kind": "received_player_action", "data": data.duplicate(true)}
+		if pending_moves.is_empty() or pending_moves.back() != entry:
+			pending_moves.append(entry)
+		creature["motion_action_queue"] = pending_moves
+		game_state.update_creature(uid, creature)
 		return
 	if uid == game_state.player_uid:
 		if action_type == 6:
@@ -1980,7 +1988,7 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 			return
 	var previous_creature := creature.duplicate(true)
 	var is_new_creature := creature.is_empty()
-	if not creature.is_empty() and creature.has("motion_action_queue"):
+	if not creature.is_empty() and creature.has("motion_action_queue") and not (creature.get("type", 0) == 2 and (correction_applied or received_queued)):
 		creature.erase("motion_action_queue")
 		game_state.update_creature(uid, creature)
 		previous_creature = creature.duplicate(true)
@@ -2217,6 +2225,8 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 			var duration := _creature_action_duration(stored_action_type, action.get("speed", 100), creature, action.get("magicID", 0))
 			if duration > 0.0:
 				_schedule_creature_idle(uid, stored_action_type, creature.get("action_started_ms", 0), duration)
+			elif creature_type == 2 and not creature.get("motion_action_queue", []).is_empty():
+				call_deferred("_finish_creature_action", uid, stored_action_type, creature.get("action_started_ms", 0))
 			_play_action_seff(uid, action, creature)
 
 
@@ -2652,6 +2662,7 @@ func _start_remote_player_motion_action(uid: int, data: Dictionary, creature: Di
 	if start != target and queue.is_empty():
 		return
 	queue.append({"kind": "player_action", "data": data.duplicate(true)})
+	queue.append_array(creature.get("motion_action_queue", []))
 	creature["motion_action_queue"] = queue
 	game_state.update_creature(uid, creature)
 	_advance_creature_motion_action(uid)
@@ -2692,6 +2703,10 @@ func _advance_creature_motion_action(uid: int) -> void:
 	if queued.get("kind", "") == "player_action":
 		game_state.update_creature(uid, creature)
 		_handle_action_data(queued.get("data", {}), true)
+		return
+	if queued.get("kind", "") == "received_player_action":
+		game_state.update_creature(uid, creature)
+		_handle_action_data(queued.get("data", {}), false, true)
 		return
 	var action: Dictionary = queued.get("action", {})
 	var action_type: int = action.get("type", 2)
