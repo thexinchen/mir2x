@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import struct
 
 from export_mir3_target_history import EXPECTED_SAMPLE, read_va
 
@@ -50,7 +51,40 @@ CHECKS = [
     (0x6527C4, "6a0033c98b949028010000e88ccdffff", "keyboard invokes same slot action64F560"),
     (0x64D75A, "c786a800000060f56400", "slot control also binds64F560 event handler"),
     (0x64F697, "a1c09372008b0033c98bd3e8ed0d0400", "resolved inventory slot invokes manual690494 path"),
+    (0x64F5E9, "be1e0000008b1dac927200", "scan thirty special item/action pairs"),
+    (0x64F617, "e838a9080085c00f8ebf000000", "special branch requires positive inventory count"),
+    (0x64F624, "8b4304e894feffff", "special branch passes mapped action to64F4C0"),
+    (0x64F631, "83c3084e75bd", "advance eight-byte special pair"),
+    (0x64F63C, "ff521083fa00750783f8007626eb027e22", "positive signed64-bit identity selects instance lookup"),
+    (0x64F666, "e8699f0800", "resolve positive identity via6D95D4"),
+    (0x6526BE, "8db49f50010000", "ten shortcut references begin at object336"),
+    (0x6526E6, "e8996c0800", "refresh shortcut through inventory helper6D9384"),
+    (0x652718, "a15c9972008b00e840420400", "missing shortcut checks pending item before clearing"),
+    (0x652749, "e8362fdbff7407", "matching pending name preserves otherwise missing shortcut"),
+    (0x652750, "8bc6e8414204004383fb0a0f855dffffff", "clear unmatched shortcut and iterate ten entries"),
+    (0x6D93B3, "ff522ca8027428", "refresh branches on item flag bit2"),
+    (0x6D93D2, "e8e90a00008bd08b068b08ff514c", "refresh sets cloned count from inventory name total"),
 ]
+
+
+def shortcut_rectangles(sample):
+    rectangles = []
+    for slot in range(10):
+        address = 0x64D77A + slot * 25
+        code = read_va(sample, address, 25)
+        if (code[:5] != bytes.fromhex("6a206a1db9") or code[9] != 0xBA
+                or code[14:16] != bytes.fromhex("8b83") or code[20] != 0xE8):
+            raise ValueError(f"unexpected shortcut rectangle instructions at {address:#x}")
+        control_offset = struct.unpack_from("<I", code, 16)[0]
+        target = address + 25 + struct.unpack_from("<i", code, 21)[0]
+        if control_offset != 296 + slot * 4 or target != 0x6EB26C:
+            raise ValueError(f"unexpected shortcut control or rectangle target at {address:#x}")
+        rectangles.append({"slot": slot, "key": str((slot + 1) % 10),
+                           "x": struct.unpack_from("<I", code, 10)[0],
+                           "y": struct.unpack_from("<I", code, 5)[0],
+                           "width": code[3], "height": code[1],
+                           "va": hex(address), "hex": code.hex()})
+    return rectangles
 
 
 def extract(sample_path, registry_path):
@@ -76,8 +110,15 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 2, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 3, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "reply_registrations": registrations,
+        "shortcut_rectangles": shortcut_rectangles(sample),
+        "special_shortcut_actions": {
+            "pointer_cell": "0x7292ac", "table_va": hex(struct.unpack("<I", read_va(sample, 0x7292AC, 4))[0]),
+            "records": [{"original_item_code": item, "original_action_code": action}
+                        for item, action in struct.iter_unpack("<II", read_va(sample, 0x71ECD0, 30 * 8))],
+            "identity_scope": "Original numeric domains; no current itemID/magicID equivalence inferred.",
+        },
         "shared_cells": {"pending_interface": "0x72995c",
                          "source_index": "0x7296a0", "sent_tick": "0x729d68"},
         "findings": {
@@ -88,6 +129,8 @@ def extract(sample_path, registry_path):
             "manual_shortcuts": {"characters": "1234567890", "slots": 10,
                                  "route": ["0x67e2d8", "0x6527ac", "0x64f560", "0x690494"],
                                  "pending_window_ms": 3000},
+            "shortcut_refresh": "object336 stores ten references;6526A0 refreshes them through actor892 inventory, preserves matching pending name, otherwise clears missing entries",
+            "shortcut_quantities": "6D9384 flag-bit2 branch clones the item and sets its count from inventory name total; other branch resolves a matching name and clones it",
             "pending_window": "unsigned elapsed; equality permits dispatch; null pending bypasses elapsed check",
             "retry": "restore previous pending item before selecting another; timeout is not success",
             "failure": "restore pending item to source index and clear pending interface",
@@ -103,6 +146,8 @@ def extract(sample_path, registry_path):
             "800ms is a pending-item retry window, not a universal potion cooldown.",
             "800ms belongs to automatic selection; manual digit slots invoke the separate3000ms inventory path.",
             "Original has ten digit slots; current six-slot mir2x belt is a protocol/UI adaptation, not full original layout parity.",
+            "Inventory-backed shortcut references differ from current separately stored belt items; do not expand the belt protocol solely from ten controls.",
+            "Full shortcut drag/drop, persistence and special action behavior remain incomplete; numeric pairs are not recovered business names.",
             "Item flags, full descriptor layout, special success branches and server reward formulas are incomplete.",
             "Original identity DWORDs must not be assumed to equal current itemID/seqID.",
             "No original live server capture or gameplay implementation is supplied by this exporter.",

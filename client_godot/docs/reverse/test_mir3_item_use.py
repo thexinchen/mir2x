@@ -26,7 +26,31 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 38)
+        self.assertEqual(len(result["instruction_checks"]), 51)
+        self.assertEqual(len(result["shortcut_rectangles"]), 10)
+        self.assertEqual(len(result["special_shortcut_actions"]["records"]), 30)
+
+    def test_shortcut_control_alias_is_rejected(self):
+        original = exporter.read_va
+        def altered(image, address, length):
+            code = bytearray(original(image, address, length))
+            if address == 0x64D77A + 25:
+                code[16:20] = (296).to_bytes(4, "little")
+            return bytes(code)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "shortcut control"):
+                exporter.shortcut_rectangles(SAMPLE.read_bytes())
+
+    def test_shortcut_rectangle_wrong_callee_is_rejected(self):
+        original = exporter.read_va
+        def altered(image, address, length):
+            code = bytearray(original(image, address, length))
+            if address == 0x64D77A:
+                code[21] ^= 1
+            return bytes(code)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "rectangle target"):
+                exporter.shortcut_rectangles(SAMPLE.read_bytes())
 
     def test_unrelated_sample_is_rejected(self):
         sample = Path(self.temp.name) / "other.exe"

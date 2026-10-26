@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -191,6 +191,71 @@
       "va": "0x64f697",
       "hex": "a1c09372008b0033c98bd3e8ed0d0400",
       "role": "resolved inventory slot invokes manual690494 path"
+    },
+    {
+      "va": "0x64f5e9",
+      "hex": "be1e0000008b1dac927200",
+      "role": "scan thirty special item/action pairs"
+    },
+    {
+      "va": "0x64f617",
+      "hex": "e838a9080085c00f8ebf000000",
+      "role": "special branch requires positive inventory count"
+    },
+    {
+      "va": "0x64f624",
+      "hex": "8b4304e894feffff",
+      "role": "special branch passes mapped action to64F4C0"
+    },
+    {
+      "va": "0x64f631",
+      "hex": "83c3084e75bd",
+      "role": "advance eight-byte special pair"
+    },
+    {
+      "va": "0x64f63c",
+      "hex": "ff521083fa00750783f8007626eb027e22",
+      "role": "positive signed64-bit identity selects instance lookup"
+    },
+    {
+      "va": "0x64f666",
+      "hex": "e8699f0800",
+      "role": "resolve positive identity via6D95D4"
+    },
+    {
+      "va": "0x6526be",
+      "hex": "8db49f50010000",
+      "role": "ten shortcut references begin at object336"
+    },
+    {
+      "va": "0x6526e6",
+      "hex": "e8996c0800",
+      "role": "refresh shortcut through inventory helper6D9384"
+    },
+    {
+      "va": "0x652718",
+      "hex": "a15c9972008b00e840420400",
+      "role": "missing shortcut checks pending item before clearing"
+    },
+    {
+      "va": "0x652749",
+      "hex": "e8362fdbff7407",
+      "role": "matching pending name preserves otherwise missing shortcut"
+    },
+    {
+      "va": "0x652750",
+      "hex": "8bc6e8414204004383fb0a0f855dffffff",
+      "role": "clear unmatched shortcut and iterate ten entries"
+    },
+    {
+      "va": "0x6d93b3",
+      "hex": "ff522ca8027428",
+      "role": "refresh branches on item flag bit2"
+    },
+    {
+      "va": "0x6d93d2",
+      "hex": "e8e90a00008bd08b068b08ff514c",
+      "role": "refresh sets cloned count from inventory name total"
     }
   ],
   "reply_registrations": [
@@ -209,6 +274,235 @@
       "handler": "0x6927b8"
     }
   ],
+  "shortcut_rectangles": [
+    {
+      "slot": 0,
+      "key": "1",
+      "x": 65,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d77a",
+      "hex": "6a206a1db908000000ba410000008b8328010000e8d9da0900"
+    },
+    {
+      "slot": 1,
+      "key": "2",
+      "x": 105,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d793",
+      "hex": "6a206a1db908000000ba690000008b832c010000e8c0da0900"
+    },
+    {
+      "slot": 2,
+      "key": "3",
+      "x": 146,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d7ac",
+      "hex": "6a206a1db908000000ba920000008b8330010000e8a7da0900"
+    },
+    {
+      "slot": 3,
+      "key": "4",
+      "x": 186,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d7c5",
+      "hex": "6a206a1db908000000baba0000008b8334010000e88eda0900"
+    },
+    {
+      "slot": 4,
+      "key": "5",
+      "x": 226,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d7de",
+      "hex": "6a206a1db908000000bae20000008b8338010000e875da0900"
+    },
+    {
+      "slot": 5,
+      "key": "6",
+      "x": 266,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d7f7",
+      "hex": "6a206a1db908000000ba0a0100008b833c010000e85cda0900"
+    },
+    {
+      "slot": 6,
+      "key": "7",
+      "x": 306,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d810",
+      "hex": "6a206a1db908000000ba320100008b8340010000e843da0900"
+    },
+    {
+      "slot": 7,
+      "key": "8",
+      "x": 346,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d829",
+      "hex": "6a206a1db908000000ba5a0100008b8344010000e82ada0900"
+    },
+    {
+      "slot": 8,
+      "key": "9",
+      "x": 386,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d842",
+      "hex": "6a206a1db908000000ba820100008b8348010000e811da0900"
+    },
+    {
+      "slot": 9,
+      "key": "0",
+      "x": 426,
+      "y": 8,
+      "width": 29,
+      "height": 32,
+      "va": "0x64d85b",
+      "hex": "6a206a1db908000000baaa0100008b834c010000e8f8d90900"
+    }
+  ],
+  "special_shortcut_actions": {
+    "pointer_cell": "0x7292ac",
+    "table_va": "0x71ecd0",
+    "records": [
+      {
+        "original_item_code": 56202,
+        "original_action_code": 60006
+      },
+      {
+        "original_item_code": 60084,
+        "original_action_code": 60005
+      },
+      {
+        "original_item_code": 867,
+        "original_action_code": 60000
+      },
+      {
+        "original_item_code": 8213,
+        "original_action_code": 60001
+      },
+      {
+        "original_item_code": 8214,
+        "original_action_code": 60002
+      },
+      {
+        "original_item_code": 55835,
+        "original_action_code": 60003
+      },
+      {
+        "original_item_code": 55977,
+        "original_action_code": 60300
+      },
+      {
+        "original_item_code": 64025,
+        "original_action_code": 64032
+      },
+      {
+        "original_item_code": 64026,
+        "original_action_code": 64033
+      },
+      {
+        "original_item_code": 64027,
+        "original_action_code": 64034
+      },
+      {
+        "original_item_code": 64028,
+        "original_action_code": 64035
+      },
+      {
+        "original_item_code": 64029,
+        "original_action_code": 64036
+      },
+      {
+        "original_item_code": 64030,
+        "original_action_code": 64037
+      },
+      {
+        "original_item_code": 64031,
+        "original_action_code": 64038
+      },
+      {
+        "original_item_code": 64032,
+        "original_action_code": 64039
+      },
+      {
+        "original_item_code": 61142,
+        "original_action_code": 61149
+      },
+      {
+        "original_item_code": 61143,
+        "original_action_code": 61150
+      },
+      {
+        "original_item_code": 61144,
+        "original_action_code": 61151
+      },
+      {
+        "original_item_code": 61145,
+        "original_action_code": 61152
+      },
+      {
+        "original_item_code": 61146,
+        "original_action_code": 61153
+      },
+      {
+        "original_item_code": 61147,
+        "original_action_code": 61154
+      },
+      {
+        "original_item_code": 61148,
+        "original_action_code": 61155
+      },
+      {
+        "original_item_code": 61149,
+        "original_action_code": 61156
+      },
+      {
+        "original_item_code": 61150,
+        "original_action_code": 61157
+      },
+      {
+        "original_item_code": 61151,
+        "original_action_code": 61158
+      },
+      {
+        "original_item_code": 60000,
+        "original_action_code": 60007
+      },
+      {
+        "original_item_code": 60001,
+        "original_action_code": 60008
+      },
+      {
+        "original_item_code": 60002,
+        "original_action_code": 60009
+      },
+      {
+        "original_item_code": 60344,
+        "original_action_code": 60010
+      },
+      {
+        "original_item_code": 60345,
+        "original_action_code": 60011
+      }
+    ],
+    "identity_scope": "Original numeric domains; no current itemID/magicID equivalence inferred."
+  },
   "shared_cells": {
     "pending_interface": "0x72995c",
     "source_index": "0x7296a0",
@@ -233,6 +527,8 @@
       ],
       "pending_window_ms": 3000
     },
+    "shortcut_refresh": "object336 stores ten references;6526A0 refreshes them through actor892 inventory, preserves matching pending name, otherwise clears missing entries",
+    "shortcut_quantities": "6D9384 flag-bit2 branch clones the item and sets its count from inventory name total; other branch resolves a matching name and clones it",
     "pending_window": "unsigned elapsed; equality permits dispatch; null pending bypasses elapsed check",
     "retry": "restore previous pending item before selecting another; timeout is not success",
     "failure": "restore pending item to source index and clear pending interface",
@@ -248,6 +544,8 @@
     "800ms is a pending-item retry window, not a universal potion cooldown.",
     "800ms belongs to automatic selection; manual digit slots invoke the separate3000ms inventory path.",
     "Original has ten digit slots; current six-slot mir2x belt is a protocol/UI adaptation, not full original layout parity.",
+    "Inventory-backed shortcut references differ from current separately stored belt items; do not expand the belt protocol solely from ten controls.",
+    "Full shortcut drag/drop, persistence and special action behavior remain incomplete; numeric pairs are not recovered business names.",
     "Item flags, full descriptor layout, special success branches and server reward formulas are incomplete.",
     "Original identity DWORDs must not be assumed to equal current itemID/seqID.",
     "No original live server capture or gameplay implementation is supplied by this exporter."
