@@ -496,11 +496,11 @@
       },
       "native_playernet": {
         "file": "playernet.cpp",
-        "sha256_lf": "dbc853a256db71244feac1f2ee21071ea3baf47fd6bbaa5d601fe098e597c338"
+        "sha256_lf": "2a636aeeb753fddd8d814dadec5a25653c12a65f6a3307513acb66b0c461070e"
       },
       "godot_main": {
         "file": "main.gd",
-        "sha256_lf": "98d01ed9598f7bef32da84158e9e493ac7c7109401ad18ae1c2bb3cb3192a0af"
+        "sha256_lf": "eeca2b6d2a0e790d59914cc5b0e7a2a84ccf9755ff20dbc4988248a64ef46466"
       },
       "godot_game_state": {
         "file": "game_state.gd",
@@ -520,7 +520,7 @@
       },
       "godot_inventory_panel": {
         "file": "inventory_panel.gd",
-        "sha256_lf": "2dcb83944a2308afde52f0e214d16b16928a0149dc8def1f7d1a82ba04cdb870"
+        "sha256_lf": "f9699daf2b15e788b3c42dd759f0be99f94ec37e5ba8cd74f3f6a451323a48aa"
       },
       "godot_protection": {
         "file": "mir3_protection.gd",

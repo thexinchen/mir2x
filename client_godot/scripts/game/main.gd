@@ -1954,6 +1954,12 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 		return
 	if uid == game_state.player_uid:
 		if action_type == 6:
+			# Hero::parseAction(SPACEMOVE) flushes forced motion and jumps;
+			# ProcessRun then centers the view at that authoritative endpoint.
+			_cancel_movement()
+			_pickup_action_timer = -1.0
+			_player_forced_action_queue.clear()
+			_player_post_forced_action = {}
 			_player_server_action_queue.clear()
 			_player_server_move_active = false
 		elif not correction_applied and (_player_server_move_active or not _player_server_action_queue.is_empty()):
@@ -1974,7 +1980,7 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 			if reviving_player:
 				_player_post_forced_action = data.duplicate(true)
 			return
-		if game_state.player_action_type == 13:
+		if game_state.player_action_type == 13 and action_type != 6:
 			if not reviving_player:
 				return
 			if not correction_applied:
@@ -2105,6 +2111,8 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 			game_state.player_direction = direction
 		_set_player_action(action_type, action.get("speed", 100), action.get("magicID", 0), action_step)
 		_player_action_timer = _action_duration(action_type, action.get("speed", 100), 2, action.get("magicID", 0))
+		if action_type == 6:
+			_center_hero()
 		if action_type == 2:
 			# reportStand() cancels the old route after a rejected move. Clear
 			# its latch too, including when the final node was already sent,
