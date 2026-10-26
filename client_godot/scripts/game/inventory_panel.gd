@@ -32,6 +32,7 @@ const SECURE_DOWN := preload("res://assets/ui/game/inventory/000000b6.png")
 var _state: Node
 var _resources: RefCounted = ActorResourceScript.new()
 var _bins: Dictionary = {} # item key -> {x,y,w,h,item}
+var _grid_snapshot: Dictionary = {}
 var _selected_key := ""
 var _grabbed_origin := Vector2i.ZERO
 var _scroll_row := 0
@@ -125,6 +126,21 @@ func _refresh() -> void:
 	_refresh_operation()
 	_update_scroll_from_value()
 	$Gold.text = _format_gold(_state.player_gold)
+	# Movement/health share state_changed with inventory updates. Keep the
+	# existing controls (and hover) when their items and layout did not change.
+	var selection := _selected_key if int(_state.inventory_operation.get("invOp", OP_NONE)) != OP_NONE else ""
+	var grid_state := {"bins": _bins, "scroll_row": _scroll_row, "selection": selection}
+	if grid_state == _grid_snapshot:
+		return
+	_grid_snapshot = grid_state.duplicate(true)
+	_rebuild_grid()
+	if not tooltip_key.is_empty() and _bins.has(tooltip_key):
+		_show_item_tooltip(_bins[tooltip_key].item)
+	else:
+		_hide_item_tooltip()
+
+
+func _rebuild_grid() -> void:
 	for child in $ItemGrid.get_children():
 		child.free()
 	for key in _bins:
@@ -175,10 +191,6 @@ func _refresh() -> void:
 		button.add_child(overlay)
 		button.mouse_entered.connect(func(): overlay.color = Color(1, 1, 1, 48.0 / 255.0))
 		button.mouse_exited.connect(func(): overlay.color = Color(0, 0, 1, 48.0 / 255.0) if selected else Color.TRANSPARENT)
-	if not tooltip_key.is_empty() and _bins.has(tooltip_key):
-		_show_item_tooltip(_bins[tooltip_key].item)
-	else:
-		_hide_item_tooltip()
 
 
 func _show_item_tooltip(item: Dictionary) -> void:
