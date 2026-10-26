@@ -105,7 +105,7 @@ func activate_slot(slot: int, button: int) -> int:
 
 func use_slot(slot: int) -> int:
 	if slot < 0 or slot >= Model.SLOT_COUNT or inventory_panel == null: return 0
-	var resolved: Dictionary = _state.item_shortcuts.resolve(slot, _state.inventory, _state.grabbed_item, NetworkClient.pending_item_use)
+	var resolved: Dictionary = _state.item_shortcuts.resolve_use(slot, _state.inventory, _state.grabbed_item, NetworkClient.pending_item_use, _state.grabbed_shortcut)
 	if resolved.is_empty() or int(resolved.get("count", 0)) <= 0 or int(NetworkClient.get("_item_use_pending_token")) != 0: return 0
 	var error: int = inventory_panel.call("_use_inventory_item", resolved)
 	if error != OK and error != ERR_UNCONFIGURED: return 0

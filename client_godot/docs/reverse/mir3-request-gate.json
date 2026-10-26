@@ -512,11 +512,11 @@
       },
       "godot_item_shortcuts": {
         "file": "mir3_item_shortcuts.gd",
-        "sha256_lf": "773bd75380b794861a7237b420fe8e7deef8df189d89aad6b8fec1631aa63345"
+        "sha256_lf": "cfdbae10855de19fde9f0e7974686421410ca465a16287df5da0eb7152b7814b"
       },
       "godot_item_shortcut_bar": {
         "file": "item_shortcut_bar.gd",
-        "sha256_lf": "889d13054f3147201e981519d763704b8da942c56b41dbb325b0c1f574cd5105"
+        "sha256_lf": "1f882af86ecaefbe2169dea79811527c37768622a329459d018fa8eca2785a23"
       },
       "godot_inventory_panel": {
         "file": "inventory_panel.gd",
