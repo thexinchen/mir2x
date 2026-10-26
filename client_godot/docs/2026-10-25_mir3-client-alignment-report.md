@@ -1495,3 +1495,33 @@ python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-histo
 相关模型、主界面、库存入口及GameState指纹与技能对照已刷新，104独立提取cmp一致。服务器PID3609924继续运行，无C++或网络结构变更，本批未重编译或重启；退出ObjectDB与软件渲染VSync警告保留。证据、运行期修复/单元及指纹、实际GUI联网专项、报告分笔线性提交，新增场景纳入提交；旧.uid、截图、日志、样本及104原有build_signature修改排除。
 
 证据→结论→后续路径：E95-1/E95-2约束普通引用拖放及kind7→1取消语义，E95-3提供旧实现负例，E95-4证明实际输入、游标显示与重登录后的权威库存均一致。F95-1修复提前清源、被替换引用丢失及背包取消误拿物品；特殊转换/合并、原始物品字段和其余玩法仍待继续恢复，整体目标未完成。
+
+## 批次 96：快捷物品双击使用及右键取消的原版事件分派（2026-10-26）
+
+本批修正快捷引用栏的鼠标入口。此前将activate_slot右键与数字键共用为使用入口，只证明了能使用物品，没有恢复原版鼠标事件。现在普通左键在按下后、于原格内释放时转移引用；左键双击调用物品使用；右键持有引用时优先取消活动源引用，普通右键快捷格不消费物品。数字键继续直接调用使用入口，六格腰带的独立右键规则保持既有语义。
+
+范围、授权与样本哈希沿用scope.md和E95，报告flavor=null。E96-1：64D708将64F484绑定到每个快捷控制的字段160，将64F560绑定到字段168。6EA8F0是普通点击分派，调用字段160；6EAEC0在GUI事件1、按钮1的释放路径中，先读取旧pressed状态并清除，检查释放坐标在控制内，才调用6EA8F0。按下路径只置pressed并设置捕获，不提交快捷引用转移。64F484调用6FD674后刷新十格引用。
+
+E96-2：字段168不是右键事件。65F314的输入回调记录最后一项为661B18；708BA4分别在D3D和DDraw分支将记录+56/+60复制到原生控制的事件字段280/284。TControl动态分派表44C3FE计数77，包含WM_LBUTTONDBLCLK(0x203)→452C60、WM_RBUTTONDBLCLK(0x206)→452D84，以及动态方法FFE9→452B1C。452C60调用FFE9，452B1C调用事件280，661B18生成GUI事件4、按钮1；6EAEC0接事件4才调用字段168，即64F560。右键双击的原生处理没有这条FFE9调用。两种渲染后端均由同一个安装函数验证，不仅凭Delphi惯用字段猜测双击。
+
+65F526先检查原鼠标按钮1（右键）与已有持有游标，再调用663428→6FD7A4取消，之后直接跳到鼠标按下分派末尾，早于6EB884的GUI分派。因此右键点到另一快捷格时，取消活动源引用优先于目标格自己的GUI处理。该结论只适用于已恢复的普通引用/取消路径；不把其他owner转换或特殊物品合并视为已完整恢复。
+
+export_mir3_item_use.py升为schema7，新增13处指令检查及三条原生动态表映射，累计93处指令/数据检查、两条物品回报注册。本机及104独立提取cmp一致，12项完整性测试通过；新增负例将左键双击表项偷换成右键处理器，必须拒绝。可复现提取结果包含shortcut_mouse_rules及全部字节证据，不依赖当前IDA的误识别库函数名。
+
+F96-1：ItemShortcutBar将use_slot与activate_slot的引用转移拆开，数字键直接调用use_slot；真实GUI左键按下只记录格号，释放在同一格内才提交，双击的第二次按下调用使用。main._input在GUI收到右键前取消grabbed_shortcut、释放地面输入并标记事件已处理，避免点到其他控件时误消费或误移动。引用模型、库存归属、物品成功/失败相关回执、3000ms待确认窗口及实际服务端奖励规则未改变。
+
+E96-3：在104的旧ccf2939运行期仅更新单元断言，日志/tmp/mir3-shortcuts96-old.log明确失败于“shortcut press alone does not complete a reference transfer”和“right click does not invoke shortcut use”；后续十键列表因前一个错误右键多添一次使用事件而连带失败，不将它解释为旧十键本身失效。新实现mir3_item_shortcuts_smoke通过按下不转移、移出原格再释放不转移、原格内释放后绑定与图标刷新、右键不使用以及原有十键、交换、取消检查。释放提交后需要等待既有延迟刷新完成，夹具增加相应帧等待，没有取消延迟刷新保护。
+
+E96-4：104 Xvfb实际GUI的network_shortcut_drag_smoke先对占用格发右键且检查请求ID不变，再拿起源引用、右键另一占用格，确认源引用清空、游标结束、目标保留且不发送请求。随后完成原有交换、游标图标、空格移动及背包取消，实际断开重登录后仍验证所有库存实例数量、腰带、地图与位置完全一致，日志/tmp/mir3-shortcut-drag96.log通过。该专项不生成或消费物品。
+
+network_item_shortcuts_smoke的两次剩余夹具药品使用改为Input.parse_input_event发送完整左键按下/释放/第二次双击按下/释放。逐次要求收到对应实际SM_OK、库存恰好减少一件、同源格释放结束游标且保留引用；十个数字键仍各消费一件，重复输入拦截、死亡0键和同UID新会话清引用均通过。最终日志/tmp/mir3-shortcuts96-use-final.log，药品总数恢复到夹具前，腰带未改变；实际角色分离出现三次已知03短重试后成功重新进入，没有重启服务器回避。
+
+```sh
+python3 client_godot/docs/reverse/export_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json --output /tmp/mir3-item-use96.json
+python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+MIR3_SHORTCUTS_RECONNECT=1 MIR3_SHORTCUTS_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_item_shortcuts_smoke.tscn
+```
+
+104的quick_bar_smoke、inventory_interaction_smoke、item_use_pending_smoke和完整world_action_smoke均通过，日志/tmp/mir3-shortcuts96-场景名.log。main和快捷栏变化后的请求门指纹、技能对照指纹已刷新，104独立生成cmp一致。服务器PID3609924继续运行；本批仅GDScript/Python/文档变更，没有C++重编译或服务器重启。退出ObjectDB与软件渲染VSync警告仍保留，不声称已修复。
+
+证据、鼠标入口修复及对应单元/指纹、实际GUI联网验证、报告分笔线性提交并同步104；旧.uid、日志、样本和既有build_signature修改排除。证据→结论→后续路径：E96-1/E96-2修正F93中未取证的右键使用假设，E96-3给出旧实现负例及释放边界，E96-4给出真实GUI、逐次服务端回报和重登录权威库存验证。F96-1使快捷鼠标操作进一步对齐原版，特殊物品动作、自动用药、完整技能与其他玩法仍待继续恢复，整体目标未完成。
