@@ -1958,7 +1958,9 @@ func _handle_action_data(data: Dictionary, correction_applied := false) -> void:
 	# Normal client moves are broadcast only to other actors. Self moves can be
 	# server-driven, so ignore only an exact active duplicate; do not discard
 	# arbitrary self movement as an acknowledgement of local prediction.
-	if not correction_applied and _matches_active_move(uid, action, creature):
+	# After another self action queues, the same edge can be a later leg of a
+	# return path. Only adjacent copies may be suppressed at the queue tail.
+	if not correction_applied and (uid != game_state.player_uid or _player_server_action_queue.is_empty()) and _matches_active_move(uid, action, creature):
 		return
 	if uid == game_state.player_uid:
 		if action_type == 6:
