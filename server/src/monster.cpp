@@ -645,12 +645,6 @@ void Monster::onDie()
 {
     dispatchOffenderExp();
     for(auto &item: getMonsterDropItemList(monsterID())){
-        // Keep the already rolled meat result for Alt harvesting. Do not roll
-        // again on a claim, or include these items in the ordinary death drop.
-        if(std::u8string_view(DBCOM_ITEMRECORD(item.itemID).type) == u8"肉"){
-            m_corpseItems.push_back(std::move(item));
-            continue;
-        }
         m_actorPod->post(mapUID(), {AM_DROPITEM, cerealf::serialize(SDDropItem
         {
             .x = X(),
@@ -668,12 +662,7 @@ void Monster::onDie()
     // don't deactivate() immdiately here
     // in future revive dead monsters maybe be revivied
 
-    if(!m_corpseItems.empty()){
-        // Adapter lifetime for an interactive corpse, not a recovered Mir3
-        // server constant. The pending result expires with this actor.
-        addDelay(60000, [this](bool) { goGhost(); });
-    }
-    else if(getMR().deadFadeOut){
+    if(getMR().deadFadeOut){
         addDelay(1000, [this](bool) { goGhost(); });
     }
     else{

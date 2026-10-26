@@ -11,19 +11,8 @@
 extern Server *g_server;
 corof::awaitable<> Monster::on_AM_CLAIMCORPSE(const ActorMsgPack &mpk)
 {
-    const auto request = mpk.conv<AMClaimCorpse>();
-    if(uidf::getUIDType(mpk.from()) != UID_PLY || !m_sdHealth.dead()
-            || request.mapUID != mapUID() || mathf::CDistance<int>(request.x, request.y, X(), Y()) > 1
-            || m_corpseItems.empty()){
-        m_actorPod->post(mpk.fromAddr(), AM_ERROR);
-        return {};
-    }
-    // This handler has no await between checking and taking the result.
-    // Another player's claim can never receive the same rolled meat twice.
-    auto result = std::move(m_corpseItems);
-    m_corpseItems.clear();
-    m_actorPod->post(mpk.fromAddr(), {AM_SDBUFFER, cerealf::serialize(result)});
-    goGhost();
+    // Retain the wire handler for older clients; rewards now drop on death.
+    m_actorPod->post(mpk.fromAddr(), AM_ERROR);
     return {};
 }
 

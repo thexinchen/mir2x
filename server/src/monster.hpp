@@ -62,7 +62,6 @@ class Monster: public BattleObject
 
     protected:
         AStarCache m_astarCache;
-        std::vector<SDItem> m_corpseItems;
 
     protected:
         std::optional<std::pair<uint64_t, uint64_t>> m_idleWaitToken {};

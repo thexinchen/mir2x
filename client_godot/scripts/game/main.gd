@@ -631,7 +631,7 @@ func _request_npc_dialogue(uid: int, now_ms := -1) -> bool:
 
 func _begin_ground_input(event: InputEventMouseButton, grid: Vector2i) -> void:
 	var force_attack := event.button_index == MOUSE_BUTTON_LEFT and event.shift_pressed and not event.alt_pressed
-	var harvest := event.button_index == MOUSE_BUTTON_LEFT and event.alt_pressed
+	var harvest := false # Corpse harvesting is disabled; death drops all items.
 	if grid == Vector2i(game_state.player_x, game_state.player_y) and not force_attack and not harvest:
 		# The decision layer treats the current cell as a no-op. Preserve the
 		# current operation, but remember the press for later held redirection.
@@ -735,7 +735,7 @@ func _process_ground_input(delta: float) -> void:
 		return
 	var hovered := get_viewport().gui_get_hovered_control()
 	var over_world := hovered == world_renderer or (hovered != null and world_renderer.is_ancestor_of(hovered))
-	_ground_input.advance(delta, _mouse_grid(), Input.is_key_pressed(KEY_CTRL), over_world, _ground_path_active, Input.is_key_pressed(KEY_SHIFT), Input.is_key_pressed(KEY_ALT))
+	_ground_input.advance(delta, _mouse_grid(), Input.is_key_pressed(KEY_CTRL), over_world, _ground_path_active, Input.is_key_pressed(KEY_SHIFT), false)
 	if not _ground_input.pending:
 		return
 	var from := Vector2i(game_state.player_x, game_state.player_y)
