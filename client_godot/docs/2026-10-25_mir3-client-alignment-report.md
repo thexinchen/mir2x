@@ -2019,3 +2019,31 @@ MIR3_INVENTORY_CANCEL_SCREENSHOT=/tmp/mir3-cancel111.png xvfb-run -a /home/czx/g
 ```
 
 证据→结论→后续路径：E111-1证明取消入口不限于快捷引用，F111-1据此修复真实物品路由遗漏，E111-2/E111-3覆盖界面回退及服务器所有权一致，E111-4复核用户指定采集规则。其他原版状态语义、逐物品延迟、冲撞及传送结算缺口仍需继续取证，整体对齐目标保持进行。
+
+## 批次 112：真实物品交换的格子占位与边界适配（2026-10-26）
+
+E112-1：沿用已授权的G:/mir3/work/mir3-movement/scope.md范围，使用IDA继续复核原6FDF98及6FE194。6FDF98经6FDC28清来源，再将target item（context32）写到source owner/source slot，并由6FD7C0保留到持久游标；既有mir3-item-use.json的6FDFA6校验覆盖这一链路。可以证明交换涉及来源/目标槽与被替换游标，不能直接把原版槽编号解释为当前多格图标的像素坐标。原样本SHA256仍为eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021，flavor=null；本批没有新增未经证明的原版空间规则。
+
+E112-2：当前后端配套C++客户端InvPack::add(item,x,y)在越界或Pack2D检测占用时调用自动放置；Godot的_place_grabbed也已有同等检查，但_grab_item交换路径直接把旧游标写到目标左上角。初版离线fixture以木剑826和相邻药品布局，在104修复前确实失败于occupied重叠，日志/tmp/mir3-swap112-before.log。后来增加右边界覆盖时确认826只宽一格，最终fixture改用实际宽于一格的布衣766，不能把原木剑用例算作宽度越界验证。
+
+F112-1（severity=n/a_re，confidence=high，status=fixed，evidence=E112-1/E112-2，location=client_godot/scripts/game/inventory_panel.gd::_grab_item）：交换成功后仍让被替换物留在鼠标，已放入背包的原游标物品优先使用请求的目标位置；若自身尺寸会超出右边界或碰到其他物品，则复用_find_free_position寻找空位。合法区域仍精确落在原目标左上角，不挪动其他背包物品，不改变实例/数量/扩展属性，不增加网络请求。格子回退是当前mir2x图标背包的适配，不宣称恢复了原服务器的背包空间协议。
+
+E112-3：新增inventory_swap_geometry_smoke.gd/.tscn，使用真实布衣尺寸覆盖邻格占用、右边界、合法区域三种布局，逐项核对被替换游标、实例数、持久属性、所有格子无重叠/越界及取消后所有权恢复。104日志/tmp/mir3-swap112-offline.log通过；inventory_cancel_smoke、inventory_interaction_smoke、inventory_refresh_smoke通过，未扩大为全部物品尺寸穷举验证。
+
+E112-4：新增network_inventory_swap_smoke.gd/.tscn，复用登录、同UID重连及右键生成输入辅助。只使用角色已有的一件宽物品与两件窄物品，调整客户端临时格子布局，其他物品放到较后滚动行，未造物、消费或向服务器保存布局。调用生产方法抓起宽物品后，通过真实GUI分发的生成左键按下/释放完成三种交换，覆盖call_deferred路径，再通过全局右键取消。每次检查完整实例记录（含数量/属性）、请求序号、布局、腰带、穿戴及坐标；重登录以新收到的服务器库存再次核对完整记录、装备、地图和位置。没有声称物理鼠标操作或原版服务器实测。
+
+初版联网夹具默认面板位置的最右列点击没有命中物品；将测试背包显式移到(0,0)后通过，未据此改生产GUI层级。截图扩展曾因scenario为Variant而无法推断path类型导致脚本启动失败；改为显式String，等该失败进程终止后再运行，失败日志/tmp/mir3-swap112-window.log不计入PASS。最终无窗口/tmp/mir3-swap112-network.log与Xvfb/tmp/mir3-swap112-window-final.log通过；后者的occupied/right_edge/clear三张截图已取回G:/mir3/work/mir3-movement/mir3-swap112-场景名.png并检查，占位回退和右边界回退均保持图标区域分离。
+
+E112-5：network_inventory_cancel_smoke、network_shortcut_drag_smoke、world_action_smoke在104顺序回归通过，日志/tmp/mir3-swap112-场景名.log。最终成功轮次日志检查无SCRIPT ERROR/ERROR；退出ObjectDB与Xvfb VSync提示仍存在，未声称修复。请求门JSON仅重算inventory_panel来源哈希，在104独立生成/tmp/mir3-request112.json并cmp一致；main未变，因此技能对应与位移动画快照不重复改写。原版物品证据本批未修改。
+
+服务器PID3708547持续运行，本批没有C++变更、编译或重启。生产修复及指纹、离线测试、联网测试、报告分四笔线性提交同步104；新增gd/tscn纳入，旧.uid、日志、截图、样本、二进制和104已有build_signature修改排除。
+
+沿用批次104资源环境复跑：
+
+```sh
+/home/czx/godot --headless --path client_godot res://tests/inventory_swap_geometry_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_inventory_swap_smoke.tscn
+MIR3_INVENTORY_SWAP_SCREENSHOT=/tmp/mir3-swap112.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_inventory_swap_smoke.tscn
+```
+
+证据→结论→后续路径：E112-1限定原交换语义，E112-2定位当前适配遗漏，F112-1修复格子安全且保留被替换游标，E112-3/E112-4核对布局与真实服务器所有权，E112-5确认相邻输入和走路等动作回归。原版状态语义、逐物品延迟、冲撞及其他传送结算继续推进，整体对齐目标未完成。
