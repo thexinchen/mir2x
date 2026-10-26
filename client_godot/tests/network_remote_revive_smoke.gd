@@ -17,6 +17,8 @@ var saw_correction := false
 var saw_death_after_health := false
 var verifying_display := false
 var appearance_replies := 0
+var waiting_peer_offline := false
+var peer_hit_point := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -40,6 +42,9 @@ func _message(head: int, payload: PackedByteArray) -> void:
 			"map_uid": data.mapUID, "x": data.action.x, "y": data.action.y, "direction": data.action.direction})
 		main = load("res://scenes/game/main.tscn").instantiate()
 		add_child(main)
+		# Registered after main: this callback observes the same signal emission
+		# after normal removal handling, before another rendered frame can run.
+		NetworkClient.message_received.connect(_after_main_message)
 	elif head == NetworkClient.SM_HEALTH:
 		var reader := CerealReader.new(payload)
 		var data := reader.read_sd_health()
@@ -146,7 +151,29 @@ func _verify_revived_display(actor: Dictionary) -> void:
 		return
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(exchange + "/revived-inspection.png")
+	if OS.get_environment("MIR3_REMOTE_REMOVAL") == "1":
+		waiting_peer_offline = true
+		peer_hit_point = point
+		var close_file := FileAccess.open(exchange + "/observer.done", FileAccess.WRITE)
+		close_file.store_string("inspection verified; waiting for actual peer disconnect")
+		close_file.close()
+		return
 	_finish(true, "real remote revival, live rendered hitbox/status/opacity, selection and Ctrl-right fresh inspection reply")
+
+
+func _after_main_message(head: int, payload: PackedByteArray) -> void:
+	if finished or not waiting_peer_offline or head != NetworkClient.SM_OFFLINE or payload.size() != 16:
+		return
+	if payload.decode_u64(0) != subject_uid or payload.decode_u64(8) != GameState.player_map_uid:
+		return
+	var renderer: Control = main.get_node("WorldRenderer")
+	var panel: Control = main.get("_extra_panel_nodes").get(main.PLAYER_INSPECTION_PANEL_PATH) as Control
+	if not GameState.get_creature(subject_uid).is_empty() or renderer.get("_actor_target_rects").has(subject_uid) \
+			or renderer.get("_corpse_target_rects").has(subject_uid) or renderer.focus_uid_at_screen(peer_hit_point, false, true) == subject_uid \
+			or main.get("_inspection_uid") != 0 or (panel != null and panel.visible):
+		_finish(false, "actual peer offline retained actor, hitbox, focus or inspection in the same message emission")
+		return
+	_finish(true, "real revival and inspection; actual peer SM_OFFLINE cleared actor/hitboxes/focus/panel before next draw")
 
 
 func _prepare_correction(actor: Dictionary) -> bool:

@@ -4055,6 +4055,7 @@ func _test_exact_frame_input(main: Control) -> bool:
 	GameState.player_y = 0
 	GameState.grabbed_item = {"itemID": 1, "seqID": 2, "count": 1}
 	GameState.update_creature(707, {"uid": 707, "x": 5, "y": 5, "type": 1, "action_type": 2})
+	GameState.update_creature(808, {"uid": 808, "x": 5, "y": 6, "type": 1, "action_type": 2})
 	var renderer: Control = main.get_node("WorldRenderer")
 	renderer._actor_target_rects = {
 		707: {"rect": Rect2(90, 90, 20, 20), "map_y": 5},
@@ -4126,6 +4127,7 @@ func _test_exact_frame_input(main: Control) -> bool:
 		return false
 	GameState.grabbed_item = {}
 	GameState.creatures.erase(707)
+	GameState.remove_creature(808)
 	return true
 
 
