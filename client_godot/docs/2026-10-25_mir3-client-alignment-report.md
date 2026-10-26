@@ -1392,3 +1392,40 @@ MIR3_ITEM_USE_HIDDEN_BAR=1 MIR3_ITEM_USE_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/client
 ```
 
 证据→结论→后续路径：E92-1/E92-2约束十格迁移的数据模型与未知动作语义，E92-3的旧版负例及新输入断言、E92-4的实际隐藏栏死亡用药回报支持F92-1。原版十格快捷引用、自动用药及其他玩法仍未完整对齐，整体目标继续。证据、输入修复/指纹、回归测试、报告分笔线性提交；旧.uid、日志、样本和104既有build_signature改动均排除。
+
+## 批次 93：十格背包快捷引用接入及实际数字键用药（2026-10-26）
+
+本批将E92的十格引用模型接入Godot，数字键1—9/0分别使用十个背包引用。背包选取物品后左键快捷格即可绑定，物品仍归背包所有；左键已有引用可将引用移到另一格，取消引用不丢弃库存。既有六格腰带继续单独存储并支持右键使用，数字键不再在未绑定时回落消费腰带。原版特殊动作和配置持久化仍有未恢复部分，不能把本批称为完整原版物品系统。
+
+范围沿用工作目录scope.md、用户对Mir3及Godot/104验证的授权，报告flavor=null，原样本SHA-256仍为eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021。E93-1：追踪64F484传入的对象+928接口，解析64A003的三个28字节接口记录，唯一offset=0x3A0记录指向649FD7虚表。方法包装器先将对象地址减928再跳转：kind→64DB24返回7，accept→64A420要求物品接口有效且来源kind为1或7，get→64D930复制指定格的引用，set→64A0D8向对象+336+4*slot复制引用，clear→64A44C只清理该引用。最初IDA未将这些间接目标定义为函数，反编译失败；补建已由虚表确定的函数边界后取得反编译，原样本没有修改。独立PE提取器校验包装器及目标，不依赖修改过的IDA数据库。
+
+export_mir3_item_use.py/schema4现在包含56处原始指令、2条回报注册、十个矩形、30对特殊编号及上述五个接口方法。test_mir3_item_use.py九项测试通过，新增拒绝setter被错误绑定到getter的检查。本机和104各自提取后cmp一致，虚表映射和set/clear/get方法与E92背包刷新证据共同约束本次客户端实现。
+
+F93-1：新增mir3_item_shortcuts.gd管理十个引用。当前可堆叠物品按当前itemID汇总背包数量并每次重新选择实际实例；非堆叠物品按当前itemID/seqID匹配。分组物品暂时耗尽时保留零数量引用，后续取得同种物品可继续使用；非分组实例消失后清除，匹配正在等待确认的实例则暂保留。这里用当前packable/itemID适配原flag-bit2/名称统计，没有声称原始字段与当前ID数值等价，也没有合并未经证明的不同ID同名物品。数量由库存更新驱动，同一物品绑定十次不会增加库存。
+
+GameState保存引用及独立的grabbed_shortcut游标；真实grabbed_item始终优先，避免把快捷引用当成第二份库存。绑定被本地鼠标拿起的背包物品时，将同一物品放回背包并清空真实游标，不请求装备腰带；移动引用不改变背包数量，取消引用也不发送地面丢弃。InventoryPanel抽出共用_use_inventory_item入口，快捷引用复用已有物品使用/穿戴逻辑，也能解析被鼠标暂时拿起但服务端仍属于背包的物品。已知场景内使用成功/失败仍由E91相关回执处理，不提前扣除本地权威数量。
+
+NetworkClient增加当前待确认背包物品身份及状态信号，完成、超时、发送失败和断线清理；旧回调不能清掉新请求身份。GameState按角色UID隔离引用，同一角色在当前进程内重连先保留引用，等首次库存到达后再解析；不同角色清空引用。当前未写入磁盘，重启客户端不会保留绑定；原版配置读写位置尚未恢复，未自创原版持久化格式。
+
+F93-2：新增ItemShortcuts视图，十个内部矩形沿用E92提取坐标及29×32尺寸，显示数字、物品图标和汇总数量。为接入当前原生HUD，整行放在控制面板上方；框体样式和父级位置是当前UI适配，没有声称完整原版HUD像素一致。main优先处理1—9/0，技能和设置面板将全部数字让给物品入口，即便格子为空或浮动腰带关闭，也不会改成数字技能绑定。加载/购买模态、聊天输入以及已有死亡/强制动作边界保留。
+
+E93-2：新增mir3_item_shortcuts_smoke，覆盖分组汇总、鼠标持有去重、空引用再次取得物品、精确实例、待确认保留、同UID重连及换角色清理，以及十格绑定、移动、取消不转移库存/腰带、十个数字键分派和内部矩形。真实Input.parse_input_event鼠标点击最初暴露“Object is locked and can't be freed”：同步state_changed刷新尝试释放正在发gui_input的格子。虽然当时数据绑定成功并打印PASS，原日志仍含脚本错误，因此没有算作最终验收。视图改为延后合并刷新，并增加图标及tooltip完成刷新的断言；最终Xvfb日志/tmp/mir3-item-shortcuts93-gui-final.log没有该错误。
+
+视图还比较解析后的显示内容，无关演员/聊天状态更新不重复创建十格节点；夹具检查状态信号后既有格子实例ID不变。这只证明避免了无关HUD重建，未测整体FPS或声称全部性能问题解决。最终headless专项、quick_bar_smoke、skill_panel_smoke、runtime_config_smoke、item_use_pending_smoke、inventory_interaction_smoke及world_action_smoke均通过。待确认专项新增实际身份元数据及旧会话回调隔离断言。既有quick_bar夹具把数字键断言移至十格引用，六格腰带本身的图标、抓取、装备、右键和拖动检查保留；7和Shift+7空引用不再绑定技能。
+
+E93-3：新增network_item_shortcuts_smoke，使用标准id_4真实在线库存生成12份6号药水，从背包选取同一物品分别绑定十格，检查每次绑定后数量不变、腰带未变且未发送使用请求。关闭浮动腰带后，1—9/0各产生一份实际请求及匹配SM_OK，库存每次只减一；同步重复按键不得产生第二个请求ID或音效，十个引用均显示最新库存总数。MIR3_SHORTCUTS_DEAD_KEY=1在0键前发实际@die，HP0时仍能使用第十格，随后@revive。最后使用剩余2份测试药水，恢复测试前总数量；测试没有移动角色或转移腰带物品。
+
+最终Xvfb日志/tmp/mir3-shortcuts93-network-final.log显示dead_zero=true及PASS，截图/tmp/mir3-item-shortcuts93-final.png已复制到工作目录item-shortcuts93-final.png并人工查看，十个物品格及数字可见。此测试验证药水，不把全部装备、技能书或30项特殊动作视为已实测。30项特殊编号继续保留为原始域，不按当前magicID构造未经证明的技能请求。
+
+E93-4：旧network_item_use_receipt_smoke的死亡/隐藏栏模式改为先在背包建立十格引用并用数字键消费背包物品，再单独以右键测试腰带；七种失败、权威扣除、重复请求及旧格式兼容检查均保留并复跑通过。network_belt_consume_smoke不再要求库存恰为10份，使用已有有效数量，避免为夹具删除库存。其旧MIR2X_NETWORK_BELT_DEAD_KEY模式现在先验证空数字引用不会消费腰带，再验证死亡右键仍可消费腰带，随后复活、归还余量及背包右键使用。实际记录belt10→9、inventory9→8，两次消费保留在标准测试角色账上；该旧夹具不声称库存净变化为0。
+
+同账号顺接运行有一次旧日志只报泛化login rejected，缺少错误码，不能据此确定原因为重复在线。夹具现补充明确错误码，并仅对已知SM_ONLINEERROR单字节03作最多8次短重试，其他拒绝仍失败；最终独立复跑通过，没有重启服务端掩盖登录失败，也未声称这次复跑确定覆盖了重试分支。network_request_gate_smoke的实际走路、回执、插值、10秒迟读和重连复跑通过并归位。服务器PID3609924继续运行，无C++或协议结构变更，本批未重编译或重启。
+
+```sh
+MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" /home/czx/godot --headless --path client_godot res://tests/mir3_item_shortcuts_smoke.tscn
+MIR3_SHORTCUTS_DEAD_KEY=1 MIR3_ITEM_SHORTCUTS_SCREENSHOT=/tmp/mir3-item-shortcuts93-final.png MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_item_shortcuts_smoke.tscn
+```
+
+请求门证据schema9将新增模型、视图和库存使用入口纳入源码指纹，既有main/GameState/网络指纹及技能对照均刷新，104独立提取cmp一致。原版证据、模型/会话状态、UI与既有回归适配、新专项、报告分批线性提交；新增源码/场景纳入提交，旧.uid、截图、日志、二进制、样本和104原有build_signature修改排除。退出ObjectDB及软件渲染VSync警告仍有保留。
+
+证据→结论→后续路径：E93-1支持复制/清理引用的数据模型；E93-2证明客户端绑定与游标生命周期、修复实际GUI刷新错误；E93-3/E93-4将十个数字键及旧腰带隔离接到真实库存与相关回报。F93-1/F93-2完成十格背包引用的运行期主链路，持久化、特殊动作、原始字段完整映射及其余玩法继续分析，整体目标未完成。
