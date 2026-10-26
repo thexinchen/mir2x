@@ -359,7 +359,7 @@ func _consume_or_equip(key: String) -> Error:
 
 func _use_inventory_item(item: Dictionary) -> Error:
 	var item_type: String = _resources.item_type(int(item.get("itemID", 0)))
-	if item_type in ["恢复药水", "强化药水", "技能书"]:
+	if item_type in ["恢复药水", "强化药水", "技能书"] or (item_type == "传送卷轴" and _resources.item_name(int(item.get("itemID", 0))) == "随机传送卷"):
 		var error := NetworkClient.send_consume_item(item.get("itemID", 0), item.get("seqID", 0), 1)
 		if error == ERR_BUSY:
 			return error
