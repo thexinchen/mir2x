@@ -947,9 +947,9 @@ func _update_magic_focus(_mouse_grid: Vector2i, magic_id := 0) -> int:
 func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 	var magic_name: String = _resources.magic_names.get(magic_id, "")
 	# Original 67CF44 resolves a spell target only in its casting branch.
-	# Sword toggles and the special kick command must not replace magic focus.
+	# Sword toggles and the rush/kick command branch must not replace focus.
 	var focus_uid := 0
-	if magic_name not in SWING_MAGIC_NAMES and magic_name != "空拳刀法":
+	if magic_name not in SWING_MAGIC_NAMES and magic_name not in ["野蛮冲撞", "空拳刀法"]:
 		# Actual spells still refresh focus before the cooldown rejection.
 		focus_uid = _update_magic_focus(mouse_grid, magic_id)
 	if not _magic_ready(magic_id):
