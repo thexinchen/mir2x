@@ -39,6 +39,16 @@ CHECKS = [
     (0x5FD081, "2b967403000081fae80300000f828e010000", "separate GUI protection controller has1000ms unsigned check"),
     (0x5FD0A2, "8bb869010000a1c09372008b003bb8710100007d69", "GUI controller distinguishes current HP361 from maximum HP369"),
     (0x5FD13C, "3bbe2c0300007d0d8d8628030000e8b50e0000", "GUI protection compares raw HP against its own threshold before action"),
+    (0x5F9C96, "80787c007519a1289d720080780100750e", "GUI auto recovery has actor124 and global729D28 byte1 guards"),
+    (0x5F97DD, "8378f41e0f8cc7000000", "GUI automatic HP requires deficit at least30"),
+    (0x5F97E7, "bb110000008b049d145e7200", "GUI automatic HP scans recovery table backward from index17"),
+    (0x5F9807, "85db7e0c8b049d105e72003b45f074ef", "HP groups adjacent equal recovery values and starts at their first entry"),
+    (0x5F9BAD, "83e8280f82bf00000083e846720c83e846721a83e846722b", "GUI automatic MP deficit bands begin40 and increase by70"),
+    (0x6911CB, "2b83180d00008b93200d00003bc2770485d27505", "GUI frame gate permits only elapsed greater than item delay, or zero delay"),
+    (0x5FE01F, "b201e8caf40600", "escape selection6 invokes explicit exit with argument1"),
+    (0x5FE054, "8950088b500883fa067f0485d27d0533d2895008c3", "escape selector clamps both negative and greater-than6 to0"),
+    (0x690A7C, "8983180d00008d957cffffffa15c9972008b008b08ff510c8b45e08983200d0000", "manual entry stores shared actor use tick and delay from item record offset100"),
+    (0x5FD11B, "e82080ffff", "AutoBack first path calls named item use directly, not escape/exit dispatcher"),
 ]
 
 # Each row is (channel, object offset, enable/interval/threshold push addresses).
@@ -52,6 +62,24 @@ TABLES = [
     (0x727408, ["金创药(小)", "金创药(中)", "强效金创药", "", "", "", "", ""]),
     (0x727500, ["魔法药(小)", "魔法药(中)", "强效魔法药", "", "", "", "", ""]),
     (0x7275F8, ["太阳水", "强效太阳水", "万年雪霜", "疗伤药", "", "", "", ""]),
+]
+GUI_HP_NAMES = ["急救丸(小)", "金创药(小)", "急救丸(中)", "太阳水", "金创药(中)",
+                "急救丸(大)", "强效太阳水", "金创药(大)", "九叶灵芝(小)", "急救丸(特)",
+                "急救瓶", "千年雪霜", "万年雪霜", "金创药(特)", "雪霜菁华", "九叶灵芝(中)",
+                "金创药(特大)", "九叶灵芝(大)"]
+GUI_HP_VALUES = [30, 30, 70, 70, 70, 110, 110, 110, 140, 170, 70, 130, 170, 170, 195, 200, 200, 300]
+GUI_MP_NAMES = ["魔法药(小)", "魔法药(中)", "魔法药(大)", "魔法药(特)", "清心丸(小)",
+                "清心丸(中)", "清心丸(大)", "清心丸(特)", "清新瓶", "太阳水", "强效太阳水",
+                "千年雪霜", "万年雪霜", "九叶灵芝(小)", "九叶灵芝(中)", "雪霜菁华", "九叶灵芝(大)"]
+ESCAPE_NAMES = ["回城卷", "随机传送卷", "随机传送石", "地牢逃脱卷", "比奇传送石", "盟重传送石", "小退"]
+GUI_KEY_LOADS = [
+    (0x5F9F11, "AutoHP"), (0x5F9F40, "HPVal"), (0x5F9F6A, "SyncHP"), (0x5F9F8D, "ManualHP"),
+    (0x5FA0BF, "AutoMP"), (0x5FA0EE, "MPVal"), (0x5FA118, "SyncMP"), (0x5FA13B, "ManualMP"),
+    (0x5FA286, "AutoBackCheck"), (0x5FA2A9, "AutoBackVal"), (0x5FA2D3, "AutoBackModel"),
+    (0x5FA312, "HPMaxBackCheck"), (0x5FA330, "HPMaxBackVal"), (0x5FA34A, "HPMaxBackModel"),
+    (0x5FA3AA, "HPBackCheck2"), (0x5FA3C8, "HPBackVal2"), (0x5FA3E2, "HPBackModel2"),
+    (0x5FA442, "MPBackCheck1"), (0x5FA460, "MPBackVal1"), (0x5FA47A, "MPBackModel1"),
+    (0x5FA4DA, "MPBackCheck2"), (0x5FA4F8, "MPBackVal2"), (0x5FA512, "MPBackModel2"),
 ]
 
 
@@ -100,7 +128,77 @@ def medicine_tables(sample):
     return result
 
 
-def compare_items(path):
+def gui_rules(sample):
+    def string_table(address, expected):
+        result = []
+        for index, name in enumerate(expected):
+            pointer = struct.unpack("<I", read_va(sample, address + index * 4, 4))[0]
+            length = struct.unpack("<I", read_va(sample, pointer - 4, 4))[0]
+            if length > 64 or read_va(sample, pointer, length).decode("gb18030") != name:
+                raise ValueError(f"unexpected GUI name table at {address:#x} index{index}")
+            result.append({"index": index, "name": name, "pointer": hex(pointer)})
+        return result
+    hp = string_table(0x725DCC, GUI_HP_NAMES)
+    values = list(struct.unpack("<18I", read_va(sample, 0x725E14, 72)))
+    if values != GUI_HP_VALUES:
+        raise ValueError("unexpected GUI HP recovery weights")
+    for row, value in zip(hp, values):
+        row["selection_weight"] = value
+    keys = []
+    for address, expected in GUI_KEY_LOADS:
+        code = read_va(sample, address, 10)
+        if code[0] != 0xB9 or code[5] != 0xBA:
+            raise ValueError(f"unexpected GUI config key load at {address:#x}")
+        key = ansi_string(sample, struct.unpack_from("<I", code, 1)[0])
+        section = ansi_string(sample, struct.unpack_from("<I", code, 6)[0])
+        if key != expected or section != "Protect":
+            raise ValueError(f"unexpected GUI config key at {address:#x}")
+        keys.append({"key": key, "section": section, "va": hex(address), "hex": code.hex()})
+    return {
+        "configuration": {"file_family": "character.MFA", "loader": "0x5f9d94", "saver": "0x5fab00", "keys": keys,
+                          "auto_and_manual": "automatic takes precedence; loader disables manual if both are set",
+                          "defaults": "AutoHP/AutoMP/SyncHP/SyncMP/ManualHP/ManualMP and escape checks default0; HPVal/MPVal default current maxima"},
+        "automatic_recovery": {"entry": "0x5f9c7c", "hp": "0x5f9738", "mp": "0x5f9b1c",
+                               "order": "HP then MP", "target": "min(configured target, actor maximum)",
+                               "sync": "5FCD38 updates target fields to latest maxima only when Auto and Sync controls are enabled",
+                               "hp_minimum_deficit": 30, "hp_table": hp,
+                               "hp_selection": "scan original indexes17..0; skip weights above deficit; try adjacent equal-weight group in forward order, then continue backward; do not sort this nonmonotonic table",
+                               "mp_minimum_deficit": 40, "mp_deficit_bands": [40, 110, 180, 250],
+                               "mp_name_options": string_table(0x725E5C, GUI_MP_NAMES),
+                               "mp_selection_scope": "bands select5F98D4 branches; recursive medicine and special fallback still need complete extraction",
+                               "item_use": ["0x5f5140", "0x690494"],
+                               "frame_gate": "6911C0: unsigned elapsed since actor3352 > actor3360 delay, or delay0; separate from pending3000ms",
+                               "delay_source": "690A7C stores actor3352;690A97 stores latest item record offset100 into actor3360, one shared actor pair rather than separate per-item timers",
+                               "guards": {"actor124": 0, "cell729D28_byte1": 0}},
+        "escape_protection": {"entry": "0x5fd040", "period_ms": 1000,
+                              "options": string_table(0x72603C, ESCAPE_NAMES), "selector_bounds": [0, 6],
+                              "invalid_selector": 0, "exit_selector": 6,
+                              "auto_back_exception": "first AutoBack path checks selected item name and calls5F5140 directly; it does not apply5FE004's special exit-selector6 branch",
+                              "damage_entry": "0x5fd228", "damage_interval_ms": 2000,
+                              "damage_trigger": "positive damage strictly above HPMaxBackVal; last tick advances only after a nonzero local action result, not a server acknowledgement"},
+        "limits": "GUI automatic recovery, manual deficit rows and escape protection are distinct from the helper.Set controller. Stored .MFA format and all mode callbacks are not yet migrated.",
+    }
+
+
+def hp_candidate_order(deficit, records):
+    """Replay5F9738's automatic branch for review, without sending game requests."""
+    if deficit < 30:
+        return []
+    result, index = [], len(records) - 1
+    while index >= 0:
+        value = records[index]["selection_weight"]
+        if value > deficit:
+            index -= 1
+            continue
+        start = index
+        while start > 0 and records[start - 1]["selection_weight"] == value:
+            start -= 1
+        result.extend(row["name"] for row in records[start:index + 1])
+        index = start - 1
+    return result
+
+
+def compare_items(path, original_names=None):
     data = path.read_bytes()
     if len(data) < 12 or data[:4] != b"M2SP" or struct.unpack_from("<I", data, 4)[0] != 1:
         raise ValueError("invalid current item name manifest")
@@ -122,7 +220,7 @@ def compare_items(path):
     def normalize(name):
         return name.replace("（", "(").replace("）", ")")
     rows = []
-    for _, table in TABLES:
+    for table in ([original_names] if original_names is not None else [table for _, table in TABLES]):
         for name in table:
             if not name:
                 continue
@@ -151,10 +249,11 @@ def extract(path, item_names=None):
                          "settings": [config_default(sample, *row) for row in defaults],
                          "actor_scalar_offset": 365 if name == "MP" else 361})
     result = {
-        "schema_version": 1, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 2, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "channels": channels,
         "book_selection": config_default(sample, 0x6C3B98, "RenewBookNowBookIndex", -1),
         "initial_medicine_tables": medicine_tables(sample),
+        "gui_rules": gui_rules(sample),
         "controller": {"function": "0x6c4a40", "timer_ms": 50,
                        "channel_field": 17, "sequence": ["HP", "MP", "special", "book"],
                        "failure_rule": "advance once; only if new channel is3 evaluate it immediately; otherwise return",
@@ -173,7 +272,7 @@ def extract(path, item_names=None):
                                     "hp": 361, "max_hp": 369, "mp": 365, "max_mp": 373,
                                     "action_dispatch": "0x5fe004", "item_use": ["0x5f5140", "0x690494"],
                                     "selection6": "explicit exit via66D4F0, not a medicine",
-                                    "scope": "Separate GUI protection path uses manual inventory entry; do not assign the helper's800ms window to every automatic action. Configuration and activation require further analysis."},
+                                    "scope": "Escape protection, not GUI auto recovery. Uses manual inventory entry; do not assign the helper's800ms window to every automatic action. See gui_rules for separate .MFA settings."},
         "limits": [
             "Static initial medicine tables; runtime table editing has not been traced.",
             "Stored Percent keys compare raw scalar values; user-facing editor conversion remains unaudited.",
@@ -184,6 +283,7 @@ def extract(path, item_names=None):
     }
     if item_names is not None:
         result["current_item_name_comparison"] = compare_items(item_names)
+        result["gui_item_name_comparison"] = compare_items(item_names, list(dict.fromkeys(GUI_HP_NAMES + GUI_MP_NAMES + ESCAPE_NAMES[:-1])))
     return result
 
 

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -131,6 +131,56 @@
       "va": "0x5fd13c",
       "hex": "3bbe2c0300007d0d8d8628030000e8b50e0000",
       "role": "GUI protection compares raw HP against its own threshold before action"
+    },
+    {
+      "va": "0x5f9c96",
+      "hex": "80787c007519a1289d720080780100750e",
+      "role": "GUI auto recovery has actor124 and global729D28 byte1 guards"
+    },
+    {
+      "va": "0x5f97dd",
+      "hex": "8378f41e0f8cc7000000",
+      "role": "GUI automatic HP requires deficit at least30"
+    },
+    {
+      "va": "0x5f97e7",
+      "hex": "bb110000008b049d145e7200",
+      "role": "GUI automatic HP scans recovery table backward from index17"
+    },
+    {
+      "va": "0x5f9807",
+      "hex": "85db7e0c8b049d105e72003b45f074ef",
+      "role": "HP groups adjacent equal recovery values and starts at their first entry"
+    },
+    {
+      "va": "0x5f9bad",
+      "hex": "83e8280f82bf00000083e846720c83e846721a83e846722b",
+      "role": "GUI automatic MP deficit bands begin40 and increase by70"
+    },
+    {
+      "va": "0x6911cb",
+      "hex": "2b83180d00008b93200d00003bc2770485d27505",
+      "role": "GUI frame gate permits only elapsed greater than item delay, or zero delay"
+    },
+    {
+      "va": "0x5fe01f",
+      "hex": "b201e8caf40600",
+      "role": "escape selection6 invokes explicit exit with argument1"
+    },
+    {
+      "va": "0x5fe054",
+      "hex": "8950088b500883fa067f0485d27d0533d2895008c3",
+      "role": "escape selector clamps both negative and greater-than6 to0"
+    },
+    {
+      "va": "0x690a7c",
+      "hex": "8983180d00008d957cffffffa15c9972008b008b08ff510c8b45e08983200d0000",
+      "role": "manual entry stores shared actor use tick and delay from item record offset100"
+    },
+    {
+      "va": "0x5fd11b",
+      "hex": "e82080ffff",
+      "role": "AutoBack first path calls named item use directly, not escape/exit dispatcher"
     }
   ],
   "channels": [
@@ -325,6 +375,432 @@
       "sha256": "70b671ecb8f6bba592bf41565fcd6ccfbb26d78d0eba1c2eafbaf72fafb0c157"
     }
   ],
+  "gui_rules": {
+    "configuration": {
+      "file_family": "character.MFA",
+      "loader": "0x5f9d94",
+      "saver": "0x5fab00",
+      "keys": [
+        {
+          "key": "AutoHP",
+          "section": "Protect",
+          "va": "0x5f9f11",
+          "hex": "b948a85f00ba58a85f00"
+        },
+        {
+          "key": "HPVal",
+          "section": "Protect",
+          "va": "0x5f9f40",
+          "hex": "b968a85f00ba58a85f00"
+        },
+        {
+          "key": "SyncHP",
+          "section": "Protect",
+          "va": "0x5f9f6a",
+          "hex": "b978a85f00ba58a85f00"
+        },
+        {
+          "key": "ManualHP",
+          "section": "Protect",
+          "va": "0x5f9f8d",
+          "hex": "b988a85f00ba58a85f00"
+        },
+        {
+          "key": "AutoMP",
+          "section": "Protect",
+          "va": "0x5fa0bf",
+          "hex": "b9d8a85f00ba58a85f00"
+        },
+        {
+          "key": "MPVal",
+          "section": "Protect",
+          "va": "0x5fa0ee",
+          "hex": "b9e8a85f00ba58a85f00"
+        },
+        {
+          "key": "SyncMP",
+          "section": "Protect",
+          "va": "0x5fa118",
+          "hex": "b9f8a85f00ba58a85f00"
+        },
+        {
+          "key": "ManualMP",
+          "section": "Protect",
+          "va": "0x5fa13b",
+          "hex": "b908a95f00ba58a85f00"
+        },
+        {
+          "key": "AutoBackCheck",
+          "section": "Protect",
+          "va": "0x5fa286",
+          "hex": "b958a95f00ba58a85f00"
+        },
+        {
+          "key": "AutoBackVal",
+          "section": "Protect",
+          "va": "0x5fa2a9",
+          "hex": "b970a95f00ba58a85f00"
+        },
+        {
+          "key": "AutoBackModel",
+          "section": "Protect",
+          "va": "0x5fa2d3",
+          "hex": "b984a95f00ba58a85f00"
+        },
+        {
+          "key": "HPMaxBackCheck",
+          "section": "Protect",
+          "va": "0x5fa312",
+          "hex": "b99ca95f00ba58a85f00"
+        },
+        {
+          "key": "HPMaxBackVal",
+          "section": "Protect",
+          "va": "0x5fa330",
+          "hex": "b9b4a95f00ba58a85f00"
+        },
+        {
+          "key": "HPMaxBackModel",
+          "section": "Protect",
+          "va": "0x5fa34a",
+          "hex": "b9cca95f00ba58a85f00"
+        },
+        {
+          "key": "HPBackCheck2",
+          "section": "Protect",
+          "va": "0x5fa3aa",
+          "hex": "b9e4a95f00ba58a85f00"
+        },
+        {
+          "key": "HPBackVal2",
+          "section": "Protect",
+          "va": "0x5fa3c8",
+          "hex": "b9fca95f00ba58a85f00"
+        },
+        {
+          "key": "HPBackModel2",
+          "section": "Protect",
+          "va": "0x5fa3e2",
+          "hex": "b910aa5f00ba58a85f00"
+        },
+        {
+          "key": "MPBackCheck1",
+          "section": "Protect",
+          "va": "0x5fa442",
+          "hex": "b928aa5f00ba58a85f00"
+        },
+        {
+          "key": "MPBackVal1",
+          "section": "Protect",
+          "va": "0x5fa460",
+          "hex": "b940aa5f00ba58a85f00"
+        },
+        {
+          "key": "MPBackModel1",
+          "section": "Protect",
+          "va": "0x5fa47a",
+          "hex": "b954aa5f00ba58a85f00"
+        },
+        {
+          "key": "MPBackCheck2",
+          "section": "Protect",
+          "va": "0x5fa4da",
+          "hex": "b96caa5f00ba58a85f00"
+        },
+        {
+          "key": "MPBackVal2",
+          "section": "Protect",
+          "va": "0x5fa4f8",
+          "hex": "b984aa5f00ba58a85f00"
+        },
+        {
+          "key": "MPBackModel2",
+          "section": "Protect",
+          "va": "0x5fa512",
+          "hex": "b998aa5f00ba58a85f00"
+        }
+      ],
+      "auto_and_manual": "automatic takes precedence; loader disables manual if both are set",
+      "defaults": "AutoHP/AutoMP/SyncHP/SyncMP/ManualHP/ManualMP and escape checks default0; HPVal/MPVal default current maxima"
+    },
+    "automatic_recovery": {
+      "entry": "0x5f9c7c",
+      "hp": "0x5f9738",
+      "mp": "0x5f9b1c",
+      "order": "HP then MP",
+      "target": "min(configured target, actor maximum)",
+      "sync": "5FCD38 updates target fields to latest maxima only when Auto and Sync controls are enabled",
+      "hp_minimum_deficit": 30,
+      "hp_table": [
+        {
+          "index": 0,
+          "name": "急救丸(小)",
+          "pointer": "0x5f41d8",
+          "selection_weight": 30
+        },
+        {
+          "index": 1,
+          "name": "金创药(小)",
+          "pointer": "0x5f41ec",
+          "selection_weight": 30
+        },
+        {
+          "index": 2,
+          "name": "急救丸(中)",
+          "pointer": "0x5f4200",
+          "selection_weight": 70
+        },
+        {
+          "index": 3,
+          "name": "太阳水",
+          "pointer": "0x5f4214",
+          "selection_weight": 70
+        },
+        {
+          "index": 4,
+          "name": "金创药(中)",
+          "pointer": "0x5f4224",
+          "selection_weight": 70
+        },
+        {
+          "index": 5,
+          "name": "急救丸(大)",
+          "pointer": "0x5f4238",
+          "selection_weight": 110
+        },
+        {
+          "index": 6,
+          "name": "强效太阳水",
+          "pointer": "0x5f424c",
+          "selection_weight": 110
+        },
+        {
+          "index": 7,
+          "name": "金创药(大)",
+          "pointer": "0x5f4260",
+          "selection_weight": 110
+        },
+        {
+          "index": 8,
+          "name": "九叶灵芝(小)",
+          "pointer": "0x5f4274",
+          "selection_weight": 140
+        },
+        {
+          "index": 9,
+          "name": "急救丸(特)",
+          "pointer": "0x5f428c",
+          "selection_weight": 170
+        },
+        {
+          "index": 10,
+          "name": "急救瓶",
+          "pointer": "0x5f42a0",
+          "selection_weight": 70
+        },
+        {
+          "index": 11,
+          "name": "千年雪霜",
+          "pointer": "0x5f42b0",
+          "selection_weight": 130
+        },
+        {
+          "index": 12,
+          "name": "万年雪霜",
+          "pointer": "0x5f42c4",
+          "selection_weight": 170
+        },
+        {
+          "index": 13,
+          "name": "金创药(特)",
+          "pointer": "0x5f42d8",
+          "selection_weight": 170
+        },
+        {
+          "index": 14,
+          "name": "雪霜菁华",
+          "pointer": "0x5f42ec",
+          "selection_weight": 195
+        },
+        {
+          "index": 15,
+          "name": "九叶灵芝(中)",
+          "pointer": "0x5f4300",
+          "selection_weight": 200
+        },
+        {
+          "index": 16,
+          "name": "金创药(特大)",
+          "pointer": "0x5f4318",
+          "selection_weight": 200
+        },
+        {
+          "index": 17,
+          "name": "九叶灵芝(大)",
+          "pointer": "0x5f4330",
+          "selection_weight": 300
+        }
+      ],
+      "hp_selection": "scan original indexes17..0; skip weights above deficit; try adjacent equal-weight group in forward order, then continue backward; do not sort this nonmonotonic table",
+      "mp_minimum_deficit": 40,
+      "mp_deficit_bands": [
+        40,
+        110,
+        180,
+        250
+      ],
+      "mp_name_options": [
+        {
+          "index": 0,
+          "name": "魔法药(小)",
+          "pointer": "0x5f4348"
+        },
+        {
+          "index": 1,
+          "name": "魔法药(中)",
+          "pointer": "0x5f435c"
+        },
+        {
+          "index": 2,
+          "name": "魔法药(大)",
+          "pointer": "0x5f4370"
+        },
+        {
+          "index": 3,
+          "name": "魔法药(特)",
+          "pointer": "0x5f4384"
+        },
+        {
+          "index": 4,
+          "name": "清心丸(小)",
+          "pointer": "0x5f4398"
+        },
+        {
+          "index": 5,
+          "name": "清心丸(中)",
+          "pointer": "0x5f43ac"
+        },
+        {
+          "index": 6,
+          "name": "清心丸(大)",
+          "pointer": "0x5f43c0"
+        },
+        {
+          "index": 7,
+          "name": "清心丸(特)",
+          "pointer": "0x5f43d4"
+        },
+        {
+          "index": 8,
+          "name": "清新瓶",
+          "pointer": "0x5f43e8"
+        },
+        {
+          "index": 9,
+          "name": "太阳水",
+          "pointer": "0x5f43f8"
+        },
+        {
+          "index": 10,
+          "name": "强效太阳水",
+          "pointer": "0x5f4408"
+        },
+        {
+          "index": 11,
+          "name": "千年雪霜",
+          "pointer": "0x5f441c"
+        },
+        {
+          "index": 12,
+          "name": "万年雪霜",
+          "pointer": "0x5f4430"
+        },
+        {
+          "index": 13,
+          "name": "九叶灵芝(小)",
+          "pointer": "0x5f4444"
+        },
+        {
+          "index": 14,
+          "name": "九叶灵芝(中)",
+          "pointer": "0x5f445c"
+        },
+        {
+          "index": 15,
+          "name": "雪霜菁华",
+          "pointer": "0x5f4474"
+        },
+        {
+          "index": 16,
+          "name": "九叶灵芝(大)",
+          "pointer": "0x5f4488"
+        }
+      ],
+      "mp_selection_scope": "bands select5F98D4 branches; recursive medicine and special fallback still need complete extraction",
+      "item_use": [
+        "0x5f5140",
+        "0x690494"
+      ],
+      "frame_gate": "6911C0: unsigned elapsed since actor3352 > actor3360 delay, or delay0; separate from pending3000ms",
+      "delay_source": "690A7C stores actor3352;690A97 stores latest item record offset100 into actor3360, one shared actor pair rather than separate per-item timers",
+      "guards": {
+        "actor124": 0,
+        "cell729D28_byte1": 0
+      }
+    },
+    "escape_protection": {
+      "entry": "0x5fd040",
+      "period_ms": 1000,
+      "options": [
+        {
+          "index": 0,
+          "name": "回城卷",
+          "pointer": "0x5f5258"
+        },
+        {
+          "index": 1,
+          "name": "随机传送卷",
+          "pointer": "0x5f5268"
+        },
+        {
+          "index": 2,
+          "name": "随机传送石",
+          "pointer": "0x5f527c"
+        },
+        {
+          "index": 3,
+          "name": "地牢逃脱卷",
+          "pointer": "0x5f5290"
+        },
+        {
+          "index": 4,
+          "name": "比奇传送石",
+          "pointer": "0x5f52a4"
+        },
+        {
+          "index": 5,
+          "name": "盟重传送石",
+          "pointer": "0x5f52b8"
+        },
+        {
+          "index": 6,
+          "name": "小退",
+          "pointer": "0x5f52cc"
+        }
+      ],
+      "selector_bounds": [
+        0,
+        6
+      ],
+      "invalid_selector": 0,
+      "exit_selector": 6,
+      "auto_back_exception": "first AutoBack path checks selected item name and calls5F5140 directly; it does not apply5FE004's special exit-selector6 branch",
+      "damage_entry": "0x5fd228",
+      "damage_interval_ms": 2000,
+      "damage_trigger": "positive damage strictly above HPMaxBackVal; last tick advances only after a nonzero local action result, not a server acknowledgement"
+    },
+    "limits": "GUI automatic recovery, manual deficit rows and escape protection are distinct from the helper.Set controller. Stored .MFA format and all mode callbacks are not yet migrated."
+  },
   "controller": {
     "function": "0x6c4a40",
     "timer_ms": 50,
@@ -375,7 +851,7 @@
       "0x690494"
     ],
     "selection6": "explicit exit via66D4F0, not a medicine",
-    "scope": "Separate GUI protection path uses manual inventory entry; do not assign the helper's800ms window to every automatic action. Configuration and activation require further analysis."
+    "scope": "Escape protection, not GUI auto recovery. Uses manual inventory entry; do not assign the helper's800ms window to every automatic action. See gui_rules for separate .MFA settings."
   },
   "limits": [
     "Static initial medicine tables; runtime table editing has not been traced.",
@@ -468,6 +944,229 @@
       },
       {
         "original_name": "疗伤药",
+        "candidates": []
+      }
+    ],
+    "limits": "Name correspondence only; punctuation normalization is an explicit catalog adapter. No strong-to-large medicine mapping or equal recovery values inferred."
+  },
+  "gui_item_name_comparison": {
+    "manifest_sha256": "5886087aade34b76b09bcd43cf41b22a11795bba79bdf3847b9c80275489e4bf",
+    "item_count": 1194,
+    "rows": [
+      {
+        "original_name": "急救丸(小)",
+        "candidates": []
+      },
+      {
+        "original_name": "金创药(小)",
+        "candidates": [
+          {
+            "item_id": 6,
+            "current_name": "金创药（小）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "急救丸(中)",
+        "candidates": []
+      },
+      {
+        "original_name": "太阳水",
+        "candidates": [
+          {
+            "item_id": 14,
+            "current_name": "太阳水",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "金创药(中)",
+        "candidates": [
+          {
+            "item_id": 7,
+            "current_name": "金创药（中）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "急救丸(大)",
+        "candidates": []
+      },
+      {
+        "original_name": "强效太阳水",
+        "candidates": [
+          {
+            "item_id": 15,
+            "current_name": "强效太阳水",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "金创药(大)",
+        "candidates": [
+          {
+            "item_id": 8,
+            "current_name": "金创药（大）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "九叶灵芝(小)",
+        "candidates": []
+      },
+      {
+        "original_name": "急救丸(特)",
+        "candidates": []
+      },
+      {
+        "original_name": "急救瓶",
+        "candidates": []
+      },
+      {
+        "original_name": "千年雪霜",
+        "candidates": []
+      },
+      {
+        "original_name": "万年雪霜",
+        "candidates": [
+          {
+            "item_id": 38,
+            "current_name": "万年雪霜",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "金创药(特)",
+        "candidates": [
+          {
+            "item_id": 9,
+            "current_name": "金创药（特）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "雪霜菁华",
+        "candidates": []
+      },
+      {
+        "original_name": "九叶灵芝(中)",
+        "candidates": []
+      },
+      {
+        "original_name": "金创药(特大)",
+        "candidates": []
+      },
+      {
+        "original_name": "九叶灵芝(大)",
+        "candidates": []
+      },
+      {
+        "original_name": "魔法药(小)",
+        "candidates": [
+          {
+            "item_id": 10,
+            "current_name": "魔法药（小）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "魔法药(中)",
+        "candidates": [
+          {
+            "item_id": 11,
+            "current_name": "魔法药（中）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "魔法药(大)",
+        "candidates": [
+          {
+            "item_id": 12,
+            "current_name": "魔法药（大）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "魔法药(特)",
+        "candidates": [
+          {
+            "item_id": 13,
+            "current_name": "魔法药（特）",
+            "match": "parenthesis_only"
+          }
+        ]
+      },
+      {
+        "original_name": "清心丸(小)",
+        "candidates": []
+      },
+      {
+        "original_name": "清心丸(中)",
+        "candidates": []
+      },
+      {
+        "original_name": "清心丸(大)",
+        "candidates": []
+      },
+      {
+        "original_name": "清心丸(特)",
+        "candidates": []
+      },
+      {
+        "original_name": "清新瓶",
+        "candidates": []
+      },
+      {
+        "original_name": "回城卷",
+        "candidates": [
+          {
+            "item_id": 153,
+            "current_name": "回城卷",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "随机传送卷",
+        "candidates": [
+          {
+            "item_id": 151,
+            "current_name": "随机传送卷",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "随机传送石",
+        "candidates": []
+      },
+      {
+        "original_name": "地牢逃脱卷",
+        "candidates": [
+          {
+            "item_id": 152,
+            "current_name": "地牢逃脱卷",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "original_name": "比奇传送石",
+        "candidates": []
+      },
+      {
+        "original_name": "盟重传送石",
         "candidates": []
       }
     ],
