@@ -71,6 +71,9 @@ void ActorPod::innHandler(const ActorMsgPack &mpk)
 
     if(mpk.respID()){
         if(auto p = m_respondCBList.find(mpk.respID()); p != m_respondCBList.end()){
+            // Resuming can register another wait and rehash this map. Remove
+            // the completed entry first and keep its callable alive locally.
+            auto continuation = m_respondCBList.extract(p);
             std::visit(VarDispatcher
             {
                 [&mpk, this](std::coroutine_handle<corof::awaitable<ActorMsgPack>::promise_type> &handle)
@@ -99,8 +102,11 @@ void ActorPod::innHandler(const ActorMsgPack &mpk)
                 },
             },
 
-            p->second);
-            m_respondCBList.erase(p);
+            continuation.mapped());
+        }
+        else if(!mpk.from() && (mpk.type() == AM_TIMEOUT || mpk.type() == AM_CANCEL)){
+            // A timer can outlive an actor instance and reach a new instance
+            // with the same UID. Unique wait IDs prevent aliasing a new wait.
         }
         else{
             throw fflpanic("{} <- {}: no corresponding coroutine exists", to_cstr(uidf::getUIDString(UID())), to_cstr(mpk.str(UID())));
@@ -152,7 +158,12 @@ uint64_t ActorPod::rollSeqID()
 
 std::pair<uint64_t, uint64_t> ActorPod::doCreateWaitToken(uint64_t tick, std::function<void(const ActorMsgPack &)> op)
 {
-    const auto seqID = rollSeqID();
+    // Per-actor message counters restart on relogin, while delayed messages
+    // are addressed by UID and may still be in flight. Give waits a separate
+    // globally unique namespace, independent of the message tracing option.
+    static std::atomic<uint64_t> s_nextWaitSeqID {UINT64_C(1) << 63};
+    const auto seqID = s_nextWaitSeqID.fetch_add(1);
+    fflassert(seqID & (UINT64_C(1) << 63));
     const auto empOK = m_respondCBList.try_emplace(seqID, std::move(op)); // prepare cb before request timeout
 
     fflassert(empOK.second);
