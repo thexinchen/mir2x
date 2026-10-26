@@ -1,7 +1,60 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
+  "item_use_delay_source": {
+    "converter": "0x6c0a00",
+    "standard_record_size": 193,
+    "standard_record_offset_in_converter": 4104,
+    "standard_delay_offset": 167,
+    "normalized_record_offset_in_converter": 4,
+    "normalized_delay_offset": 100,
+    "normalized_record_size": 120,
+    "full_standard_message": 4502,
+    "summary_message": 2109,
+    "summary_record_size": 56,
+    "scope": "Server-provided standard-item field; offline sample does not establish per-item values. Neither item.potion.time nor Buff duration is a substitute."
+  },
   "instruction_checks": [
+    {
+      "va": "0x6c0a39",
+      "hex": "8dbb08100000b930000000f3a5a4",
+      "role": "converter copies193-byte standard record to object4104"
+    },
+    {
+      "va": "0x6c0a48",
+      "hex": "8d7304",
+      "role": "normalized record starts at converter object4"
+    },
+    {
+      "va": "0x6c0ad5",
+      "hex": "8b83af100000894664",
+      "role": "standard record167 supplies normalized record100 delay"
+    },
+    {
+      "va": "0x6c0d0a",
+      "hex": "8d43048b55fc8902",
+      "role": "converter returns object4 as record pointer"
+    },
+    {
+      "va": "0x6bfb34",
+      "hex": "8d7010b91e000000f3a5",
+      "role": "item getter copies120 bytes from item object16"
+    },
+    {
+      "va": "0x67f4bc",
+      "hex": "68d845680066b9060066ba9611",
+      "role": "register standard-item handler6845D8 for message4502 mode6"
+    },
+    {
+      "va": "0x68462a",
+      "hex": "a1b49272008b00e89230e6ff",
+      "role": "standard-item message upserts full record in shared manager"
+    },
+    {
+      "va": "0x685c75",
+      "hex": "b938000000",
+      "role": "message2109 reads only56-byte summary, not full193-byte record"
+    },
     {
       "va": "0x6c33d0",
       "hex": "404a6c00",
@@ -945,7 +998,7 @@
     "Stored Percent keys compare raw scalar values; user-facing editor conversion remains unaudited.",
     "Timer activation, configuration UI, derived helpers, mode1 callers and full book/escape actions remain incomplete.",
     "Original slots0-51 are not mir2x itemID/seqID or a reason to resize its belt protocol.",
-    "This evidence does not enable automatic use in Godot; original defaults are disabled, unlike current mir2x protection booleans."
+    "This artifact describes source evidence; Godot helper protection is a separate adapter, default disabled. GUI.MFA recovery still requires unavailable per-item delay values."
   ],
   "current_item_name_comparison": {
     "manifest_sha256": "5886087aade34b76b09bcd43cf41b22a11795bba79bdf3847b9c80275489e4bf",

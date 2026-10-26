@@ -13,6 +13,14 @@ from export_mir3_target_history import EXPECTED_SAMPLE, read_va
 
 
 CHECKS = [
+    (0x6C0A39, "8dbb08100000b930000000f3a5a4", "converter copies193-byte standard record to object4104"),
+    (0x6C0A48, "8d7304", "normalized record starts at converter object4"),
+    (0x6C0AD5, "8b83af100000894664", "standard record167 supplies normalized record100 delay"),
+    (0x6C0D0A, "8d43048b55fc8902", "converter returns object4 as record pointer"),
+    (0x6BFB34, "8d7010b91e000000f3a5", "item getter copies120 bytes from item object16"),
+    (0x67F4BC, "68d845680066b9060066ba9611", "register standard-item handler6845D8 for message4502 mode6"),
+    (0x68462A, "a1b49272008b00e89230e6ff", "standard-item message upserts full record in shared manager"),
+    (0x685C75, "b938000000", "message2109 reads only56-byte summary, not full193-byte record"),
     (0x6C33D0, "404a6c00", "helper virtual method4 is automatic protection timer"),
     (0x6C3655, "8b4004508b45f08b4008e8a092d7ff", "install virtual method4 on timer object8"),
     (0x6C366A, "ba32000000e88092d7ff", "automatic protection timer period50ms"),
@@ -287,7 +295,15 @@ def extract(path, item_names=None):
                          "settings": [config_default(sample, *row) for row in defaults],
                          "actor_scalar_offset": 365 if name == "MP" else 361})
     result = {
-        "schema_version": 3, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 4, "sample_sha256": EXPECTED_SAMPLE,
+        "item_use_delay_source": {
+            "converter": "0x6c0a00", "standard_record_size": 193,
+            "standard_record_offset_in_converter": 4104,
+            "standard_delay_offset": 167, "normalized_record_offset_in_converter": 4,
+            "normalized_delay_offset": 100, "normalized_record_size": 120,
+            "full_standard_message": 4502, "summary_message": 2109, "summary_record_size": 56,
+            "scope": "Server-provided standard-item field; offline sample does not establish per-item values. Neither item.potion.time nor Buff duration is a substitute."
+        },
         "instruction_checks": evidence, "channels": channels,
         "book_selection": config_default(sample, 0x6C3B98, "RenewBookNowBookIndex", -1),
         "initial_medicine_tables": medicine_tables(sample),
@@ -316,7 +332,7 @@ def extract(path, item_names=None):
             "Stored Percent keys compare raw scalar values; user-facing editor conversion remains unaudited.",
             "Timer activation, configuration UI, derived helpers, mode1 callers and full book/escape actions remain incomplete.",
             "Original slots0-51 are not mir2x itemID/seqID or a reason to resize its belt protocol.",
-            "This evidence does not enable automatic use in Godot; original defaults are disabled, unlike current mir2x protection booleans.",
+            "This artifact describes source evidence; Godot helper protection is a separate adapter, default disabled. GUI.MFA recovery still requires unavailable per-item delay values.",
         ],
     }
     if item_names is not None:

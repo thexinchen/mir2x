@@ -12,13 +12,26 @@ import export_mir3_auto_use as exporter
 class AutoUseEvidenceTest(unittest.TestCase):
     def test_documented_sample(self):
         result = exporter.extract(SAMPLE)
-        self.assertEqual(len(result["instruction_checks"]), 41)
+        self.assertEqual(len(result["instruction_checks"]), 49)
         self.assertEqual(result["controller"]["timer_ms"], 50)
         self.assertEqual([r["settings"][1]["default"] for r in result["channels"]], [2500, 3500, 300, 100])
         self.assertTrue(all(r["settings"][0]["default"] == 0 for r in result["channels"]))
         self.assertEqual(result["book_selection"]["default"], -1)
         self.assertEqual(result["initial_medicine_tables"][2]["names"][:4], ["太阳水", "强效太阳水", "万年雪霜", "疗伤药"])
         self.assertEqual(result["gui_rules"]["escape_protection"]["options"][6]["name"], "小退")
+
+    def test_delay_origin_is_full_standard_record(self):
+        source = exporter.extract(SAMPLE)["item_use_delay_source"]
+        self.assertEqual(source["standard_delay_offset"], 167)
+        self.assertEqual(source["normalized_delay_offset"], 100)
+        self.assertEqual(source["standard_record_offset_in_converter"] + source["standard_delay_offset"], 4271)
+        self.assertEqual(source["normalized_record_offset_in_converter"] + source["normalized_delay_offset"], 104)
+        self.assertGreater(source["standard_delay_offset"], source["summary_record_size"])
+
+    def test_delay_source_cannot_silently_use_adjacent_field(self):
+        with self.changed_read(0x6C0AD5, lambda code: code.__setitem__(2, 0x61)):
+            with self.assertRaisesRegex(ValueError, "instruction at 0x6c0ad5"):
+                exporter.extract(SAMPLE)
 
     def test_gui_hp_order_preserves_nonmonotonic_original_priority(self):
         records = exporter.gui_rules(SAMPLE.read_bytes())["automatic_recovery"]["hp_table"]
