@@ -120,7 +120,7 @@ def book_rules(sample):
             "pending_rule": "693D74 requires pending item null; no800/3000ms replacement in this entry",
             "outer_gate": "channel3 enabled, interval nonzero/due, rawHP<threshold, selection !=-1; attempt tick advances even when global20s gate blocks",
             "handled_rule": "actor exists and global20s gate permits: return1 even if all names fail or selection outside0..2; otherwise0",
-            "backend_gap": "Current mir2x CM_CONSUMEITEM handles skill books and potions only; teleport scroll consumption is unimplemented. Do not expose live helper book protection yet."}
+            "backend_gap": "Original candidate names do not establish current backend effects. Audit Player::net_CM_CONSUMEITEM before enabling helper book protection; random, recall and guild destinations require separate settlement evidence."}
 
 
 def replay_book_attempt(now, last_dispatch, selection, inventory_names, dispatch, actor_present=True):

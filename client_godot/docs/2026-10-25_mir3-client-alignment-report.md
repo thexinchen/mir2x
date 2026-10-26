@@ -1789,3 +1789,42 @@ MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/buil
 ```
 
 证据→结论→后续路径：E103-1/E103-2明确冲撞属于有条件的独立方向命令，E103-3约束后续计时移植，E103-4/E103-5修正并验证一个会影响后续普通法术目标的真实副作用。F103-1是命令/施法目标隔离进一步符合原版；完整冲撞请求到当前服务端结算的对应仍未完成，传送物品、GUI物品延迟及其余玩法对齐继续。
+
+## 批次 104：随机传送卷结算及自身瞬移的镜头/动作清理（2026-10-26）
+
+本批从既有书籍保护取证继续接通手工传送物品。普通施法的MP成本WORD68、定义延迟DWORD64仍是原服下发字段，未用当前MagicRecord或旧CSV猜值。原6C7468/690D40所列随机传送卷与当前物品ID151精确同名、类型为传送卷轴；包内和腰带使用最终均进入当前CM_CONSUMEITEM/CM_CONSUMEBELTITEM。这里补当前后端的同地图随机传送语义，地图随机分布、占用、禁用地图等仍沿用当前mir2x流程，不声称已逆向得到原服结算公式或原服所有限制。
+
+E104-1：ServerMap::on_AM_TRYSPACEMOVE原来检查amTSM.X/Y是否越界，再决定是否随机目的地；前面已确认起点在地图且包含该角色，故该随机分支无法按目的地触发。BattleObject同时拒绝所有非严格越界目的地，卷轴消费则仍处于TODO。新增network_random_scroll_smoke.gd/.tscn先在旧服务器运行，数量2、非本人实例的拒绝通过，但有效随机卷收到实际SM_ERROR，测试明确失败；日志/tmp/mir3-scroll104-before.log，不将超时当成拒绝。
+
+随机目的地现在是requestSpaceMove的显式第四参数，默认false；只有随机卷使用(-1,-1,false,true)，既有跟随、脚本定点传送等三参数调用保留原坐标验证。地图侧检查目的地，随机模式调用既有getRCValidGrid(false,false,-1)，从随机起点按原RC搜索遍历当前地图，返回合法地形；指定坐标仍走原严格1次/非严格100格的搜索。这是复用当前服务器随机起点与合法格回退，不是声明对全部合法格均匀抽样。没有新增客户端目的地参数或客户端自行选点。
+
+E104-2：仅支持当前精确物品随机传送卷，其他回城/地牢/行会卷与传送石没有伪造实现。玩家可行动且无移动锁、拥有请求实例、数量恰为1时，先从背包或腰带预留一张，再await地图确认。成功保留消耗并返回关联SM_OK；失败scope guard退还，异常展开也经过同一回滚路径。若等待中腰带槽已被替换/装满，退回库存，不覆盖新槽物品。库存回滚直接恢复存储/DB和SM_UPDATEITEM，不触发新获奖励任务事件。失败回滚允许当前库存按既有规则合并/分配实例号，未承诺所有并发失败都保留原seqID和格位。
+
+这些实际消费接口新增await后统一使用co_return，原药水/技能书分支保持同步一次效果、一次扣除。客户端不做预扣或本地猜位移。背包生产使用入口允许精确名称的随机传送卷，十个背包数字快捷键自然复用此入口；腰带原有右键/快捷入口继续使用同一网络消费接口。已实际验证前置拒绝；await期间地图拒绝后的并发换槽及异常回滚仅审查源码，没有故障注入，未声称覆盖这些并发失败组合。自动Book通道尚未开放，不能据手工随机卷成功宣称全部自动逃脱已完成。
+
+E104-3：联网夹具验证直接包内请求、实际背包_use_inventory_item、数字0的_unhandled_input入口、腰带请求四路，每路匹配真实请求ID的SM_OK、数量恰减1，以及实际SM_ACTION SpaceMove的新坐标与当前地图可走地形一致。还验证数量2、非本人实例、死亡时背包/腰带使用被明确拒绝且不扣数量、不产生传送。夹具各生成4张，成功用完后还原本轮起始库存数量和腰带，最后返回起点；按标准测试账号运行，包含@die/@revive，结束时存活但HP不承诺恢复到测试前数值。
+
+第一次成功消费后的夹具检查失败，是SM_BELT解码空物品有itemID=0/count=1字段，而抓取槽后本地空槽为{}；实际物品数量相同。改用保持所有有效物品字段、只将两种空槽表示统一为{}的语义签名，未放宽有效物品一致性。新增失败清理会尝试返回记录的起点，MIR3_SCROLL_FIXTURE_TOWN=1可在地图24先归位(407,126)。该选项在起点已相同时不重复发传送，避免准备请求晚到污染后续计数。早期失败留下的测试生成物不冒充已完全清理。
+
+E104-4：Xvfb截图显示坐标已经到远处，画面仍留在原桥附近，暴露自身瞬移只更新角色而镜头缓慢收敛的问题。当前C++ client/src/processrunnet.cpp在自身ACTION_SPACEMOVE后立即centerMyHero；Hero::parseAction还flushForcedMotion并jumpLoc，ProcessRun先clearActionQueue。Godot原处理未清掉普通路线/待施法/拾取，强制动作/旧死亡显示还会挡掉权威瞬移。新增self_space_move_smoke.gd/.tscn先在旧代码复现镜头未居中、旧动作未清、强制/死亡显示阻挡的失败；初次夹具少传press必填参数，修正后取得真正行为失败，脚本启动错误不计为行为证据。日志/tmp/mir3-scroll104-camera-before.log。
+
+Godot自身SpaceMove现在清除旧本地输入、路径、待施法、拾取、强制显示及后续动作，采用回包坐标后立即居中，停止旧镜头收敛；不重播旧动作，也不因其他角色瞬移居中本机镜头。权威自身瞬移可覆盖过时的死亡显示，不将它当成客户端自行复活请求。该修复依据当前C++传送适配行为，未把原消息6误认为当前枚举6并添加冲撞三秒计时副作用。
+
+E104-5：self_space_move_smoke通过旧镜头正在滚动、移动/施法/拾取/服务端队列、强制死亡显示、结束后不回放、远端镜头隔离；联网随机卷进一步要求收到位置后draw_grid及镜头立即位于新格，不等待平滑滚动。Xvfb在最终传送动画回站立后截图，已取回查看G:/mir3/work/mir3-movement/random-scroll-104.png，确认新地形和居中的传送效果，不再停留原桥画面。测试是生产GUI/输入方法调用，未声称进行了物理鼠标右键操作。
+
+104原生server目标编译成功，最终日志/tmp/mir3-scroll104-build-final.log。核实进程路径/命令后正常替换测试服务器，最终PID3708547监听7000。无窗口及Xvfb联网随机卷通过；network_item_use_receipt_smoke原七种明确失败、包内/腰带药品成功及旧无回包消费通过。inventory_interaction_smoke、quick_bar_smoke、item_use_pending_smoke、world_action_smoke、self_server_move_queue_smoke通过；network_death_revive_smoke通过，人物归位(407,126)。network_space_move_disconnect_smoke连续12轮同位置突发传送/立即断线/重登通过。最终服务器日志/tmp/mir2x-server-v01.g3log.20261026-112856.log未见本次检查的FATAL/SIGSEGV/无对应协程/断言错误。既有ObjectDB退出警告与Xvfb VSync提示保留。
+
+请求门快照重算playernet、inventory_panel、main等已有输入，技能对应仅更新main哈希；两端独立重生成并cmp一致。自动用药证据的backend_gap说明更新为逐项审计当前卷轴结算，不再笼统声称所有传送卷均未实现，65处指令和26项测试保持通过。日志前缀/tmp/mir3-scroll104-*。源码、场景及报告按功能分笔线性提交同步104；旧.uid、生成资源、服务器二进制、样本、截图、日志及既有build_signature修改排除。
+
+```sh
+cmake --build --preset conan-release --target server --parallel 6
+export MIR2X_WORLD_RES="$PWD/client_godot/build/world_res"
+export MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture"
+export MIR2X_AUDIO_RES="$PWD/client_godot/build/audio"
+/home/czx/godot --headless --path client_godot res://tests/self_space_move_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_random_scroll_smoke.tscn
+MIR3_RANDOM_SCROLL_SCREENSHOT=/tmp/mir3-scroll104.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_random_scroll_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_space_move_disconnect_smoke.tscn
+```
+
+证据→结论→后续路径：E104-1/E104-2接通原物品列表中的一个明确后端缺口，E104-3证明真实请求、结算和四个入口相接；E104-4/E104-5通过失败优先测试修复远距离传送的实际显示/动作错误。F104-1为手工随机卷和自身权威瞬移链已可运行；自动Book四路调度接入、其他传送目的地结算、GUI逐物品延迟、冲撞及其他未决玩法仍需继续，整体目标保持进行。
