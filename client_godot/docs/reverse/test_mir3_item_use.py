@@ -26,11 +26,23 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 63)
+        self.assertEqual(len(result["instruction_checks"]), 80)
         self.assertEqual(len(result["shortcut_rectangles"]), 10)
         self.assertEqual(len(result["special_shortcut_actions"]["records"]), 30)
         self.assertEqual(len(result["shortcut_drag_interface"]["methods"]), 5)
         self.assertEqual(result["shortcut_session_cleanup"]["count"], 10)
+        self.assertEqual(result["shortcut_drag_rules"]["properties"]["flags"], 3)
+
+    def test_swap_cursor_cannot_silently_keep_the_original_item(self):
+        original = exporter.read_va
+        def altered(image, address, length):
+            code = bytearray(original(image, address, length))
+            if address == 0x6FDFA6:
+                code[16] = 16  # target item offset32 replaced by held item offset16
+            return bytes(code)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "instruction at 0x6fdfa6"):
+                self.extract()
 
     def test_cleanup_cannot_silently_leave_the_tenth_reference(self):
         original = exporter.read_va

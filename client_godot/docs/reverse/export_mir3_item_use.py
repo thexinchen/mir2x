@@ -76,6 +76,23 @@ CHECKS = [
     (0x6C7D18, "a1749b72008b00e83c7cf8ff", "common cleanup resets current operate-board shortcuts"),
     (0x64F9A8, "33db8d849e50010000e8f26f04004383fb0a75ee", "clear all ten references at object336 with four-byte stride"),
     (0x6969AE, "8bc3e89b08d7ff5b5dc3", "cleanup wrapper invokes System.IntfClear"),
+    (0x64DA88, "b002c3", "shortcut reference conversion mode2"),
+    (0x64DA8C, "0fb60594da6400c303", "shortcut drag property flags3"),
+    (0x64DB3C, "807a0c077506807a1c01740333c0c3b001c3", "custom transfer accepts shortcut kind7 to inventory kind1"),
+    (0x6FDD24, "837820000f95c0c3837810000f95c0c3", "state predicates test target32 and held16"),
+    (0x6FE160, "8b4624508b4628500fb64e1c8b56208b4608e8f5f5ffff", "pickup records target slot/owner/kind/item in persistent cursor"),
+    (0x6FDE7C, "0fb6500c3a501c0f94c0c3", "compare source kind12 and target kind28"),
+    (0x6FDE88, "8b50143b50240f94c0c3", "compare source slot20 and target slot36"),
+    (0x6FDC1B, "8b50248b40288b08ff511c", "clear target via target owner and slot"),
+    (0x6FDC2B, "8b50148b40188b08ff511c", "clear source via source owner and slot"),
+    (0x6FDFA6, "8b4b208b53148b43188b30ff56188b53208b4308e801f8ffff", "swap writes displaced target to source and keeps displaced item on cursor"),
+    (0x6FDBCC, "8bc6e8550000008bc6e83e0000008bc6e8b70300008bc6e8b4fcffff", "occupied same-kind transfer clears slots, replaces source and sets destination"),
+    (0x6FE1B8, "8bc6e8c9fcffff84c0756d", "same source slot skips slot mutation before ending drag"),
+    (0x6FE1C3, "8bc6e85efaffff8bc6e8cbf6ffff", "empty same-kind target clears source then sets target"),
+    (0x6FE23F, "8bc6e8e6f7ffff", "empty target transfer ends persistent cursor"),
+    (0x6FD7DB, "33c0894310c6431800c64319008d4314e8609ad0ff", "cursor cleanup resets metadata and clears owner interface"),
+    (0x6FD985, "e8d6ffffff", "cancel checks source release property bit0"),
+    (0x6FD990, "e893020000", "permitted cancel clears active source reference"),
 ]
 
 
@@ -129,6 +146,37 @@ def shortcut_interface(sample):
             "accepted_source_kinds": [1, 7]}
 
 
+def shortcut_drag_rules(sample):
+    entry = read_va(sample, 0x64A007, 28)
+    if any(read_va(sample, address, 16) != entry[:16]
+           for address in [0x6FDAC0, 0x6FDCA4, 0x6FDD9C]):
+        raise ValueError("shortcut property interface queries disagree")
+    vtable, offset = struct.unpack_from("<II", entry, 16)
+    if offset != 920:
+        raise ValueError("unexpected shortcut property interface offset")
+    methods = []
+    for slot, name, expected in [(3, "flags", 0x64DA8C), (4, "conversion_mode", 0x64DA88)]:
+        wrapper = struct.unpack("<I", read_va(sample, vtable + slot * 4, 4))[0]
+        code = read_va(sample, wrapper, 10)
+        if code[:6] != bytes.fromhex("0568fcffffe9") or wrapper + 10 + struct.unpack_from("<i", code, 6)[0] != expected:
+            raise ValueError(f"unexpected shortcut property wrapper for {name}")
+        methods.append({"name": name, "wrapper": hex(wrapper), "target": hex(expected), "hex": code.hex()})
+    return {
+        "properties": {"object_offset": offset, "vtable": hex(vtable), "methods": methods,
+                       "flags": 3, "conversion_mode": 2},
+        "context_fields": {"held_item": 16, "source_kind": 12, "source_slot": 20,
+                           "source_owner": 24, "target_kind": 28, "target_item": 32,
+                           "target_slot": 36, "target_owner": 40},
+        "pickup": "record cursor without clearing source slot",
+        "occupied_same_kind": "swap slot references; keep displaced target on cursor with original source slot",
+        "empty_same_kind": "clear original source, set target, end cursor",
+        "same_slot": "end cursor without mutating the source reference",
+        "explicit_cancel": "flags bit0 permits clearing only the active source reference",
+        "inventory_target": "custom kind7-to-kind1 handler completes by clearing shortcut source; no real item drop inferred",
+        "limits": "Ordinary shortcut transfers; custom merging and other owners' conversion/callback rules are not fully recovered.",
+    }
+
+
 def extract(sample_path, registry_path):
     sample = sample_path.read_bytes()
     if hashlib.sha256(sample).hexdigest() != EXPECTED_SAMPLE:
@@ -152,10 +200,11 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 5, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 6, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "reply_registrations": registrations,
         "shortcut_rectangles": shortcut_rectangles(sample),
         "shortcut_drag_interface": shortcut_interface(sample),
+        "shortcut_drag_rules": shortcut_drag_rules(sample),
         "shortcut_session_cleanup": {
             "explicit_exit": "0x66d4f0", "request_command": 1009,
             "role_endpoint_transition": ["0x6cc7ac", "0x6cc8c8"],

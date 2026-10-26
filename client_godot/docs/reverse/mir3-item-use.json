@@ -1,5 +1,5 @@
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -316,6 +316,91 @@
       "va": "0x6969ae",
       "hex": "8bc3e89b08d7ff5b5dc3",
       "role": "cleanup wrapper invokes System.IntfClear"
+    },
+    {
+      "va": "0x64da88",
+      "hex": "b002c3",
+      "role": "shortcut reference conversion mode2"
+    },
+    {
+      "va": "0x64da8c",
+      "hex": "0fb60594da6400c303",
+      "role": "shortcut drag property flags3"
+    },
+    {
+      "va": "0x64db3c",
+      "hex": "807a0c077506807a1c01740333c0c3b001c3",
+      "role": "custom transfer accepts shortcut kind7 to inventory kind1"
+    },
+    {
+      "va": "0x6fdd24",
+      "hex": "837820000f95c0c3837810000f95c0c3",
+      "role": "state predicates test target32 and held16"
+    },
+    {
+      "va": "0x6fe160",
+      "hex": "8b4624508b4628500fb64e1c8b56208b4608e8f5f5ffff",
+      "role": "pickup records target slot/owner/kind/item in persistent cursor"
+    },
+    {
+      "va": "0x6fde7c",
+      "hex": "0fb6500c3a501c0f94c0c3",
+      "role": "compare source kind12 and target kind28"
+    },
+    {
+      "va": "0x6fde88",
+      "hex": "8b50143b50240f94c0c3",
+      "role": "compare source slot20 and target slot36"
+    },
+    {
+      "va": "0x6fdc1b",
+      "hex": "8b50248b40288b08ff511c",
+      "role": "clear target via target owner and slot"
+    },
+    {
+      "va": "0x6fdc2b",
+      "hex": "8b50148b40188b08ff511c",
+      "role": "clear source via source owner and slot"
+    },
+    {
+      "va": "0x6fdfa6",
+      "hex": "8b4b208b53148b43188b30ff56188b53208b4308e801f8ffff",
+      "role": "swap writes displaced target to source and keeps displaced item on cursor"
+    },
+    {
+      "va": "0x6fdbcc",
+      "hex": "8bc6e8550000008bc6e83e0000008bc6e8b70300008bc6e8b4fcffff",
+      "role": "occupied same-kind transfer clears slots, replaces source and sets destination"
+    },
+    {
+      "va": "0x6fe1b8",
+      "hex": "8bc6e8c9fcffff84c0756d",
+      "role": "same source slot skips slot mutation before ending drag"
+    },
+    {
+      "va": "0x6fe1c3",
+      "hex": "8bc6e85efaffff8bc6e8cbf6ffff",
+      "role": "empty same-kind target clears source then sets target"
+    },
+    {
+      "va": "0x6fe23f",
+      "hex": "8bc6e8e6f7ffff",
+      "role": "empty target transfer ends persistent cursor"
+    },
+    {
+      "va": "0x6fd7db",
+      "hex": "33c0894310c6431800c64319008d4314e8609ad0ff",
+      "role": "cursor cleanup resets metadata and clears owner interface"
+    },
+    {
+      "va": "0x6fd985",
+      "hex": "e8d6ffffff",
+      "role": "cancel checks source release property bit0"
+    },
+    {
+      "va": "0x6fd990",
+      "hex": "e893020000",
+      "role": "permitted cancel clears active source reference"
     }
   ],
   "reply_registrations": [
@@ -482,6 +567,45 @@
       1,
       7
     ]
+  },
+  "shortcut_drag_rules": {
+    "properties": {
+      "object_offset": 920,
+      "vtable": "0x649fb3",
+      "methods": [
+        {
+          "name": "flags",
+          "wrapper": "0x649ecd",
+          "target": "0x64da8c",
+          "hex": "0568fcffffe9b53b0000"
+        },
+        {
+          "name": "conversion_mode",
+          "wrapper": "0x649ed7",
+          "target": "0x64da88",
+          "hex": "0568fcffffe9a73b0000"
+        }
+      ],
+      "flags": 3,
+      "conversion_mode": 2
+    },
+    "context_fields": {
+      "held_item": 16,
+      "source_kind": 12,
+      "source_slot": 20,
+      "source_owner": 24,
+      "target_kind": 28,
+      "target_item": 32,
+      "target_slot": 36,
+      "target_owner": 40
+    },
+    "pickup": "record cursor without clearing source slot",
+    "occupied_same_kind": "swap slot references; keep displaced target on cursor with original source slot",
+    "empty_same_kind": "clear original source, set target, end cursor",
+    "same_slot": "end cursor without mutating the source reference",
+    "explicit_cancel": "flags bit0 permits clearing only the active source reference",
+    "inventory_target": "custom kind7-to-kind1 handler completes by clearing shortcut source; no real item drop inferred",
+    "limits": "Ordinary shortcut transfers; custom merging and other owners' conversion/callback rules are not fully recovered."
   },
   "shortcut_session_cleanup": {
     "explicit_exit": "0x66d4f0",
