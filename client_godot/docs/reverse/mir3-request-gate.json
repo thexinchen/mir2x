@@ -504,7 +504,7 @@
       },
       "godot_game_state": {
         "file": "game_state.gd",
-        "sha256_lf": "265e1aefc48fe9bf53b36b3acbf0287d3ed7c8a38b3a225a80227850925a5c87"
+        "sha256_lf": "cddfb4dfc1f6e8a937c47e408533ebb14f0a7228d4b9611f0c31b63d42084d42"
       },
       "godot_request_gate": {
         "file": "mir3_request_gate.gd",

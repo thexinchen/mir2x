@@ -54,7 +54,6 @@ var grabbed_item: Dictionary = {}
 var item_shortcuts = preload("res://scripts/game/mir3_item_shortcuts.gd").new()
 var grabbed_shortcut: Dictionary = {}
 var inventory_initialized := false
-var _shortcut_owner_uid := 0
 var secured_items: Array = []
 var secured_items_reset_serial := 0
 
@@ -196,10 +195,8 @@ func update_quest_description(name: String, fsm: String, desp: Variant, main_fsm
 
 
 func set_player_online(online_data: Dictionary) -> void:
-	var next_uid: int = online_data.get("uid", 0)
-	if next_uid != _shortcut_owner_uid:
-		item_shortcuts.clear_all()
-		_shortcut_owner_uid = next_uid
+	# Original6C7CD0 ->64F960 clears all ten references at session reset.
+	item_shortcuts.clear_all()
 	grabbed_shortcut = {}
 	inventory_initialized = false
 	hud_minimized = false
