@@ -182,7 +182,8 @@ func _ground_meat_count(resources) -> int:
 	var count := 0
 	for items in GameState.ground_items.values():
 		for item in items:
-			if resources.item_type(int(item.get("itemID", 0))) == "肉": count += int(item.get("count", 0))
+			# Ground snapshots contain item IDs, one entry per visible item.
+			if resources.item_type(int(item)) == "肉": count += 1
 	return count
 
 func _write(name: String, value: Dictionary) -> void:
