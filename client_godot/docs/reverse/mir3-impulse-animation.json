@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "checks": [
     {
@@ -121,8 +121,198 @@
       "va": "0x6dea27",
       "hex": "a1109d72008b008078400074198b0680b8f802000000740e",
       "role": "action6/7 two special predicates"
+    },
+    {
+      "va": "0x6838cc",
+      "hex": "8b450883e80c83f8407c1f",
+      "role": "optional description requires76 payload bytes"
+    },
+    {
+      "va": "0x6838e4",
+      "hex": "8b55fc8d430cb940000000e8e0fad7ff",
+      "role": "copy64 description bytes from payload12"
+    },
+    {
+      "va": "0x683917",
+      "hex": "0fb746040fb7d081fa210300007f14742d83c2fa83ea0272254a742283ea1c741d",
+      "role": "local messages6/7/9/37 enter common actor routing"
+    },
+    {
+      "va": "0x683990",
+      "hex": "0fb74606500fb74608500fb7460a508b07508b4704508b45fc506a008b4708508b0e0fb756048b45f8e82657ffff",
+      "role": "forward header coordinates/packed direction and three payload DWORDs to6790E4"
+    },
+    {
+      "va": "0x6791ea",
+      "hex": "0fb7451cc1e8080fb6c08986ac0200000fb6451c89451c",
+      "role": "packed direction high byte goes to actor684; only low byte continues"
+    },
+    {
+      "va": "0x679296",
+      "hex": "8b4520508b451c508b4518508b4514506a006a008b450c508b4508508b4d248bd38bc6e8961d0600",
+      "role": "enqueue received action with null string/zero auxiliary fields"
+    },
+    {
+      "va": "0x6db08a",
+      "hex": "0fb7c789038b45fc8943048b45248943088b452089430c8b451c8943108b4518894314",
+      "role": "write received action and first five queue DWORDs"
+    },
+    {
+      "va": "0x6db0ad",
+      "hex": "8d43188b5514e8e8a1d2ff8b451089431c8b450c8943208b4508894324",
+      "role": "write remaining fields of40-byte queue record"
+    },
+    {
+      "va": "0x6db674",
+      "hex": "8b45dc8943158b45e08943190fb655e48bc3e8cd100000",
+      "role": "apply record coordinates and facing to actor"
+    },
+    {
+      "va": "0x6db68b",
+      "hex": "8b45f88983a00200008b45d8898398020000",
+      "role": "queue action number becomes actor664"
+    },
+    {
+      "va": "0x6db69d",
+      "hex": "a1c09372003b1874098b45fc89839c0200008bc38b10ff520c",
+      "role": "remote actor668 update then virtual frame setup"
+    },
+    {
+      "va": "0x6de70a",
+      "hex": "8b068b8098020000",
+      "role": "frame selector reads actor664"
+    },
+    {
+      "va": "0x66cb3c",
+      "hex": "b8104e730033c9ba00000200e87f6ed9ff33d2b8104e7300",
+      "role": "initialize65536 WORD command-translation entries to zero"
+    },
+    {
+      "va": "0x66cb54",
+      "hex": "8bc88bda81c346f4ffff83fb410f873b010000",
+      "role": "translation writes are restricted to command3002 through3067"
+    },
+    {
+      "va": "0x66cca2",
+      "hex": "4283c00281fa000001000f85a2feffff",
+      "role": "translation initialization visits every WORD entry"
+    },
+    {
+      "va": "0x6db42f",
+      "hex": "a10c9d72008b55d866833c5000",
+      "role": "local action remaps only a nonzero command-table entry"
+    },
+    {
+      "va": "0x6db479",
+      "hex": "a10c9d72008b55d80fb704508945d8",
+      "role": "local command-table remap assigns resulting action"
+    },
+    {
+      "va": "0x6839be",
+      "hex": "0fb746046683e8067451",
+      "role": "message6 selects the local impulse-clock branch"
+    },
+    {
+      "va": "0x683a23",
+      "hex": "3b420c0f85a8000000e8cfd108008b15f09772008902",
+      "role": "only local message6 stamps shared impulse clock"
     }
   ],
+  "feedback": {
+    "registrations": [
+      {
+        "call": "0x67eac9",
+        "register_function": "0x67ea1c",
+        "message": 6,
+        "registration_ecx": 6,
+        "handler": "0x683874"
+      },
+      {
+        "call": "0x67eaf3",
+        "register_function": "0x67ea1c",
+        "message": 7,
+        "registration_ecx": 6,
+        "handler": "0x683874"
+      },
+      {
+        "call": "0x67ebda",
+        "register_function": "0x67ea1c",
+        "message": 9,
+        "registration_ecx": 6,
+        "handler": "0x683874"
+      },
+      {
+        "call": "0x67eade",
+        "register_function": "0x67ea1c",
+        "message": 37,
+        "registration_ecx": 6,
+        "handler": "0x683874"
+      }
+    ],
+    "handler": "0x683874",
+    "actor_router": "0x6790e4",
+    "enqueue": "0x6db054",
+    "apply": "0x6db2f0",
+    "header": {
+      "bytes": 12,
+      "uid_u32": 0,
+      "message_u16": 4,
+      "x_u16": 6,
+      "y_u16": 8,
+      "packed_direction_u16": 10
+    },
+    "payload": {
+      "minimum_decoder_bytes": 12,
+      "raw_u32_offsets": [
+        0,
+        4,
+        8
+      ],
+      "optional_description_offset": 12,
+      "optional_description_bytes": 64,
+      "description_rule": "only copy when payload length>=76; shorter tail is not partially copied",
+      "existing_actor_queue_string": null
+    },
+    "queue_record_bytes": 40,
+    "queue_u32_fields": [
+      "original_message",
+      "x",
+      "y",
+      "direction_low_byte",
+      "payload0",
+      "payload4",
+      "null_string",
+      "zero",
+      "zero",
+      "payload8"
+    ],
+    "actor_fields": {
+      "packed_high_byte": 684,
+      "record_action": 664,
+      "coordinates": [
+        21,
+        25
+      ],
+      "remote_payload8": 668
+    },
+    "initial_command_translation": {
+      "pointer": "0x729d0c",
+      "table": "0x734e10",
+      "initializer": "0x66cb38",
+      "feedback6_7_9_37": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "frame_virtual_entry": {
+      "entry": "0x6da738",
+      "method": "0x6de6e0"
+    },
+    "local_clock": "only message6 with UID==local UID stamps7297F0",
+    "limits": "Decoded queue fields are not a guarantee the actor applies them: actor eligibility, unknown actor creation and runtime command-table mutation are separate. Packed high byte and raw payload DWORDs have no inferred business names."
+  },
   "frame_setup": {
     "function": "0x6de6e0",
     "switch": "0x6de736",
@@ -322,7 +512,7 @@
     "decision": "Do not attach original300/1000ms post-animation restrictions to current5/6/9 without a verified semantic translation"
   },
   "limits": [
-    "Frame behavior and table selection are recovered; protocol semantic names and server impulse settlement are not.",
+    "Original messages6/7/9/37 reach the same-numbered queue and frame domain after the documented initialization; business names and server impulse settlement are incomplete.",
     "No original record frame interval is substituted for current network speed or potion delay.",
     "Effect argument235 is in the original effect domain, not current magicID235.",
     "No changes to production gameplay or client-selected teleport destinations are made by this extractor."
