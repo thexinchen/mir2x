@@ -573,7 +573,7 @@ func _refresh_controls() -> void:
 			if key == 7:
 				(control as OptionButton).select(clampi(_config_int(7, 1), 1, 3) - 1)
 			elif key == 47:
-				(control as OptionButton).select(_window_size_index(_config_pair(47, Vector2i(800, 600))))
+				(control as OptionButton).select(_window_size_index(decode_display_settings(_state.runtime_config).window_size))
 		elif control is HSlider:
 			(control as HSlider).value = _config_float(key, _default_float(key)) * 100.0
 		elif control is Button:
@@ -615,11 +615,11 @@ static func decode_display_settings(config: Dictionary) -> Dictionary:
 	var fullscreen_data: PackedByteArray = config.get(5, PackedByteArray())
 	var size_data: PackedByteArray = config.get(47, PackedByteArray())
 	var fullscreen := fullscreen_data.size() >= 2 and fullscreen_data[0] != 0 and fullscreen_data[1] != 0
-	var window_size := Vector2i(800, 600)
+	var window_size := Vector2i(1024, 768)
 	if size_data.size() >= 9 and size_data[0] != 0:
 		window_size = Vector2i(size_data.decode_s32(1), size_data.decode_s32(5))
-	if window_size.x <= 0 or window_size.y <= 0:
-		window_size = Vector2i(800, 600)
+	if window_size.x <= 0 or window_size.y <= 0 or window_size in [Vector2i(800, 600), Vector2i(1920, 1080)]:
+		window_size = Vector2i(1024, 768)
 	return {"fullscreen": fullscreen, "window_size": window_size}
 
 

@@ -6,8 +6,8 @@ extends Control
 
 const GRID_XP := 48
 const GRID_YP := 32
-const SCREEN_W := 800
-const SCREEN_H := 600
+
+
 const OBJMAXW := 3
 const OBJMAXH := 25
 const WorldResourceScript = preload("res://scripts/game/world_resource.gd")
@@ -175,6 +175,16 @@ func set_focus_channels(magic_uid: int, follow_uid: int, attack_uid: int) -> voi
 	_attack_focus_uid = attack_uid
 
 
+func visible_grid_rect(view_x: int, view_y: int) -> Rect2i:
+	var first := Vector2i(maxi(0, floori(float(view_x) / GRID_XP) - OBJMAXW), maxi(0, floori(float(view_y) / GRID_YP) - OBJMAXH))
+	var last := Vector2i(floori(float(view_x + size.x) / GRID_XP) + OBJMAXW, floori(float(view_y + size.y) / GRID_YP) + OBJMAXH)
+	if map_width > 0:
+		last.x = mini(last.x, map_width - 1)
+	if map_height > 0:
+		last.y = mini(last.y, map_height - 1)
+	return Rect2i(first, last - first + Vector2i.ONE)
+
+
 func _draw() -> void:
 	if game_state == null or loading_map:
 		return
@@ -184,14 +194,11 @@ func _draw() -> void:
 	var view_y: int = int(game_state.view_y)
 	
 	# Compute visible grid range (same as C++ draw())
-	var x0 := maxi(0, floori(float(view_x) / GRID_XP) - OBJMAXW)
-	var y0 := maxi(0, floori(float(view_y) / GRID_YP) - OBJMAXH)
-	var x1 := floori(float(view_x + SCREEN_W) / GRID_XP) + OBJMAXW
-	var y1 := floori(float(view_y + SCREEN_H) / GRID_YP) + OBJMAXH
-	if map_width > 0:
-		x1 = mini(x1, map_width - 1)
-	if map_height > 0:
-		y1 = mini(y1, map_height - 1)
+	var visible_grid := visible_grid_rect(view_x, view_y)
+	var x0 := visible_grid.position.x
+	var y0 := visible_grid.position.y
+	var x1 := visible_grid.end.x - 1
+	var y1 := visible_grid.end.y - 1
 	
 	# Tiles and ground objects are below every actor.
 	for gy in range(y0, y1 + 1):
@@ -1599,7 +1606,7 @@ func _draw_creature(c: Dictionary, view_x: int, view_y: int, body_alpha := 1.0) 
 	var center := Vector2(cx + GRID_XP * 0.5, cy + GRID_YP * 0.5)
 	
 	# Cull if off-screen
-	if cx < -GRID_XP or cx > SCREEN_W or cy < -GRID_YP or cy > SCREEN_H:
+	if cx < -GRID_XP or cx > size.x or cy < -GRID_YP or cy > size.y:
 		return
 	
 	var c_type: int = c.get("type", 0)

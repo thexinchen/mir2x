@@ -816,7 +816,7 @@ func _add_health_feedback(grid_x: int, grid_y: int, diff_hp: int, diff_mp: int) 
 
 
 func camera_center_y() -> int:
-	var visible_height := SCREEN_H if hud_minimized else SCREEN_H - HUD_SHIFT_HEIGHT
+	var visible_height := get_viewport().get_visible_rect().size.y - (0 if hud_minimized else HUD_SHIFT_HEIGHT)
 	return floori(float(visible_height) * 0.5)
 
 
@@ -825,7 +825,7 @@ func center_camera_on_player() -> void:
 
 
 func center_camera_on_grid(grid_position: Vector2) -> void:
-	view_x = grid_position.x * GRID_XP - SCREEN_W * 0.5
+	view_x = grid_position.x * GRID_XP - get_viewport().get_visible_rect().size.x * 0.5
 	view_y = grid_position.y * GRID_YP - camera_center_y()
 	if player_action_type not in [3, 5]:
 		_camera_scrolling = false
@@ -869,12 +869,12 @@ func scroll_camera_to(target_grid: Vector2, delta_seconds: float = CAMERA_REFERE
 		return
 	# Keep a stable one-sixth-screen dead zone, then continue converging until
 	# the player's visual position is centered and the movement has ended.
-	var target_x := target_grid.x * GRID_XP - SCREEN_W * 0.5
+	var target_x := target_grid.x * GRID_XP - get_viewport().get_visible_rect().size.x * 0.5
 	var target_y := target_grid.y * GRID_YP - camera_center_y()
 	var dx := target_x - view_x
 	var dy := target_y - view_y
-	var visible_height := SCREEN_H if hud_minimized else SCREEN_H - HUD_SHIFT_HEIGHT
-	if _camera_scrolling or abs(dx) > SCREEN_W / 6.0 or abs(dy) > visible_height / 6.0:
+	var visible_height := get_viewport().get_visible_rect().size.y - (0 if hud_minimized else HUD_SHIFT_HEIGHT)
+	if _camera_scrolling or abs(dx) > get_viewport().get_visible_rect().size.x / 6.0 or abs(dy) > visible_height / 6.0:
 		_camera_scrolling = true
 		var elapsed := clampf(delta_seconds, 0.0, CAMERA_MAX_DELTA)
 		if not is_zero_approx(dx):

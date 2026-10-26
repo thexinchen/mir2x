@@ -154,6 +154,11 @@ var item_shortcut_bar: Control
 var mir3_protection = preload("res://scripts/game/mir3_protection.gd").new()
 
 
+func _enter_tree() -> void:
+	get_tree().root.content_scale_size = Vector2i(1024, 768)
+	RuntimeConfigPanelScript.apply_display_config(get_node("/root/GameState").runtime_config)
+
+
 func _ready() -> void:
 	game_state = get_node("/root/GameState")
 	protocol = Protocol.new()
@@ -276,6 +281,7 @@ func _send_mir3_protection(selected: Dictionary) -> Dictionary:
 
 
 func _exit_tree() -> void:
+	get_tree().root.set_deferred("content_scale_size", Vector2i(800, 600))
 	if _team_flag_active:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
@@ -2366,10 +2372,10 @@ func _preload_visible_map_textures(serial: int, center_grid_x: int, center_grid_
 
 	var map_width: int = resource.width
 	var map_height: int = resource.height
-	var x0: int = clampi(center_grid_x - MAP_PRELOAD_WINDOW_WIDTH / 2 / GameState.GRID_XP - MAP_OBJECT_MAX_WIDTH, 0, map_width)
-	var x1: int = clampi(center_grid_x + MAP_PRELOAD_WINDOW_WIDTH / 2 / GameState.GRID_XP + MAP_OBJECT_MAX_WIDTH, 0, map_width)
-	var y0: int = clampi(center_grid_y - MAP_PRELOAD_WINDOW_HEIGHT / 2 / GameState.GRID_YP - MAP_OBJECT_MAX_HEIGHT, 0, map_height)
-	var y1: int = clampi(center_grid_y + MAP_PRELOAD_WINDOW_HEIGHT / 2 / GameState.GRID_YP + MAP_OBJECT_MAX_HEIGHT, 0, map_height)
+	var x0: int = clampi(center_grid_x - maxi(MAP_PRELOAD_WINDOW_WIDTH, ceili(world_renderer.size.x)) / 2 / GameState.GRID_XP - MAP_OBJECT_MAX_WIDTH, 0, map_width)
+	var x1: int = clampi(center_grid_x + maxi(MAP_PRELOAD_WINDOW_WIDTH, ceili(world_renderer.size.x)) / 2 / GameState.GRID_XP + MAP_OBJECT_MAX_WIDTH, 0, map_width)
+	var y0: int = clampi(center_grid_y - maxi(MAP_PRELOAD_WINDOW_HEIGHT, ceili(world_renderer.size.y)) / 2 / GameState.GRID_YP - MAP_OBJECT_MAX_HEIGHT, 0, map_height)
+	var y1: int = clampi(center_grid_y + maxi(MAP_PRELOAD_WINDOW_HEIGHT, ceili(world_renderer.size.y)) / 2 / GameState.GRID_YP + MAP_OBJECT_MAX_HEIGHT, 0, map_height)
 	var total_grid_count: int = maxi(1, (y1 - y0 + 1) * (x1 - x0 + 1))
 	var done_grid_count := 0
 	var last_ratio := 0
