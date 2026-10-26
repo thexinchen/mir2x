@@ -8,7 +8,28 @@ func _ready() -> void:
  add_child(main)
  main.set_process(false)
  await get_tree().create_timer(0.4).timeout
- main.call("_handle_action_data", {"uid":101,"mapUID":1 << 35,"action":{"type":11,"speed":100,"direction":3,"x":10,"y":10}})
+ # Match the zero-initialized C++ ActionHitted wire layout independently.
+ var payload := PackedByteArray()
+ payload.resize(43)
+ payload.encode_u64(0, 101)
+ payload.encode_u64(8, 1 << 35)
+ payload.encode_u16(16, 11) # type=11; speed bits remain zero
+ payload[18] = 3
+ payload.encode_s16(19, 10)
+ payload.encode_s16(21, 10)
+ main.call("_on_server_message", NetworkClient.SM_ACTION, payload)
+ if GameState.player_action_speed != 100:
+  push_error("Zero wire speed must use default Hero hit speed")
+  get_tree().quit(1)
+  return
+ var peer_uid: int = (5 << 59) | 302
+ GameState.update_creature(peer_uid, {"uid":peer_uid,"type":2,"x":12,"y":10,"direction":3,"action_type":2})
+ payload.encode_u64(0, peer_uid)
+ main.call("_on_server_message", NetworkClient.SM_ACTION, payload)
+ if GameState.get_creature(peer_uid).get("action_speed", 0) != 100:
+  push_error("Remote Hero hit must also use default speed")
+  get_tree().quit(1)
+  return
  GameState.player_action_started_ms = Time.get_ticks_msec() - 150
  main.call("_process_player_action", 1.0 / 30.0)
  if GameState.player_action_type != 11:
