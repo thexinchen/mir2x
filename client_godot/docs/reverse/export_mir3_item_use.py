@@ -22,6 +22,9 @@ CHECKS = [
     (0x6C4AA8, "a1c09372008b008bd3e8c2f3fcff", "dispatch item-use693E78"),
     (0x6904DD, "a15c9972008338007418", "separate inventory path also checks pending item"),
     (0x6904EC, "8b15689d72002b023db80b00000f8270060000", "inventory path uses unsigned3000ms pending window"),
+    (0x6904D0, "e8cf41000084c00f8592060000", "manual use rejects actor predicate before pending check"),
+    (0x6946AB, "33db8bc6e840b1040084c07402b3018bc3", "actor predicate delegates to raw flag helper"),
+    (0x6DF7F4, "f64035080f95c0c3", "actor predicate tests byte53 mask8, not a health field"),
     (0x693E9B, "8b155c99720083c9ff8b837c030000e88d590400", "restore previous pending item before next selection"),
     (0x693EC6, "8b068b10ff522ca80274208b068b10ff523885c07e15", "flag bit2 and positive VMT56 choose copy-only branch"),
     (0x693EDC, "8b0d5c9972008bd78b837c030000e8195c0400", "copy-only helper6D9B08"),
@@ -275,8 +278,13 @@ def extract(sample_path, registry_path):
             raise ValueError(f"unexpected item-use registration for {message}")
         registrations.extend(matches)
     return {
-        "schema_version": 8, "sample_sha256": EXPECTED_SAMPLE,
+        "schema_version": 9, "sample_sha256": EXPECTED_SAMPLE,
         "instruction_checks": evidence, "reply_registrations": registrations,
+        "manual_actor_guard": {"entry_call": "0x6904d0", "predicate": "0x6946a4",
+                               "flag_helper": "0x6df7f4", "actor_byte_offset": 53,
+                               "mask": 8, "blocked_when": "(actor_byte53 &8) !=0",
+                               "before": "shared pending3000ms check", "semantic_name": None,
+                               "limit": "This raw flag has not been identified as death/HP or any current Buff; do not substitute a dead-player guard."},
         "shortcut_rectangles": shortcut_rectangles(sample),
         "shortcut_drag_interface": shortcut_interface(sample),
         "shortcut_drag_rules": shortcut_drag_rules(sample),

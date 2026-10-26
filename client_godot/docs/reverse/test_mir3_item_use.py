@@ -26,7 +26,7 @@ class ItemUseEvidenceTest(unittest.TestCase):
     def test_original_sample_and_registry_agree(self):
         result = self.extract()
         self.assertEqual(len(result["reply_registrations"]), 2)
-        self.assertEqual(len(result["instruction_checks"]), 103)
+        self.assertEqual(len(result["instruction_checks"]), 106)
         self.assertEqual(len(result["shortcut_rectangles"]), 10)
         self.assertEqual(len(result["special_shortcut_actions"]["records"]), 30)
         self.assertEqual(len(result["shortcut_drag_interface"]["methods"]), 5)
@@ -34,6 +34,23 @@ class ItemUseEvidenceTest(unittest.TestCase):
         self.assertEqual(result["shortcut_drag_rules"]["properties"]["flags"], 3)
         self.assertEqual(result["shortcut_mouse_rules"]["left_double_click"]["gui_event"], 4)
         self.assertEqual(result["shortcut_reference_refresh"]["proxy_interface"]["item_field"], 20)
+
+    def test_manual_guard_has_no_unproven_death_label(self):
+        guard = self.extract()["manual_actor_guard"]
+        self.assertEqual((guard["actor_byte_offset"], guard["mask"]), (53, 8))
+        self.assertIsNone(guard["semantic_name"])
+        self.assertEqual(guard["before"], "shared pending3000ms check")
+
+    def test_manual_guard_offset_or_mask_cannot_silently_change(self):
+        original = exporter.read_va
+        for index in [2, 3]:
+            def altered(image, address, length):
+                code = bytearray(original(image, address, length))
+                if address == 0x6DF7F4: code[index] ^= 1
+                return bytes(code)
+            with self.subTest(index=index), patch.object(exporter, "read_va", altered):
+                with self.assertRaisesRegex(ValueError, "instruction at 0x6df7f4"):
+                    self.extract()
 
     def test_proxy_setter_cannot_silently_use_noop_method(self):
         original = exporter.read_va

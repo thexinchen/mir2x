@@ -1,5 +1,5 @@
 {
-  "schema_version": 8,
+  "schema_version": 9,
   "sample_sha256": "eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021",
   "instruction_checks": [
     {
@@ -46,6 +46,21 @@
       "va": "0x6904ec",
       "hex": "8b15689d72002b023db80b00000f8270060000",
       "role": "inventory path uses unsigned3000ms pending window"
+    },
+    {
+      "va": "0x6904d0",
+      "hex": "e8cf41000084c00f8592060000",
+      "role": "manual use rejects actor predicate before pending check"
+    },
+    {
+      "va": "0x6946ab",
+      "hex": "33db8bc6e840b1040084c07402b3018bc3",
+      "role": "actor predicate delegates to raw flag helper"
+    },
+    {
+      "va": "0x6df7f4",
+      "hex": "f64035080f95c0c3",
+      "role": "actor predicate tests byte53 mask8, not a health field"
     },
     {
       "va": "0x693e9b",
@@ -534,6 +549,17 @@
       "handler": "0x6927b8"
     }
   ],
+  "manual_actor_guard": {
+    "entry_call": "0x6904d0",
+    "predicate": "0x6946a4",
+    "flag_helper": "0x6df7f4",
+    "actor_byte_offset": 53,
+    "mask": 8,
+    "blocked_when": "(actor_byte53 &8) !=0",
+    "before": "shared pending3000ms check",
+    "semantic_name": null,
+    "limit": "This raw flag has not been identified as death/HP or any current Buff; do not substitute a dead-player guard."
+  },
   "shortcut_rectangles": [
     {
       "slot": 0,
