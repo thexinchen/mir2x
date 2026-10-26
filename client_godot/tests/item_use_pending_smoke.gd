@@ -74,6 +74,26 @@ func _ready() -> void:
 	network.finish(new_id, NetworkClient.SM_ERROR)
 	_expect(network.send_consume_item(6, 101, 1, Callable(), true) == OK, "automatic failure immediately permits next request")
 	network.disconnect_from_server()
+	_expect(network.send_consume_belt_item(0) == OK, "belt starts a pending item with no inventory identity")
+	id = network.sent.back()[2]
+	network._item_use_sent_ms = Time.get_ticks_msec() - 5000
+	network._response_callbacks[id].expires = Time.get_ticks_msec() + 10000
+	_expect(network.pending_item_use.is_empty() and network.is_item_use_pending(), "empty inventory identity is not an idle pending object")
+	_expect(network.send_protection_book(151, 301) == ERR_BUSY, "Book never replaces live pending item after800 or3000ms")
+	network.finish(id, NetworkClient.SM_OK)
+	_expect(network.send_protection_book(151, 301) == OK, "Book dispatches when shared pending object is empty")
+	id = network.sent.back()[2]
+	var book_tick: int = network.protection_book_sent_ms
+	_expect(network.send_consume_item(6, 101) == ERR_BUSY, "Book pending also blocks manual use")
+	network.finish(id, NetworkClient.SM_ERROR)
+	_expect(network.protection_book_sent_ms == book_tick, "server rejection does not undo locally dispatched Book interval")
+	network.protection_book_sent_ms = 123
+	network.send_error = ERR_UNCONFIGURED
+	_expect(network.send_protection_book(151, 301) == ERR_UNCONFIGURED and network.protection_book_sent_ms == 123, "failed Book transport does not update global tick")
+	network.send_error = OK
+	_expect(network.send_consume_item(6, 101) == OK and network.protection_book_sent_ms == 123, "manual use does not start Book global interval")
+	network.disconnect_from_server()
+	_expect(network.protection_book_sent_ms == 123, "Book interval survives disconnect into next character session")
 	if _failures.is_empty():
 		print("ITEM USE PENDING PASS: shared inventory/belt gate, immediate result release, automatic800/manual3000ms retry, stale completion, failed replacement restoration and disconnect")
 	get_tree().quit(0 if _failures.is_empty() else 1)

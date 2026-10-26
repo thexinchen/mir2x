@@ -164,6 +164,7 @@ var _item_use_serial := 0
 var _item_use_pending_token := 0
 var _item_use_sent_ms := 0
 var _item_use_response_id := 0
+var protection_book_sent_ms := 0 # Process lifetime, including character relogin.
 var pending_item_use: Dictionary = {}
 var _message_dispatch_paused := false
 var _deferred_messages: Array[Dictionary] = []
@@ -520,9 +521,25 @@ func send_consume_belt_item(slot: int, callback := Callable(), automatic := fals
 	return _send_item_use_request(CM_CONSUMEBELTITEM, payload, callback, 800 if automatic else 3000)
 
 
+func is_item_use_pending() -> bool:
+	return _item_use_pending_token != 0
+
+
+func send_protection_book(item_id: int, seq_id: int, callback := Callable()) -> Error:
+	var payload := PackedByteArray()
+	payload.resize(10)
+	payload.encode_u32(0, item_id)
+	payload.encode_u32(4, seq_id)
+	payload.encode_u16(8, 1)
+	# 690D40 ->693D74 never replaces a live pending item by elapsed time.
+	var error := _send_item_use_request(CM_CONSUMEITEM, payload, callback, -1)
+	if error == OK: protection_book_sent_ms = Time.get_ticks_msec()
+	return error
+
+
 func _send_item_use_request(head: int, payload: PackedByteArray, callback: Callable, retry_ms := 3000) -> Error:
 	_expire_responses()
-	if _item_use_pending_token != 0 and ((Time.get_ticks_msec() - _item_use_sent_ms) & 0xFFFFFFFF) < retry_ms:
+	if _item_use_pending_token != 0 and (retry_ms < 0 or ((Time.get_ticks_msec() - _item_use_sent_ms) & 0xFFFFFFFF) < retry_ms):
 		return ERR_BUSY
 	var previous := {"token": _item_use_pending_token, "sent": _item_use_sent_ms, "response": _item_use_response_id, "item": pending_item_use.duplicate(true)}
 	_item_use_serial += 1
