@@ -19,24 +19,30 @@ BaseBuffActTrigger::BaseBuffActTrigger(BaseBuff *argBuff, size_t argBuffActOff)
             }
         }();
 
-        getBuff()->getBO()->defer([bo = getBuff()->getBO(), key = actKey(), tick, tgrCount]() -> corof::awaitable<>
+        getBuff()->getBO()->defer([bo = getBuff()->getBO(), key = actKey(), tick, tgrCount]()
         {
-            if(auto tgrPtr = dynamic_cast<BaseBuffActTrigger *>(bo->m_buffList.hasBuffAct(key))){
-                co_await tgrPtr->runOnTrigger(BATGR_TIME);
-            }
-            else{
-                co_return;
-            }
-
-            for(int i = 1; tgrCount < 0 || i < tgrCount; ++i){
-                co_await bo->asyncWait(tick);
-                if(auto tgrPtr = dynamic_cast<BaseBuffActTrigger *>(bo->m_buffList.hasBuffAct(key))){
+            // defer() erases its callable after the first resume. Pass values
+            // into a captureless coroutine so suspended frames never reference
+            // that destroyed closure when the next timer message arrives.
+            return [](BattleObject *owner, std::pair<uint64_t, size_t> actionKey, long period, int triggerCount) -> corof::awaitable<>
+            {
+                if(auto tgrPtr = dynamic_cast<BaseBuffActTrigger *>(owner->m_buffList.hasBuffAct(actionKey))){
                     co_await tgrPtr->runOnTrigger(BATGR_TIME);
                 }
                 else{
                     co_return;
                 }
-            }
+
+                for(int i = 1; triggerCount < 0 || i < triggerCount; ++i){
+                    co_await owner->asyncWait(period);
+                    if(auto tgrPtr = dynamic_cast<BaseBuffActTrigger *>(owner->m_buffList.hasBuffAct(actionKey))){
+                        co_await tgrPtr->runOnTrigger(BATGR_TIME);
+                    }
+                    else{
+                        co_return;
+                    }
+                }
+            }(bo, key, tick, tgrCount);
         });
     }
 }
