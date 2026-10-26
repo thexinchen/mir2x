@@ -1362,3 +1362,33 @@ MIR3_ITEM_USE_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR
 104精确最终服务器源码已编译成功，有意停止旧进程后运行新二进制，最终PID3609924；运行日志/tmp/mir3-batch91-runtime.log。不是因观测超时重启。请求门源码指纹已刷新并在104独立提取cmp一致，main未改变，因此技能对照不重复生成。现有退出ObjectDB及软件渲染VSync警告仍保留。原版证据、服务端、Godot实现/测试、死亡夹具修复、报告分批线性提交；旧.uid、日志、二进制、样本及104已有build_signature修改排除。
 
 证据→结论→后续路径：E91-1把人工键路由绑定到原3000ms语义；E91-2的旧服负例与新服实际回报支持F91-1/F91-2；E91-3覆盖迟到/超时边界，E91-4解释并修复夹具加载竞态。仍需继续原十格快捷栏与物品表现、自动用药配置、特殊成功分支以及原版服务端数值的对齐，整体目标保持未完成。
+
+## 批次 92：快捷引用结构取证与隐藏浮动栏后的物品键（2026-10-26）
+
+本批沿用原样本与scope.md授权范围，继续E91人工快捷入口，确认原版十个格子的引用刷新与当前六格腰带存储有结构差异；不能仅将mir2x腰带数组扩成十格就声称对齐。本批恢复现有1—6物品键不依赖浮动栏可见性的行为，并记录十格完整迁移仍需处理的引用、拖放和特殊动作问题。报告flavor=null，原样本SHA-256继续为eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021。
+
+E92-1：原版64D708创建十个控件，64D77A开始的十段各25字节依次调用6EB26C设置矩形。提取器校验每段操作码、控件字段偏移296+4*slot及实际调用目标，不按等差数列猜坐标。实际x为65、105、146、186、226、266、306、346、386、426，y均8，宽29、高32；第三格存在1像素差异。64F560从对象+336的引用数组取物品，正的64位身份字段走6D95D4库存实例查找，否则经名称查找；这些身份字段仍不与当前itemID/seqID直接等同。
+
+6526A0遍历十个引用，用演员+892的背包调用6D9384刷新：flag-bit2分支克隆物品，按名称统计库存数量并写入克隆数量；另一分支按名称找库存物品再克隆。刷新结果缺失时，若与共享待确认物品的名称相同则保留引用，否则清理。flag-bit2分支可能保留数量为0的克隆，不能把所有零数量都概括为立即清空。基于这些调用关系，可确定这是依赖背包状态刷新的快捷引用模型；当前mir2x腰带则在装备入槽时移走库存、单独存储SDItem，二者不同。完整拖放接口、持久化方式尚未恢复，不声称所有操作都已证明为无所有权转移的复制。
+
+E92-2：64F5E9扫描7292AC指向的71ECD0表，30条记录每条两个DWORD。模板编号匹配后先检查背包中数量为正，再将第二字段传给64F4C0构造动作记录，进入67CF44；不能将所有快捷格都当作1006喝药请求。mir3-item-use.json/schema3保存30对原始编号、十个矩形及新增指令，提取器累计51处指令与2条回报注册通过。本机与104独立提取cmp一致，八项完整性测试通过，新增拒绝第二控件误指向第一格及矩形调用目标被修改的检查。30对编号尚无可靠业务名对应，没有套用当前技能ID。
+
+F92-1：67E2D8数字键分派及6527AC/64F560入口没有快捷格可见性检查。当前main却只在quick_bar.visible时处理1—6；隐藏浮动栏后，runtime_config可能吞掉按键，skill_panel可能把该键绑定给悬停技能，已有数字技能绑定也可能直接施法。main现在仍在加载遮罩、购买模态和按下/回声检查之后接管现有1—6，无需浮动栏可见；技能面板和设置面板的前置键处理保持同样优先级。死亡及强制动作门仍位于物品键之后，待确认物品继续由E91共享门控处理，空格及忙碌也不落入技能绑定。
+
+这只是现有六格适配输入链路的修复，不是完整十格实现。7—0在当前适配中仍未建立原版背包快捷引用，本批保留此前未迁移的技能键行为并明确其与原版的差异。没有为了凑十格而创建四个虚假的服务端腰带槽；后续十格迁移必须同时实现背包引用更新、拖放接口、数字键路由与特殊动作的可靠映射。
+
+E92-3：只将新quick_bar_smoke夹具放到104旧2268bad实现时，明确失败于“runtime config swallowed the hidden quick-slot key: []”，日志/tmp/mir3-hidden-key92-old.log。新实现通过隐藏栏+设置面板、隐藏栏+悬停技能、不重复音效的忙碌状态、空槽不回落绑定，以及实际CloseButton关闭后仍可用数字键的断言；原图标、文字、拖动、显示时快捷键、Shift及原有死亡/强制动作检查保留。headless及Xvfb各通过，窗口日志/tmp/mir3-hidden-key92-gui.log。
+
+world_action_smoke原有断言要求隐藏栏后Shift+1恢复已有数字技能施法，按旧原生客户端规则编写；本批运行确实在该断言失败。根据E92-1/F92-1已确认的原版输入优先级，将该用例改为隐藏时也不能由数字技能越过物品键，继续保留B/H非数字技能优先、未学习技能回退、效果数量等检查。修改后完整world_action_smoke通过，没有删除该场景或允许两条路径同时成功。
+
+E92-4：network_item_use_receipt_smoke增加MIR3_ITEM_USE_HIDDEN_BAR=1。结合MIR3_ITEM_USE_DEAD_KEY=1，在初始地图和正血量条件建立后发实际@die，保持QuickBar不可见，通过main的正常数字键入口提交现有腰带物品使用。收到对应请求ID的实际SM_OK且只少一件，再次操作被共享待确认门拒绝且无重复音效。之后真实@revive，抓取和归还余量、无respID旧格式使用及七种明确失败回报继续通过。最终日志/tmp/mir3-hidden-key92-network.log显示dead_key=true、hidden_bar=true及PASS，测试角色恢复存活且未移动。这是当前协议真实联网验证，不是原版服务器捕获，也未进行逐像素截图验收。
+
+104的quick_bar_smoke、skill_panel_smoke、runtime_config_smoke、item_use_pending_smoke及world_action_smoke最终通过。main变化后的请求门和技能对照源码指纹均重新生成，104独立提取cmp一致；一次本机指纹命令使用了不存在的工作目录SkillDesc.txt路径，随后定位到G:/游戏/Mir3/Data/SkillDesc.txt并成功生成，对应原文哈希保持一致。未把失败命令算作通过。服务器源码未改变，沿用上一批已编译的PID3609924，没有重编译或重启；退出ObjectDB及VSync警告仍保留。
+
+```sh
+python3 client_godot/docs/reverse/export_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json --output /tmp/mir3-item-use92.json
+python3 client_godot/docs/reverse/test_mir3_item_use.py --sample /tmp/mir3-history-unpacked.exe --registry client_godot/docs/reverse/mir3-socket-registry.json
+MIR3_ITEM_USE_HIDDEN_BAR=1 MIR3_ITEM_USE_DEAD_KEY=1 MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_item_use_receipt_smoke.tscn
+```
+
+证据→结论→后续路径：E92-1/E92-2约束十格迁移的数据模型与未知动作语义，E92-3的旧版负例及新输入断言、E92-4的实际隐藏栏死亡用药回报支持F92-1。原版十格快捷引用、自动用药及其他玩法仍未完整对齐，整体目标继续。证据、输入修复/指纹、回归测试、报告分笔线性提交；旧.uid、日志、样本和104既有build_signature改动均排除。
