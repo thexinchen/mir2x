@@ -24,6 +24,8 @@ func _ready() -> void:
 	main.set("_pickup_action_timer", 0.15)
 	_deliver(_move(10, 11))
 	var started: int = GameState.player_action_started_ms
+	_deliver(_move(10, 11))
+	_expect(main.get("_player_server_action_queue").is_empty() and GameState.player_action_started_ms == started, "immediate active duplicate does not queue or restart animation")
 	_deliver(_move(11, 12))
 	_deliver(_move(11, 12))
 	_deliver(_stand(12))
@@ -71,7 +73,36 @@ func _ready() -> void:
 	_expect(GameState.player_action_type == 13, "revive still waits for death animation")
 	main.call("_process_player_action", 1.1)
 	_expect(GameState.player_action_type == 2 and not main.call("_player_input_blocked"), "revive and input recover after queued death")
-	if failures.is_empty(): print("SELF SERVER MOVE QUEUE PASS: ordered legs/stand, duplicate suppression, real-frame interpolation, held/input handling, teleport/scene cleanup and death/revive ordering")
+	# A repeated edge after an intervening return leg is new motion, even
+	# while the first copy is still the active animation on screen.
+	_deliver(_move(16, 17))
+	var cycle_started: int = GameState.player_action_started_ms
+	_deliver(_move(17, 16))
+	_deliver(_move(16, 17))
+	_deliver(_move(16, 17))
+	_deliver(_stand(17))
+	_expect(main.get("_player_server_action_queue").size() == 3, "forward-return-forward retains repeated edge after intervening action while deduplicating adjacent copies")
+	_expect(GameState.player_action_started_ms == cycle_started and GameState.player_x == 17, "queued cyclic movement preserves the active first leg")
+	main.set_process(true)
+	for _frame in range(120):
+		await get_tree().create_timer(0.01).timeout
+		if GameState.player_x == 16: break
+	_expect(GameState.player_x == 16 and GameState.player_action_from_x == 17 and GameState.player_action_type == 3, "return leg plays before repeated forward edge")
+	for _frame in range(120):
+		await get_tree().create_timer(0.01).timeout
+		if GameState.player_x == 17: break
+	_expect(GameState.player_x == 17 and GameState.player_action_from_x == 16 and GameState.player_action_type == 3, "repeated forward edge animates instead of jumping straight to final stand")
+	await get_tree().create_timer(0.2).timeout
+	drawn = renderer.player_draw_grid()
+	_expect(drawn.x > 16.0 and drawn.x < 17.0, "repeated forward edge has a real interpolated midpoint")
+	if OS.has_environment("MIR3_SERVER_CYCLE_SCREENSHOT"):
+		await RenderingServer.frame_post_draw
+		_expect(get_viewport().get_texture().get_image().save_png(OS.get_environment("MIR3_SERVER_CYCLE_SCREENSHOT")) == OK, "cycle screenshot saves")
+	for _frame in range(120):
+		await get_tree().create_timer(0.01).timeout
+		if GameState.player_action_type == 2: break
+	_expect(GameState.player_x == 17 and GameState.player_action_type == 2 and main.get("_player_server_action_queue").is_empty(), "terminal stand follows all three cyclic legs")
+	if failures.is_empty(): print("SELF SERVER MOVE QUEUE PASS: ordered legs/stand, adjacent duplicate suppression, repeated edges after return, real-frame interpolation, held/input handling, teleport/scene cleanup and death/revive ordering")
 	get_tree().quit(0 if failures.is_empty() else 1)
 
 func _move(from_x: int, to_x: int) -> Dictionary:
