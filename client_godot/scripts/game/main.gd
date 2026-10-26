@@ -8,6 +8,7 @@ const CerealReader = preload("res://scripts/network/cereal_reader.gd")
 const ActorResourceScript = preload("res://scripts/game/actor_resource.gd")
 const WorldPathfinderScript = preload("res://scripts/game/world_pathfinder.gd")
 const Mir3TargetLockScript = preload("res://scripts/game/mir3_target_lock.gd")
+const Mir3TargetHistoryScript = preload("res://scripts/game/mir3_target_history.gd")
 const Mir3MovementScript = preload("res://scripts/game/mir3_movement.gd")
 const RuntimeConfigPanelScript = preload("res://scripts/game/runtime_config_panel.gd")
 const MINIMAP_PANEL_PATH := "res://scenes/game/panels/minimap.tscn"
@@ -83,6 +84,7 @@ var _next_strike := false
 var _swing_magic: Dictionary = {}
 var _locked_magic_target_uid := 0
 var _magic_focus_uid := 0
+var _magic_history_uid := 0
 var _last_impulse_magic_ms := -3000
 var _last_magic_request_ms := -500
 var _action_request_gate: RefCounted = preload("res://scripts/game/mir3_request_gate.gd").new()
@@ -653,6 +655,8 @@ func _on_creature_removed(uid: int) -> void:
 		_locked_magic_target_uid = 0
 	if _magic_focus_uid == uid:
 		_magic_focus_uid = 0
+	if _magic_history_uid == uid:
+		_magic_history_uid = 0
 	if _follow_focus_uid == uid:
 		_follow_focus_uid = 0
 	if _attack_focus_uid == uid:
@@ -867,17 +871,35 @@ func _valid_locked_magic_target() -> int:
 func _update_magic_focus(_mouse_grid: Vector2i, magic_id := 0) -> int:
 	# 67CA30 / 67CD24 allow the currently hovered corpse for legacy spell 77.
 	# The history fallback below still requires a live actor (67CA7D/67CD08).
-	var include_dead: bool = _resources.magic_names.get(magic_id, "") == "回生术"
+	var magic_name: String = _resources.magic_names.get(magic_id, "")
+	var include_dead := magic_name == "回生术"
 	var focus_uid: int = world_renderer.focus_uid_at_screen(get_viewport().get_mouse_position(), false, include_dead)
+	var selected_hover := false
 	if focus_uid != 0:
 		var candidate: Dictionary = game_state.get_creature(focus_uid)
 		if not candidate.is_empty() and (include_dead or candidate.get("action_type", 0) != 13):
 			_magic_focus_uid = focus_uid
-			return _magic_focus_uid
-	if _magic_focus_uid != 0:
+			selected_hover = true
+	if _magic_focus_uid != 0 and not selected_hover:
 		var focus: Dictionary = game_state.get_creature(_magic_focus_uid)
 		if focus.is_empty() or focus.get("action_type", 0) == 13:
 			_magic_focus_uid = 0
+	# 67CCCC resolves a permitted lock before both cooldown and busy gates.
+	if magic_name in SELF_MAGIC_NAMES or magic_name in GROUND_MAGIC_NAMES or magic_name in TARGET_MAGIC_NAMES:
+		if _magic_target_lock_enabled() and Mir3TargetLockScript.ALLOWED.has(magic_name):
+			var locked_uid := _valid_locked_magic_target()
+			if locked_uid != 0:
+				_magic_focus_uid = locked_uid
+	var history_known_positive: bool = Mir3TargetHistoryScript.KNOWN_POSITIVE.has(magic_name)
+	if _magic_focus_uid == 0 and history_known_positive:
+		var history: Dictionary = game_state.get_creature(_magic_history_uid)
+		if not history.is_empty() and history.get("action_type", 0) != 13:
+			_magic_focus_uid = _magic_history_uid
+	# 67CB3C / 67CF27 update a separate historical pointer, excluding self.
+	# Skills without proven permission retain the existing current-focus policy;
+	# their original server-supplied byte81 has not been recovered.
+	if history_known_positive and _magic_focus_uid != 0 and _magic_focus_uid != game_state.player_uid:
+		_magic_history_uid = _magic_focus_uid
 	return _magic_focus_uid
 
 
@@ -909,12 +931,7 @@ func _cast_magic(magic_id: int, mouse_grid: Vector2i) -> bool:
 	# live scene-member lock override as target spells. Keep special commands out.
 	if magic_name in SELF_MAGIC_NAMES or magic_name in GROUND_MAGIC_NAMES or magic_name in TARGET_MAGIC_NAMES:
 		if _magic_target_lock_enabled() and Mir3TargetLockScript.ALLOWED.has(magic_name):
-			var locked_uid := _valid_locked_magic_target()
-			if locked_uid != 0:
-				focus_uid = locked_uid
-			# 67CCCC writes the resolved lock into current spell focus before
-			# the busy gate. Independent lock storage does not bypass focus.
-			_magic_focus_uid = focus_uid
+			# Focus, lock and proven history were resolved before readiness.
 			return _send_spell_action(9, magic_id, mouse_grid, focus_uid)
 	if magic_name in SELF_MAGIC_NAMES:
 		return _send_spell_action(9, magic_id, Vector2i(game_state.player_x, game_state.player_y), game_state.player_uid)
@@ -1827,6 +1844,7 @@ func _handle_start_game_scene(payload: PackedByteArray) -> void:
 	# 68669A -> 676FA4 clears current/history targets with the old scene.
 	_locked_magic_target_uid = 0
 	_magic_focus_uid = 0
+	_magic_history_uid = 0
 	_clear_player_inspection()
 	_follow_focus_uid = 0
 	_attack_focus_uid = 0
@@ -2146,6 +2164,7 @@ func _switch_player_map(map_uid: int, action: Dictionary) -> void:
 	_player_post_forced_action = {}
 	_locked_magic_target_uid = 0
 	_magic_focus_uid = 0
+	_magic_history_uid = 0
 	_clear_player_inspection()
 	_follow_focus_uid = 0
 	_attack_focus_uid = 0
