@@ -1719,3 +1719,43 @@ python3 client_godot/docs/reverse/test_mir3_auto_use.py --sample /tmp/mir3-histo
 ```
 
 证据→结论→后续路径：E101-1确定延迟字段来自服务端标准表而非Buff，E101-2/E101-3接入已有证据充分的helper三路定时恢复，E101-4证明在Linux实际主场景配置、持久化和服务端消费相接。F101-1是定时保护已可运行；GUI恢复的逐药延迟、书籍/逃脱完整执行、原配置编辑转换及启动条件仍需继续，不能据此宣告全部原版游戏逻辑对齐完成。
+
+## 批次 102：书籍保护取证、首次状态初始化及持续用药稳定性（2026-10-26）
+
+本批继续整体对齐目标。原版静态证据补齐后，实际联网复跑暴露了两处后端生命周期问题；均记录失败后修复，没有把进程存在或回调超时当作通过。样本仍为既有SHA-256 eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021。旧IDA worker返回不可达且会话消失，确认该句柄已失效后，按skill的start.ps1/open.ps1重新打开原样本；9.1实际安装路径通过IDADIR传给脚本，未用重启活进程处理普通观察超时。
+
+E102-1：6C7468所谓Book通道实际为低体力传送保护，而非学习技能书。选择0顺序为地牢逃脱卷、回城卷、盟重传送石、比奇传送石、苍月岛传送石、白日门传送石、封魔谷传送石；选择1为随机传送卷、随机传送石；选择2为行会回城卷。外层6C4C60要求通道启用、非零且到期的配置间隔、原始HP严格低于阈值，以及选择不为-1；每次到期调用后更新本通道尝试时间，即使内部20秒门拒绝。
+
+内部使用全局72782C，初值0绕过等待，否则u32(now-last)>=20000才尝试，等于20000允许。每个候选经690D40→6D94C8(mode1)从背包末索引倒序查找精确LStrCmp名称，没有腰带回退，也没有药品CompareStringA忽略大小写逻辑。每个名称只选择一个末尾实例，发送失败则试下一名称，而非继续同名更早实例。693D74要求待确认物品对象为空，不使用800/3000ms超时替换。只有本地成功发出请求才更新20秒时间，不等待服务器结果；没有任何候选成功、或选择不在0..2时，只要actor存在且20秒门允许，仍返回handled=1。选择-1由外层拦截，不应因被调函数自身返回1而自动纠正为0。
+
+当前物品表只匹配四个卷轴（ID150–153），六种传送石没有名称映射。更关键的是server/src/playernet.cpp的CM_CONSUMEITEM仅结算isBook技能书与isPotion药品，卷轴分支仍未实现；物品类型为传送卷轴并不等于已经可使用。因此本批仅固化该分支证据与参考重放，不开放自动传送，也没有猜测回城地点、行会权限或地牢限制。export_mir3_auto_use.py升为schema5、65处指令检查，含三组31字节ShortString、目录匹配、处理/时间更新语义和启动链。26项测试覆盖20秒相等/回绕、零时间、倒序精确名称、失败后的名称回退、无actor、无候选/非法选择的返回、字节变更与表填充负例。两端通过，104独立重生JSON后cmp一致。
+
+E102-2：691754写入角色状态后，在6917E5判断helper全局为空才于6917F6调用66F030创建职业helper；66F0ED通过虚方法+8立即启用。66D66C退出角色时调用同一方法传0，再于66D674销毁。6C509C切换两只定时器，与是否已经取得背包并非同一条件。Godot现在在生命数据就绪后先加载角色保护配置、开始计时，再由库存初始化/加载遮罩限制实际发药，避免之前将整个计时起点推迟到地图与背包都完成。联网夹具在实际连接中暂置库存未初始化和加载遮罩可见，调用生产入口，要求helper已加载但没有发药，随后恢复原状态并验证三路真实消费。原配置编辑器Percent转换、其他职业helper细节仍未全部恢复。
+
+E102-3：旧服务器PID3609924于10:52:19发生SIGSEGV。/tmp/mir2x-server-v01.g3log.20261026-085124.log记录崩溃偏移0x4eee6b；对当时尚未替换的可执行文件运行addr2line/objdump，解析到BaseBuffActTrigger构造中的第二个lambda恢复路径，正在通过已失效捕获读取BattleObject的Buff列表。serverobject.hpp的defer执行func().resume()后返回true，StateTrigger::run立即移除并销毁该捕获lambda；而buffacttrigger.cpp原代码是带捕获的协程，等待下一tick后仍访问闭包。这与崩溃位置相符。
+
+修复将defer保存的闭包改成普通工厂，启动无捕获协程，并把owner、actionKey、period、triggerCount按值作为协程参数保存到帧内。保留按当前actKey重查Buff的逻辑，不捕获可能提前释放的Buff指针，也不更改恢复公式或药品时长。本次没有core或ASan报告；定位依据是真实信号日志、旧二进制符号/反汇编及明确的闭包销毁顺序，不宣称已证明全部协程生命周期问题消失。104原生server目标重新编译成功。
+
+E102-4：修复闭包后启动PID3687498，30次自动用药与Xvfb单轮通过，但紧接同角色重登录的人工用药测试失败：未收到实际SM_ERROR，不能把客户端超时视为明确拒绝。服务端仍在监听，却重复报告PLY_7收到旧AM_TIMEOUT respID27、无对应协程，角色队列阻塞。ActorPod原本每实例重新编号，DelayDriver只按UID/响应号投递，旧实例定时器可进入同UID新实例；无对应项时抛出异常，ActorPool又保留当前未完成队列，导致反复处理该消息。此外innHandler恢复协程后才erase旧unordered_map迭代器，恢复期间新等待插入可触发rehash，存在迭代器失效风险。
+
+actorpod.cpp现在给等待令牌使用高半区的进程级唯一64位编号，独立于普通消息的可选全局跟踪编号，不与新实例从1起的普通请求混用；已无登记项且来自ZERO的AM_TIMEOUT/AM_CANCEL作为过期定时消息跳过，其他未知响应仍保留原异常。匹配回调先extract到本地node，再恢复协程/执行回调，既保留可调用对象生命周期，也不在可能rehash后使用旧迭代器。该适配修复保证旧定时消息不会命中新会话等待，未更改客户端协议或将所有错误静默忽略。
+
+E102-5：两处C++修复最终构建成功，日志/tmp/mir3-protection102-build-final.log。确认旧进程路径及命令后正常停止PID3687498，仅启动一次最终server，PID3690496监听7000。最终依次运行：十轮HP/MP/特殊药（30次真实SM_OK与逐次库存减一）后立即退出、不等待持续效果；同一角色立即重新登录运行network_item_use_receipt_smoke；Xvfb正常单轮并等待最终3.5秒定时窗口；再一次同角色人工用药。四个实际进程依次全部通过，末尾服务端仍在线，/tmp/mir2x-server-v01.g3log.20261026-105845.log未出现本次SIGSEGV/FATAL或no corresponding coroutine。没有靠每轮重启服务端使测试通过。
+
+network_mir3_protection_smoke新增MIR3_PROTECTION_REPEAT（1–10）与MIR3_PROTECTION_FAST_LOGOUT夹具模式，持续验证配置持久化、原始阈值、健康数据提前初始化、真实关联回包及腰带/地图/坐标不变。每轮生成并消耗一份各类测试药，成功用例恢复各自开始时库存数量；先前崩溃中断的夹具可能留有生成物，不声称整个历史测试账号已还原。服务端允许的Buff本身仍按其规则生效。纯模型mir3_protection_smoke及world_action_smoke通过；Xvfb的VSync支持警告保留。先前失败日志保留，不计入最终PASS。
+
+主场景变化的请求门和技能对应快照均重算，104独立重生后cmp一致；actorpod/buffacttrigger不在既有快照输入列表，未伪造无关字段更新。取证、持续效果修复、等待消息修复、客户端起点修复、联网夹具及报告分别线性提交同步104。旧.uid、原分析数据库、二进制、日志、截图及104既有build_signature修改均排除。
+
+```sh
+cmake --build --preset conan-release --target server --parallel 6
+export MIR2X_WORLD_RES="$PWD/client_godot/build/world_res"
+export MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture"
+export MIR2X_AUDIO_RES="$PWD/client_godot/build/audio"
+MIR3_PROTECTION_REPEAT=10 MIR3_PROTECTION_FAST_LOGOUT=1 /home/czx/godot --headless --path client_godot res://tests/network_mir3_protection_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_item_use_receipt_smoke.tscn
+xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/network_mir3_protection_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/network_item_use_receipt_smoke.tscn
+python3 client_godot/docs/reverse/test_mir3_auto_use.py --sample /tmp/mir3-history-unpacked.exe
+```
+
+最终日志：/tmp/mir3-protection102-repeat-final.log、relogin-final.log、visual-final.log、manual-final.log（后三者同前缀）。证据→结论→后续路径：E102-1恢复Book真实含义和独立节拍，E102-2修正客户端计时起点，E102-3/E102-4解释实际持续用药/重登失败并修复，E102-5以真实回包及连续会话确认当前路径恢复可用。F102-1为这一批保护运行链得到进一步对齐和稳定；传送物品的服务器结算、GUI恢复逐药延迟及其他未决技能/玩法仍需继续，整体目标未完成。
