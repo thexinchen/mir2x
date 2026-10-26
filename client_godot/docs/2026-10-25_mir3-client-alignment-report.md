@@ -1281,3 +1281,27 @@ MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/buil
 双客户端按批次87命令复跑即包含新增显示与Ctrl右键验证。main、网络和服务器源码未修改，相关已有指纹没有无意义重生成。104服务器PID3558161继续运行，未重编译或重启；既有VSync警告保留。实现、回归、报告分三笔线性提交，旧.uid排除。
 
 证据→结论→后续路径：E88-1为旧版实际像素负例、新版分级透明及默认不透明PNG一致；E88-2为真实复活后的命中框、选中和新外观查询回报。F88-1补齐上一批状态恢复与实际人物绘制之间的缺口。原版alpha混合、全部装备组合及其他未恢复玩法仍未证明，整体对齐目标继续。
+
+## 批次 89：同帧演员移除后的命中框与焦点快照失效（2026-10-26）
+
+本批继续核对E71/E86的演员移除与目标清理，发现当前main已清理逻辑焦点，但WorldRenderer仍保留上一绘制帧的命中框及焦点快照。移除演员后、下一次绘制前，focus_uid_at_screen可能再次返回已不存在的UID；同UID立即重建时还可能继承旧位置命中框。本批修复该显示缓存与场景生命周期不一致的问题。
+
+E89-1：既有原版证据0x6799BE/0x6799D0/0x6799E2在移除后清理匹配目标，0x679A08/0x679A5B按UID清理匹配历史。0x6788B8通过场景+244列表的IndexOf检查对象仍在场景中，0x67CA4F/0x67CCDA等解析路径使用该成员检查。本批没有把旧显示矩形当作场景成员证明，也没有改变原版已确认的回生术当前尸体例外。
+
+F89-1：main的中央creature_removed处理立即调用WorldRenderer.forget_actor_target，删除该UID的活人及尸体命中框，并清理渲染器中匹配的鼠标、魔法、跟随、攻击焦点快照；其他UID的快照保留。命中查询的保留目标分支与遍历分支均检查当前演员存在；普通选择拒绝当前已死亡演员，include_dead显式查询仍接受场景内的尸体。本人是否参与命中仍由allow_player控制，重叠时的有效保留目标优先级保持。
+
+尸体例外没有被改成“必须等新尸体贴图绘制才可选择”：当缓存仍是上一可见姿势但对象已死亡时，普通查询返回0，显式允许尸体的查询仍可返回该场景成员。移除后则两种查询都拒绝；同UID重新进入必须有新的命中框，不能使用已清除的旧框。此处验证的是成员/死亡状态及缓存生命周期，不是声称恢复了原版全部像素命中几何。
+
+新增focus_lifecycle_smoke直接走_record_actor_target和GameState中央移除入口，在中间不等待绘制帧，覆盖移除后查询、同帧UID重建、新框恢复、死亡及回生后的普通/尸体选择、重叠优先级、本人策略、四类渲染焦点按UID清理。104旧37f06af配新夹具明确失败于“removed actor must not be reselected from the previous frame”，退出1。新实现headless及Xvfb均通过。world_action_smoke的重叠框夹具原先只建立707演员，却手工给808命中框；现在补建808的实际演员并在结束时清理，保留原有重叠断言，未通过接受无场景演员来放宽生产逻辑。
+
+E89-2：network_remote_revive_smoke增加可选MIR3_REMOTE_REMOVAL=1模式。在真实复活、可选中和Ctrl右键查看均通过后，观察端保持在线，通知被观察者正常退出。新增回调注册在main正常消息处理回调之后，收到实际同UID、同地图的16字节SM_OFFLINE时，在同一次同步消息发射中检查：演员已移除、活人/尸体框均不存在、原命中位置不再返回该UID、查看目标已清零且面板关闭。中间没有await下一帧或主动伪造移除报文。104共享目录/tmp/mir3-remote-revive87.ZMf1P1通过该完整流程，确认生产清理路径与真实对端退出相接。
+
+104最终focus_lifecycle_smoke、world_action_smoke、mir3_resurrection_target_smoke、mir3_target_lock_smoke、mir3_npc_interaction_smoke及mir3_right_actor_smoke通过；此前同批独立历史和演员移除专项亦通过。NPC共享节流、Ctrl查看的300ms长按恢复、已有路径/移动计时及窗口释放回归未退化。实际SM_OFFLINE测试不是原版服务器报文捕获；没有扩大到未知原版视野半径或怪物分类语义。
+
+```sh
+MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" /home/czx/godot --headless --path client_godot res://tests/focus_lifecycle_smoke.tscn
+```
+
+双客户端执行批次87的完整启动流程前增加export MIR3_REMOTE_REMOVAL=1，即在复活/查看后等待真实对端退出验证；不设置该变量时仍执行批次88流程。main指纹变化后的请求门及技能对照JSON已刷新，104独立提取并cmp一致。无C++变更，服务器PID3558161继续运行且未重启；既有VSync/ObjectDB退出警告保留。源代码、测试/指纹、报告分三笔线性提交，旧.uid及日志排除。
+
+证据→结论→后续路径：E89-1为原版成员检查及按UID清理，E89-2为真实SM_OFFLINE同次消息处理后的缓存/UI断言，E89-3为旧实现负例和新的同帧生命周期回归。F89-1关闭演员已移除却能被上一帧命中框重新选中的缺陷；原版其他命中几何、目标模式、资源与游戏数值缺口继续保留，整体目标未完成。
