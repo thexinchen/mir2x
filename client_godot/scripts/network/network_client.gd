@@ -162,6 +162,8 @@ var _next_response_id := 1
 var _response_callbacks: Dictionary = {}
 var _item_use_serial := 0
 var _item_use_pending_token := 0
+var _item_use_sent_ms := 0
+var _item_use_response_id := 0
 var pending_item_use: Dictionary = {}
 var _message_dispatch_paused := false
 var _deferred_messages: Array[Dictionary] = []
@@ -502,29 +504,32 @@ func send_drop_item(item_id: int, seq_id: int, count: int) -> Error:
 	return _send_fixed_message(CM_DROPITEM, payload)
 
 
-func send_consume_item(item_id: int, seq_id: int, count: int = 1, callback := Callable()) -> Error:
+func send_consume_item(item_id: int, seq_id: int, count: int = 1, callback := Callable(), automatic := false) -> Error:
 	var payload := PackedByteArray()
 	payload.resize(10)
 	payload.encode_u32(0, item_id)
 	payload.encode_u32(4, seq_id)
 	payload.encode_u16(8, clampi(count, 0, 0xFFFF))
-	return _send_item_use_request(CM_CONSUMEITEM, payload, callback)
+	return _send_item_use_request(CM_CONSUMEITEM, payload, callback, 800 if automatic else 3000)
 
 
-func send_consume_belt_item(slot: int, callback := Callable()) -> Error:
+func send_consume_belt_item(slot: int, callback := Callable(), automatic := false) -> Error:
 	var payload := PackedByteArray()
 	payload.resize(2)
 	payload.encode_u16(0, slot)
-	return _send_item_use_request(CM_CONSUMEBELTITEM, payload, callback)
+	return _send_item_use_request(CM_CONSUMEBELTITEM, payload, callback, 800 if automatic else 3000)
 
 
-func _send_item_use_request(head: int, payload: PackedByteArray, callback: Callable) -> Error:
+func _send_item_use_request(head: int, payload: PackedByteArray, callback: Callable, retry_ms := 3000) -> Error:
 	_expire_responses()
-	if _item_use_pending_token != 0:
+	if _item_use_pending_token != 0 and ((Time.get_ticks_msec() - _item_use_sent_ms) & 0xFFFFFFFF) < retry_ms:
 		return ERR_BUSY
+	var previous := {"token": _item_use_pending_token, "sent": _item_use_sent_ms, "response": _item_use_response_id, "item": pending_item_use.duplicate(true)}
 	_item_use_serial += 1
 	var token := _item_use_serial
 	_item_use_pending_token = token
+	_item_use_sent_ms = Time.get_ticks_msec()
+	_item_use_response_id = _next_response_id
 	pending_item_use = {"itemID": payload.decode_u32(0), "seqID": payload.decode_u32(4)} if head == CM_CONSUMEITEM else {}
 	var complete := func(reply_head: int, reply_payload: PackedByteArray):
 		if _item_use_pending_token == token:
@@ -533,13 +538,17 @@ func _send_item_use_request(head: int, payload: PackedByteArray, callback: Calla
 			item_use_state_changed.emit()
 		if callback.is_valid():
 			callback.call(reply_head, reply_payload)
-	# Original manual slots enter690494's shared3000ms pending check.
+	# The caller chooses the original800/3000ms retry check. Both paths keep
+	# correlated callbacks; replacing a pending use must not release a newer one.
 	# Inventory remains authoritative here, so failure/timeout requires no
 	# optimistic quantity rollback. A stale callback cannot release a newer use.
 	var error := _send_request(head, payload, false, complete, 3000)
 	if error != OK and _item_use_pending_token == token:
-		_item_use_pending_token = 0
-		pending_item_use = {}
+		var restore: bool = previous.token != 0 and _response_callbacks.has(previous.response)
+		_item_use_pending_token = int(previous.token) if restore else 0
+		_item_use_sent_ms = int(previous.sent) if restore else 0
+		_item_use_response_id = int(previous.response) if restore else 0
+		pending_item_use = previous.item if restore else {}
 	item_use_state_changed.emit()
 	return error
 

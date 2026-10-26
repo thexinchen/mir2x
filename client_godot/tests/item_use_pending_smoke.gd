@@ -55,8 +55,27 @@ func _ready() -> void:
 	_expect(network.pending_item_use == {"itemID": 6, "seqID": 101}, "pre-disconnect result cannot erase new inventory identity")
 	_expect(network.send_consume_belt_item(0) == ERR_BUSY, "pre-disconnect callback cannot release new-session use")
 	network.disconnect_from_server()
+	_expect(network.send_consume_item(6, 101) == OK, "manual request starts shared automatic window")
+	id = network.sent.back()[2]
+	network._item_use_sent_ms = Time.get_ticks_msec() - 700
+	_expect(network.send_consume_item(10, 102, 1, Callable(), true) == ERR_BUSY, "automatic path waits800ms")
+	network._item_use_sent_ms = Time.get_ticks_msec() - 800
+	_expect(network.send_consume_item(10, 102, 1, Callable(), true) == OK, "automatic path replaces pending at800ms")
+	new_id = network.sent.back()[2]
+	_expect(network._response_callbacks.has(id), "replacement keeps older correlated callback")
+	network.finish(id, NetworkClient.SM_OK)
+	_expect(network.pending_item_use == {"itemID": 10, "seqID": 102}, "older success does not clear automatic replacement")
+	network._item_use_sent_ms = Time.get_ticks_msec() - 800
+	_expect(network.send_consume_item(6, 101) == ERR_BUSY, "manual path still waits3000ms after automatic use")
+	network.send_error = ERR_UNCONFIGURED
+	_expect(network.send_consume_item(6, 103, 1, Callable(), true) == ERR_UNCONFIGURED, "replacement transport failure reported")
+	_expect(network.pending_item_use == {"itemID": 10, "seqID": 102}, "failed replacement restores live pending identity")
+	network.send_error = OK
+	network.finish(new_id, NetworkClient.SM_ERROR)
+	_expect(network.send_consume_item(6, 101, 1, Callable(), true) == OK, "automatic failure immediately permits next request")
+	network.disconnect_from_server()
 	if _failures.is_empty():
-		print("ITEM USE PENDING PASS: shared inventory/belt gate, immediate result release,3000ms retry, stale completion, failed send and disconnect")
+		print("ITEM USE PENDING PASS: shared inventory/belt gate, immediate result release, automatic800/manual3000ms retry, stale completion, failed replacement restoration and disconnect")
 	get_tree().quit(0 if _failures.is_empty() else 1)
 
 
