@@ -12,7 +12,7 @@ import export_mir3_auto_use as exporter
 class AutoUseEvidenceTest(unittest.TestCase):
     def test_documented_sample(self):
         result = exporter.extract(SAMPLE)
-        self.assertEqual(len(result["instruction_checks"]), 36)
+        self.assertEqual(len(result["instruction_checks"]), 41)
         self.assertEqual(result["controller"]["timer_ms"], 50)
         self.assertEqual([r["settings"][1]["default"] for r in result["channels"]], [2500, 3500, 300, 100])
         self.assertTrue(all(r["settings"][0]["default"] == 0 for r in result["channels"]))
@@ -25,6 +25,36 @@ class AutoUseEvidenceTest(unittest.TestCase):
         self.assertEqual(exporter.hp_candidate_order(29, records), [])
         self.assertEqual(exporter.hp_candidate_order(30, records), ["急救丸(小)", "金创药(小)"])
         self.assertEqual(exporter.hp_candidate_order(70, records)[:4], ["急救瓶", "急救丸(中)", "太阳水", "金创药(中)"])
+
+    def test_mp_boundaries_and_outer_special_fallback(self):
+        rules = exporter.gui_rules(SAMPLE.read_bytes())["automatic_recovery"]
+        self.assertEqual(exporter.mp_candidate_order(39, rules), [])
+        small = ["清心丸(小)", "魔法药(小)"]
+        middle = ["清心丸(中)", "清新瓶", "魔法药(中)"] + small
+        large = ["清心丸(大)", "魔法药(大)"] + middle
+        self.assertEqual(exporter.mp_candidate_order(40, rules), small)
+        self.assertEqual(exporter.mp_candidate_order(109, rules), small)
+        self.assertEqual(exporter.mp_candidate_order(110, rules), middle + ["太阳水"])
+        self.assertEqual(exporter.mp_candidate_order(179, rules), middle + ["太阳水"])
+        self.assertEqual(exporter.mp_candidate_order(180, rules), large + ["强效太阳水", "太阳水"])
+        self.assertEqual(exporter.mp_candidate_order(249, rules), large + ["强效太阳水", "太阳水"])
+        self.assertEqual(exporter.mp_candidate_order(250, rules), ["清心丸(特)", "魔法药(特)"] + large + ["万年雪霜", "强效太阳水", "太阳水"])
+
+    def test_inner_mp_fallback_cannot_enable_solar_prematurely(self):
+        with self.changed_read(0x5F9946, lambda code: code.__setitem__(slice(4, 6), bytes.fromhex("b201"))):
+            with self.assertRaisesRegex(ValueError, "instruction at 0x5f9946"):
+                exporter.extract(SAMPLE)
+
+    def test_mp_branch_name_cannot_alias_hp_medicine(self):
+        original = exporter.read_va
+        def altered(sample, address, length):
+            code = bytearray(original(sample, address, length))
+            if address == 0x5F98FB:
+                code[1:5] = (0x5F41EC).to_bytes(4, "little")
+            return bytes(code)
+        with patch.object(exporter, "read_va", altered):
+            with self.assertRaisesRegex(ValueError, "MP branch name"):
+                exporter.extract(SAMPLE)
 
     def test_gui_hp_weight_change_rejected(self):
         with self.changed_read(0x725E14, lambda code: code.__setitem__(0, 31)):
