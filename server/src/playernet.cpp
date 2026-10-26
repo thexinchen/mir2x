@@ -1102,18 +1102,22 @@ corof::awaitable<> Player::net_CM_DROPITEM(uint8_t, const uint8_t *buf, size_t, 
     return {};
 }
 
-corof::awaitable<> Player::net_CM_CONSUMEITEM(uint8_t, const uint8_t *buf, size_t, uint64_t)
+corof::awaitable<> Player::net_CM_CONSUMEITEM(uint8_t, const uint8_t *buf, size_t, uint64_t respID)
 {
     const auto cmCI = ClientMsg::conv<CMConsumeItem>(buf);
-    fflassert((SDItem
+    const auto fnReply = [this, respID](bool consumed)
     {
-        .itemID = cmCI.itemID,
-        .seqID = cmCI.seqID,
-        .count = to_uz(cmCI.count),
-    }));
-
+        if(respID){
+            postNetMessage(consumed ? SM_OK : SM_ERROR, respID);
+        }
+    };
     const auto &ir = DBCOM_ITEMRECORD(cmCI.itemID);
-    fflassert(ir);
+    // A use applies one effect and consumes one owned instance. Validate before
+    // applying the effect, including stale requests for an already used item.
+    if(!ir || cmCI.count != 1 || !cmCI.seqID || !hasInventoryItem(cmCI.itemID, cmCI.seqID, 1)){
+        fnReply(false);
+        return {};
+    }
 
     bool consumed = false;
     if(ir.isBook()){
@@ -1127,27 +1131,37 @@ corof::awaitable<> Player::net_CM_CONSUMEITEM(uint8_t, const uint8_t *buf, size_
     }
 
     if(consumed){
-        removeInventoryItem(cmCI.itemID, cmCI.seqID, cmCI.count);
+        const auto removed = removeInventoryItem(cmCI.itemID, cmCI.seqID, 1);
+        fflassert(removed == 1);
     }
-
+    fnReply(consumed);
     return {};
 }
 
-corof::awaitable<> Player::net_CM_CONSUMEBELTITEM(uint8_t, const uint8_t *buf, size_t, uint64_t)
+corof::awaitable<> Player::net_CM_CONSUMEBELTITEM(uint8_t, const uint8_t *buf, size_t, uint64_t respID)
 {
     const auto cmCBI = ClientMsg::conv<CMConsumeBeltItem>(buf);
+    const auto fnReply = [this, respID](bool consumed)
+    {
+        if(respID){
+            postNetMessage(consumed ? SM_OK : SM_ERROR, respID);
+        }
+    };
     const auto slot = to_d(cmCBI.slot);
     if(!(slot >= 0 && slot < 6)){
+        fnReply(false);
         return {};
     }
 
     auto &item = m_sdItemStorage.belt.list.at(slot);
     if(!item){
+        fnReply(false);
         return {};
     }
 
     const auto &ir = DBCOM_ITEMRECORD(item.itemID);
     if(!ir || !ir.isPotion() || !consumePotion(item.itemID)){
+        fnReply(false);
         return {};
     }
 
@@ -1160,6 +1174,7 @@ corof::awaitable<> Player::net_CM_CONSUMEBELTITEM(uint8_t, const uint8_t *buf, s
         dbRemoveBeltItem(slot);
     }
     postNetMessage(SM_BELT, cerealf::serialize(m_sdItemStorage.belt));
+    fnReply(true);
     return {};
 }
 
