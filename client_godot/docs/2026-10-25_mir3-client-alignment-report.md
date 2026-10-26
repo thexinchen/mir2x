@@ -2047,3 +2047,32 @@ MIR3_INVENTORY_SWAP_SCREENSHOT=/tmp/mir3-swap112.png xvfb-run -a /home/czx/godot
 ```
 
 证据→结论→后续路径：E112-1限定原交换语义，E112-2定位当前适配遗漏，F112-1修复格子安全且保留被替换游标，E112-3/E112-4核对布局与真实服务器所有权，E112-5确认相邻输入和走路等动作回归。原版状态语义、逐物品延迟、冲撞及其他传送结算继续推进，整体对齐目标未完成。
+
+## 批次 113：冲撞相关服务端反馈到原动作帧的衔接（2026-10-26）
+
+本批推进批次106所留的原网络消息与动作域衔接，不重复扩展背包功能。范围沿用G:/mir3/work/mir3-movement/scope.md的本地样本分析及项目适配授权，flavor=null。原样本SHA256仍为eef5bc3ce72b8db3449389f21c367f9795dacbf919480c606717a49b052d7021。当前Player::onCMActionSpell仍没有玩家“野蛮冲撞”的结算分支；怪物霸王教主的同名攻击不能充当玩家推人、距离和伤害公式。本批新增原反馈的可复跑证据与离线解码，未声称已实现冲撞玩法。
+
+E113-1（source_ref=67EAC9/67EADE/67EAF3/67EBDA及683874）：注册表中原消息6、37、7、9均以模式6进入683874。该处理器对其他演员正常路由，对本机演员也明确允许这些消息进入6790E4。12字节头包含DWORD0演员UID、WORD4消息、WORD6/8坐标及WORD10打包字段；载荷首12字节的三个DWORD由调用链转发。6790E4将WORD10高字节写到actor684，只把低字节继续作为方向字段。尚未证明高字节业务名，不称为速度、等级或耗蓝。
+
+E113-2（source_ref=679296/6DB054/6DB674/6DB697/6DE70C）：恢复并核对40字节队列记录，十个DWORD顺序为原消息号、x、y、方向低字节、payload0、payload4、空字符串、0、0、payload8。已知演员的普通入队分支未把可选描述字符串传到队列。后续6DB2F0将记录坐标写到actor21/25、调用方向设置，再将记录消息号写到actor664并通过虚方法偏移12进入动作初始化；6DE6E0读取actor664选帧，基类虚表条目6DA738指向该函数。演员资格检查、未知演员创建与子类覆盖仍是独立条件，不能从离线记录就声称任何报文必然播放。
+
+E113-3（source_ref=66CB38/729D0C/6DB42F）：本机动作应用前存在命令翻译表，不能跳过它直接宣称消息等于动作。指针729D0C指向734E10的BSS区，该区不在样本的文件数据中，首次直接按文件读取这些条目失败；随后用实际初始化代码取证：66CB38清零0x20000字节，遍历65536个WORD，仅在3002至3067范围的分支可能写非零。因此原反馈6/7/9/37在此初始化后的条目均为0，6DB2F0只在条目非零时重映射，本组原消息号得以保留到actor664。未据静态初始化证明后续运行中绝不可能修改该表。
+
+F113-1（severity=n/a_re，confidence=high，status=source_verified，evidence=E113-1/E113-2/E113-3，location=原683874→6790E4→6DB054→6DB2F0→6DE6E0）：原网络反馈6/7/9/37与批次106同号动作帧的关系现在有完整字段链证据；其中9可关联倒序步行帧，6/7/37可关联既有正序分支。但这不是当前mir2x枚举的映射：当前6是SPACEMOVE、9是SPELL，ACTION_PUSHMOVE仅有枚举/转发支持，尚无玩家冲撞结算路径。原消息6在本机UID匹配时更新7297F0的3000ms共享时钟；其他消息或远端UID不应触发该副作用，也未据此推导当前SM_OK确认含义。
+
+E113-4：export_mir3_impulse_animation.py及JSON升至schema2，加入feedback字段契约、四条注册和指针核对，累计43处指令校验，保留原7份帧记录及300/1000ms证据。decode_feedback(header,payload,local_uid)只接受已去外层封装的原12字节头及至少12字节载荷，输出原始字段、队列DWORD序列和本机时钟标志，不连接服务器、不写GameState、不把原包注入当前协议。方向低字节即使为255也保留原值，不擅自归一化为0至7。原处理器对载荷前12字节没有显示的长度保护，离线工具明确拒绝截断，不模拟越界读取。
+
+可选64字节描述只在载荷长度至少76时整体复制，12至75字节的尾部不作部分描述；更长载荷仅取这一段。该字段不等于“已更新演员描述”或队列字符串，未知演员创建用途仍需单独分析。命令行新增--header/--payload/--local-uid，必须三者同时提供，输出decoded_feedback供原始字段后续对照；未新增当前玩法的位移、伤害、资格或MP公式。
+
+E113-5：测试从8项扩至14项，本机和104通过。覆盖43处指令逐处篡改、原帧记录/反向表、四个消息与256种高字节及8个正常方向的8192组组合、远端UID和方向255保真、载荷12/13/37/75/76/77/100长度、头/载荷截断、错误消息域、非法UID、四条注册的处理器/调用点/模式/注册函数错误，以及翻译表/虚表指针错误。实际启动CLI读取合成header/payload文件并核对输出及缺参拒绝；合成用例不是原服务器抓包。104日志/tmp/mir3-impulse113-tests.log与/tmp/mir3-impulse113-export.log；独立重新提取/tmp/mir3-impulse113.json与仓库JSON逐字节cmp一致。
+
+```sh
+python3 client_godot/docs/reverse/test_mir3_impulse_animation.py --sample /tmp/mir3-history-unpacked.exe
+python3 client_godot/docs/reverse/export_mir3_impulse_animation.py --sample /tmp/mir3-history-unpacked.exe --output /tmp/mir3-impulse113.json
+cmp /tmp/mir3-impulse113.json client_godot/docs/reverse/mir3-impulse-animation.json
+# 对照原始字段时另加：--header HEADER.bin --payload PAYLOAD.bin --local-uid 0xUID
+```
+
+服务器PID3708547仍在运行。本批没有生产源码变更、编译或重启，不把上批Godot联网PASS当成本批新增玩法验证。提取器/JSON、测试、报告分三笔线性提交同步104；旧.uid、样本、日志、截图、二进制及已有build_signature修改排除。
+
+证据→结论→后续路径：E113-1恢复接收字段，E113-2连接队列与帧域，E113-3排除初始化翻译表的低编号重映射，F113-1明确原反馈到原动画的对应而保留当前协议边界，E113-4/E113-5提供可复跑解码与负例。还需确定原反馈与真实技能/推移场景的业务对应、当前服务端结算及其他剩余逻辑，整体对齐目标继续进行。
