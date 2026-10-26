@@ -1637,3 +1637,48 @@ python3 client_godot/docs/reverse/test_mir3_auto_use.py --sample /tmp/mir3-histo
 ```
 
 服务器PID3609924保持；本批没有GDScript/C++变更、资源重映射或服务器重启，因此没有重复运行移动回归或宣称服务器重编译。提取器/JSON、负例与重放检查、报告分笔线性提交同步104，旧.uid、日志、样本及既有build_signature修改排除。证据→结论→后续路径：E99-1/E99-2区分GUI恢复配置与算法，E99-3揭示待确认门之外的共享延迟，E99-4隔离保命/退出，E99-5限定当前目录适配，E99-6保证可复跑。F99-1保留未完成的运行接入要求，整体目标继续。
+
+## 批次 100：自动蓝药完整回退与实际服务器药品效果元数据（2026-10-26）
+
+本批补齐GUI自动蓝药的递归顺序，同时打通Godot读取当前服务器实际药品Buff参数的资源链。原版选择权重、当前ItemRecord.potion声明、当前实际Buff效果是三类不同数据：不能把potion.time当成原物品记录+100的使用延迟，也不能按静态物品表推断当前实际回血量。本批没有启用自动消费或修改服务器回血规则。
+
+范围、授权与原样本哈希沿用scope.md和E99，报告flavor=null。E100-1：5F98D4先尝试本档药名，失败后调用下一低档，递归时将EDX清0，禁止低档额外尝试太阳水；只有最外层较高档按其规则调用5F965C。5F965C顺序为雪霜→强效太阳水→太阳水，各级失败才向下。小档即使外层允许特殊回退也只尝试两个小蓝药，不能给缺口40自动补上太阳水。
+
+| MP缺口 | 本档优先项 | 然后尝试 | 最外层特殊回退 |
+|---|---|---|---|
+| 小于40 | 无 | 无 | 无 |
+| 40—109 | 清心丸(小)、魔法药(小) | 无 | 无 |
+| 110—179 | 清心丸(中)、清新瓶、魔法药(中) | 小档 | 太阳水 |
+| 180—249 | 清心丸(大)、魔法药(大) | 中档、小档 | 强效太阳水、太阳水 |
+| 至少250 | 清心丸(特)、魔法药(特) | 大档、中档、小档 | 万年雪霜、强效太阳水、太阳水 |
+
+export_mir3_auto_use.py/schema3增加五处递归参数指令，累计41处检查；12个具体药名的MOV EAX指针及GB18030字符串逐项验证。新增只读mp_candidate_order按上述分支重放，不发送游戏请求。18项完整性测试在本机/104通过，新增39/40、109/110、179/180、249/250边界和完整顺序，并拒绝低档递归打开特殊药回退、蓝药名称被替成红药的负例。两端独立提取JSON cmp一致。
+
+E100-2：核对当前175a089的Player::consumePotion，实际执行addBuff(UID(),0,DBCOM_BUFFID(ir.name))，并不直接使用ItemRecord.potion.hp/mp/time。以当前金创药（小）为例，物品记录声明hp30/time1，而同名Buff包含一次HP属性修改参数(10,0)，以及持续3000ms、每秒2次、参数(20,1)的HP持续触发。BuffValuePercentage的参数顺序是固定值、百分比，因此一次初始值是10点而非10%；持续回调为20+round(maxHP/100)。不在本批估算生命周期边界上究竟执行几次，也不将这些当前参数写成原版恢复值。原版客户端HP30只是选择权重，不能凭相同名字证明恢复公式相等。
+
+F100-1：godotworldres在既有hero分支生成物品元数据时，新增potion_effect.m2xmeta；逐一按与服务器相同的药名找BuffRecord。输出即时HP/MP的固定值和百分比、持续HP/MP的固定值/百分比/毫秒持续时间/每秒触发数。未知动作、重复同类动作或缺少对应Buff均显式标记，不从ItemRecord.potion或中文名称猜测实际效果。现有五类item/weapon元数据不改格式，缺少新文件时Godot保留空效果目录，旧资源仍可加载。
+
+格式沿用现有M2SP约定：12字节头（magic、u32版本1、u32条数），每条60字节：u32 itemID/buffID/flags，i32 hp[2]/mp[2]，i32 hpPulse[4]/mpPulse[4]。flags bit0为stackReplace、bit1为未完整表达的动作、bit2为缺少Buff。即时数组是[固定值,百分比]，持续数组是[固定值,百分比,持续毫秒,每秒触发数]。这是一份当前后端效果描述，不是原记录+100延迟的映射，也不是完整Buff堆叠或生命周期模拟。
+
+ActorResource增加item_potion_effect(itemID)入口，读取新元数据。先检查版本及精确文件长度，再填充临时字典；itemID为0、重复ID、截断等会整份拒绝，加载开始先清旧内容，避免残留前次配置。读取阶段不改库存、不创建Buff、不发送消费请求。
+
+E100-3：104的godotworldres目标重新编译成功，日志/tmp/mir3-potion-effects100-build.log。按既有hero资源分支导出后，新文件共31条药品记录：11条有当前可表达Buff实现，20条明确标记缺少对应Buff。不能把31条称为31种已经可用的服务器恢复药。新文件SHA-256为91a4557cf3e2a2541a05bd47f5aa3bc8b01e152a5d92affab7cdb91d53189891，两端一致；当前item、item_detail、item_name、item_type、weapon_order五个既有文件与本次hero导出结果cmp一致。
+
+首次误用item精灵分支只生成item.m2xindex，复制新效果文件失败；改为生成物品元数据的既有hero分支后完成导出，并在文档/用例提示中明确正确入口。该失败不计为新文件生成成功，没有改动原物品贴图或服务器。
+
+E100-4：新增potion_effect_metadata_smoke.gd/.tscn在104通过。实际加载导出文件，验证当前ID6的HP[10,0]/持续[20,1,3000,2]及ID10的对应MP数据，武器ID824不出现在药品目录。再用隔离的user://测试目录验证有效文件、截断、空文件、重复itemID、未知版本及删除后的缺失文件；后五种均不得保留部分或过期数据。测试清理自己的临时文件及目录，不改共享ResourceStore的资源根。
+
+inventory_interaction_smoke及完整world_action_smoke在新数据存在时复跑通过，日志/tmp/mir3-potion-effects100-场景名.log。这证明新增读取未破坏库存和动作运行，不冒充已验证自动消费。没有更改服务器Player/Buff逻辑，PID3609924持续运行，不重启服务器。
+
+```sh
+cmake --build --preset conan-release --target godotworldres --parallel 6
+build/Release/godotworldres --sprites /tmp/mir3-potion-effects100 hero build/Release/res/texture/hero.zsdb --no-png
+cp /tmp/mir3-potion-effects100/sprites/potion_effect.m2xmeta client_godot/build/world_res/sprites/potion_effect.m2xmeta
+MIR2X_WORLD_RES="$PWD/client_godot/build/world_res" MIR2X_TEXTURE_RES="$PWD/build/Release/res/texture" MIR2X_AUDIO_RES="$PWD/client_godot/build/audio" /home/czx/godot --headless --path client_godot res://tests/potion_effect_metadata_smoke.tscn
+python3 client_godot/docs/reverse/export_mir3_auto_use.py --sample /tmp/mir3-history-unpacked.exe --item-names client_godot/build/world_res/sprites/item_name.m2xmeta --output /tmp/mir3-auto-use100.json
+python3 client_godot/docs/reverse/test_mir3_auto_use.py --sample /tmp/mir3-history-unpacked.exe
+```
+
+取证/JSON、18项负例与重放、资源导出/读取、新场景验收、报告分笔线性提交并同步104；新增源文件和场景纳入提交，旧.uid、生成的二进制元数据、构建产物、日志及104既有build_signature修改排除。ActorResource变化不在现有请求门/技能指纹的输入列表，不伪造重新生成这些无变化的指纹。
+
+证据→结论→后续路径：E100-1补齐GUI蓝药选择，E100-2阻止将声明值误作实际后端恢复公式，E100-3/E100-4证明真实元数据链已在Linux构建并由Godot读取。F100-1提供下一步运行接入的数据基础；原使用延迟字段来源、保护配置迁移及实际自动消费仍未完成，整体目标保持继续。
