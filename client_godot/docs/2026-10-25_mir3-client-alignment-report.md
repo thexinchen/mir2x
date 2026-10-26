@@ -2103,3 +2103,31 @@ MIR3_TEST_SERVER_DB=$PWD/build/Release/mir2x.db3 /home/czx/godot --headless --pa
 ```
 
 证据→结论→后续路径：E114-1提供队列顺序依据，E114-2先复现F114-1再通过真实渲染帧检查修复效果，E114-3/E114-4提供不同角色的真实走路与服务器位置验证，E114-5保持来源快照可复跑。冲撞结算、原反馈业务命名、逐物品延迟及其他剩余逻辑仍需继续推进，整体对齐目标未完成。
+
+## 批次 115：其他玩家连续移动与位置纠正的队列衔接（2026-10-26）
+
+E115-1：继续对照已核验的原6DB054演员队列追加语义，并检查当前C++ Hero::parseAction的移动、站立、受击和瞬移处理。Godot此前仅本机服务器驱动移动有独立顺序保护，其他玩家的新MOVE会直接替换当前动作，STAND也可能提前结束显示；普通位置纠正队列则被后来的入口清空。本批保留当前协议已有受击等动作打断、瞬移清理及死亡强制纠正规则，只补连续移动/站立的顺序衔接，不宣称所有当前动作类型均已映射回原MIR3消息号。
+
+F115-1（severity=n/a_re，confidence=high，status=fixed，evidence=E115-1/E115-2，location=client_godot/scripts/game/main.gd::_handle_action_data/_advance_creature_motion_action）：远端玩家正在普通移动或已有普通移动队列时，后续2/3/5类型报文以received_player_action进入既有motion_action_queue，按队尾比较抑制相邻重复。新数据不改当前动画的起点、终点或时间戳；穿插返回之后的相同边仍保留。出队重入使用独立received_queued标志，跳过再次入队，但仍执行服务器起点的位置纠正。纠正前缀保留队列尾部的后续报文，已纠正动作重入也不再清掉这些尾部记录。
+
+队列中的STAND没有一次性动作时长，采用带动作类型/时间戳检查的延后完成调用继续推进，避免“站立→下一段走路”卡住。受击、瞬移及其他既有打断路径继续清普通队列；forced_action_queue不参与上述新入队分支，避免死亡纠正中的复活Stand被普通移动队列截留。怪物的原活动重复判定仍保留，新顺序处理限定于远端玩家。
+
+E115-2：新增remote_server_move_queue_smoke.gd/.tscn，经生产SM_ACTION入口投递当前协议编码报文，覆盖连续两段/站立、立即重复与队尾重复、返回后的重复边、无时长Stand后的队列推进、瞬移/受击清理，以及真实可走地图位置纠正前缀后的后续移动。初版修复前日志/tmp/mir3-remote115-before.log已经显示首段被覆盖及队列检查失败；其最后一个纠正布局还用了不可走格，亦报错，不能把该布局的失败算作生产缺陷。最终纠正用例改为从道馆地图实际扫描连续5个可走格。
+
+前两段各运行真实_process帧0.25秒，以渲染器累计移动时钟和实际_action_draw_grid公式核对绘制坐标严格位于对应起终点之间。最终无窗口/tmp/mir3-remote115-final.log及Xvfb/tmp/mir3-remote115-window.log通过。第一次取回截图只见加载0%遮罩：离线场景不接收SM_STARTGAMESCENE，未主动加载地图；仅等待遮罩消失亦按预期失败。修正夹具为调用生产_load_world_map并等待加载完成，再开始队列测试。此为测试准备遗漏，不是新发现的在线登录0%问题。最终截图/tmp/mir3-remote115.png取回G:/mir3/work/mir3-movement/remote-move-115.png并核看，两名离线演员及第二段行走中帧正常显示。
+
+E115-3：self_server_move_queue_smoke、remote_revive_smoke、self_space_move_smoke及完整world_action_smoke在104通过，日志/tmp/mir3-remote115-场景名.log；世界动作测试原有“新受击替换普通位置纠正”断言继续成立，没有为了队列测试修改既有预期。复活测试覆盖两种报文先后、死亡纠正顺序、旧回调隔离及下一生命清理。
+
+E115-4：在104同时运行id_3的network_movement_rejection_smoke与id_4的network_inventory_refresh_smoke，日志/tmp/mir3-remote115-peer3.log、/tmp/mir3-remote115-peer4.log。前者实际移动拒绝→保留按住的右键→成功续走，最终由服务器reportStand确认回到405,118；后者完成407,126↔408,126四次真实往返，每次只读SQLite核对权威坐标，随后新增/消费一份药匹配SM_OK并恢复基线数量和407,126位置。此为双客户端同时活动的联网回归，没有在网络端制造集中到达的连续报文；E115-2的受控重放不能改称在线突发流量实测。
+
+E115-5：请求门、技能对应和位移动画JSON仅重算main来源哈希，104独立生成/tmp/mir3-request115.json、/tmp/mir3-skill115.json、/tmp/mir3-impulse115.json并分别cmp一致。最终成功轮次日志检查未见SCRIPT ERROR/ERROR；Xvfb VSync提示仍存在。服务器PID3708547持续运行，无C++修改、编译或重启。生产修复/来源指纹、离线场景、报告分三笔线性提交同步104；新增gd/tscn纳入，旧.uid、样本、截图、日志、二进制及既有build_signature修改排除。
+
+沿用批次104资源环境复跑：
+
+```sh
+/home/czx/godot --headless --path client_godot res://tests/remote_server_move_queue_smoke.tscn
+MIR3_REMOTE_MOVE_SCREENSHOT=/tmp/mir3-remote115.png xvfb-run -a /home/czx/godot --max-fps 60 --path client_godot res://tests/remote_server_move_queue_smoke.tscn
+/home/czx/godot --headless --path client_godot res://tests/remote_revive_smoke.tscn
+```
+
+证据→结论→后续路径：E115-1定位远端移动顺序缺口，E115-2先复现F115-1再核对两段真实渲染帧和纠正尾部保留，E115-3检查打断及死亡复活边界，E115-4提供双客户端活动回归，E115-5保持证据快照一致。冲撞结算、原状态语义、逐物品延迟及其他剩余逻辑继续推进，整体对齐目标未完成。
