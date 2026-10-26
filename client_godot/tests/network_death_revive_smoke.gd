@@ -53,13 +53,15 @@ func _process(_delta: float) -> void:
 					subject_file.close()
 				if not FileAccess.file_exists(observer_exchange + "/observer.ready"):
 					return
-			if _aura_pending and _health_received and GameState.player_hp <= 0 and not _initial_revive_sent:
+			if _health_received and GameState.player_hp <= 0 and not _initial_revive_sent:
 				_submit_command("@revive")
 				_initial_revive_sent = true
 			if not _health_received or GameState.player_hp <= 0 or GameState.player_action_type == 13:
 				return
 			var world: RefCounted = renderer.get("world_resource")
 			if int(world.get("map_id")) != GameState.player_map_id:
+				return
+			if _main.get_node("MapLoadingOverlay").visible or bool(renderer.get("loading_map")):
 				return
 			if _aura_mode:
 				if not _aura_sent:
@@ -204,7 +206,7 @@ func _escape_recenters(context: String) -> bool:
 	escape_key.pressed = true
 	_main.call("_unhandled_input", escape_key)
 	if not Vector2(GameState.view_x, GameState.view_y).is_equal_approx(centered_view):
-		_fail("%s did not preserve the original Escape camera recenter" % context, 15)
+		_fail("%s did not preserve the original Escape camera recenter: expected=%s actual=%s overlay=%s loading=%s" % [context, centered_view, Vector2(GameState.view_x, GameState.view_y), _main.get_node("MapLoadingOverlay").visible, _main.get_node("WorldRenderer").get("loading_map")], 15)
 		return false
 	return true
 
